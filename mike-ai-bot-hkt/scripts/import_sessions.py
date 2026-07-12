@@ -26,6 +26,12 @@ async def main() -> None:
         default="../mike_sessions_export.json",
         help="Path to export JSON",
     )
+    parser.add_argument(
+        "--fraction",
+        type=float,
+        default=1.0,
+        help="Import only this fraction of sessions (sorted by user id)",
+    )
     args = parser.parse_args()
 
     database_url = os.environ.get("DATABASE_URL")
@@ -38,7 +44,7 @@ async def main() -> None:
 
     store = await SessionStore.create(database_url)
     try:
-        stats = await import_from_export(store, export_path)
+        stats = await import_from_export(store, export_path, fraction=args.fraction)
     finally:
         await store.close()
 

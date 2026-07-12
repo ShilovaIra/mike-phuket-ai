@@ -187,29 +187,56 @@ docker compose exec db psql -U mike -d mike -c \
 
 ---
 
-## 7. Import existing sessions (optional)
+## 7. Seed staging with half of a production export (one-time)
 
-If you have `mike_sessions_export.json` from production RAM export:
+Use this **once** when establishing staging. Export JSON contains real chat data — it is **gitignored** and must never be committed.
 
-Copy to the server:
-
-```bash
-scp mike_sessions_export.json root@YOUR_DROPLET_IP:/opt/mike-ai-bot-hkt/
-```
-
-Run import once (bot can stay running):
+### On your laptop
 
 ```bash
-docker compose run --rm bot python scripts/import_sessions.py mike_sessions_export.json
+# From repo root — writes a half-sized file (also gitignored):
+cd mike-ai-bot-hkt
+python scripts/seed_staging_sessions.py \
+  ../mike_sessions_export.json \
+  --write-subset ../mike_sessions_export_staging.json
+
+scp ../mike_sessions_export_staging.json \
+  root@YOUR_DROPLET_IP:/opt/mike-phuket-ai/mike-ai-bot-hkt/
 ```
 
-Pre-check the export file (optional, before import):
+### On the Droplet (fresh DB only)
 
 ```bash
-docker compose run --rm bot python scripts/verify_export.py mike_sessions_export.json
+cd /opt/mike-phuket-ai/mike-ai-bot-hkt
+
+# Optional pre-check:
+docker compose run --rm bot python scripts/verify_export.py mike_sessions_export_staging.json
+
+# One-shot seed: imports the file as-is (already half). Refuses if users exist.
+docker compose run --rm bot python scripts/seed_staging_sessions.py \
+  --fraction 1 \
+  mike_sessions_export_staging.json
 ```
 
-After import, confirm row counts in Postgres (see section 6).
+If you scp the **full** export instead, keep the default half cut:
+
+```bash
+docker compose run --rm bot python scripts/seed_staging_sessions.py \
+  mike_sessions_export.json
+```
+
+Confirm:
+
+```bash
+docker compose exec db psql -U mike -d mike -c \
+  "SELECT count(*) AS users FROM users; SELECT count(*) AS messages FROM messages;"
+```
+
+Delete the JSON from the Droplet when done:
+
+```bash
+rm -f mike_sessions_export*.json
+```
 
 ---
 
@@ -269,10 +296,12 @@ Schema still applies automatically on bot start.
 - [ ] Staging Telegram bot responds to `/start`
 - [ ] Messages survive `docker compose restart bot`
 - [ ] `\dt` shows all six tables
+- [ ] One-time half-export seed run (section 7) — or skipped intentionally
 - [ ] `leads` row created when lead flow completes (if tested)
 - [ ] Production bot token is **not** in staging `.env`
 - [ ] Firewall allows SSH only from your IP
 - [ ] `POSTGRES_PASSWORD` is strong and not committed to git
+- [ ] `mike_sessions_export*.json` deleted from Droplet and never committed
 
 ---
 
