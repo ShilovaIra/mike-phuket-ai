@@ -69,7 +69,8 @@ keyboard = [
     [ASK_MIKE_BUTTON],
 ]
 
-reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+# Demo nudge: resize_keyboard=False → taller reply buttons in most clients.
+reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=False)
 
 
 def telegram_id(update: Update) -> str:
@@ -143,7 +144,7 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not location:
         await update.message.reply_text(
-            f"Не получил геопозицию. Нажми {NEARBY_BUTTON} и разреши отправку локации.",
+            "Не получил геопозицию. Нажми «Что рядом» и разреши отправку локации.",
             reply_markup=reply_markup
         )
         return
