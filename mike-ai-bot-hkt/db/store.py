@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -106,7 +107,7 @@ class SessionStore:
                     ctx.conversation_id,
                     role,
                     content,
-                    metadata or {},
+                    json.dumps(metadata or {}),
                 )
                 return ctx
 
@@ -170,7 +171,7 @@ class SessionStore:
                     """,
                     ctx.conversation_id,
                     lead_source,
-                    snapshot,
+                    json.dumps(snapshot),
                 )
                 await conn.execute(
                     """
@@ -178,7 +179,9 @@ class SessionStore:
                     VALUES ('lead.created', $1, $2::jsonb)
                     """,
                     str(lead_id),
-                    {"lead_id": str(lead_id), "source": lead_source, "snapshot": snapshot},
+                    json.dumps(
+                        {"lead_id": str(lead_id), "source": lead_source, "snapshot": snapshot}
+                    ),
                 )
                 return LeadRecord(
                     id=lead_id,

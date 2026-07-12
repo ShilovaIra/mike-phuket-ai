@@ -213,7 +213,10 @@ cd /opt/mike-phuket-ai/mike-ai-bot-hkt
 docker compose run --rm bot python scripts/verify_export.py mike_sessions_export_staging.json
 
 # One-shot seed: imports the file as-is (already half). Refuses if users exist.
-docker compose run --rm bot python scripts/seed_staging_sessions.py \
+# Mount the host JSON into the container (compose image has no bind of the app dir).
+docker compose run --rm \
+  -v "$PWD/mike_sessions_export_staging.json:/app/mike_sessions_export_staging.json:ro" \
+  bot python scripts/seed_staging_sessions.py \
   --fraction 1 \
   mike_sessions_export_staging.json
 ```
