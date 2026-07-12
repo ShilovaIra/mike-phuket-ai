@@ -1,0 +1,15 @@
+.venv
+venv
+.env
+.env.*
+__pycache__
+*.py[cod]
+.pytest_cache
+tests
+contacts.csv
+.git
+.gitignore
+README.md
+docs
+pytest.ini
+*.md

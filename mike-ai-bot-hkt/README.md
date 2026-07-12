@@ -33,3 +33,14 @@ python scripts/import_sessions.py ../mike_sessions_export.json
 export TEST_DATABASE_URL=postgresql://localhost/mike_test
 pytest
 ```
+
+## Staging (Docker + DigitalOcean)
+
+Staging runs from the **`staging` Git branch only**.
+
+```bash
+cp .env.staging.example .env   # fill in staging tokens
+./scripts/deploy_staging.sh    # pulls staging + rebuilds (refuses other branches)
+```
+
+Full setup guide: **[docs/STAGING.md](docs/STAGING.md)**
