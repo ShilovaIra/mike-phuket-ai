@@ -35,7 +35,8 @@ TRUNCATE TABLE
     messages,
     conversations,
     identities,
-    users
+    users,
+    partners
 RESTART IDENTITY CASCADE
 """
 

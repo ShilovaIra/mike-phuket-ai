@@ -64,3 +64,30 @@ CREATE TABLE IF NOT EXISTS webhook_events (
 CREATE INDEX IF NOT EXISTS webhook_events_pending
     ON webhook_events (status, next_retry_at)
     WHERE status = 'pending';
+
+CREATE TABLE IF NOT EXISTS partners (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    type TEXT NOT NULL,
+    referral_url TEXT NOT NULL,
+    blurb TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS partners_type_active_sort
+    ON partners (type, sort_order)
+    WHERE is_active;
+
+INSERT INTO partners (id, name, type, referral_url, blurb, is_active, sort_order)
+VALUES (
+    '00000000-0000-4000-8000-000000000001',
+    'Test Exchange',
+    'money_exchange',
+    'https://t.me/example_exchange_bot?start=test_ref',
+    'Тестовый партнёр',
+    true,
+    1
+)
+ON CONFLICT (id) DO NOTHING;

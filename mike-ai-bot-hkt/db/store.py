@@ -8,6 +8,7 @@ from uuid import UUID
 import asyncpg
 
 from db.migrate import apply_schema_pool
+from partners import Partner
 
 
 @dataclass(frozen=True)
@@ -201,6 +202,29 @@ class SessionStore:
                 ctx.conversation_id,
             )
             return exists is not None
+
+    async def list_active_partners(self, partner_type: str) -> list[Partner]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, name, type, referral_url, blurb, sort_order
+                FROM partners
+                WHERE type = $1 AND is_active = true
+                ORDER BY sort_order ASC, name ASC
+                """,
+                partner_type,
+            )
+            return [
+                Partner(
+                    id=row["id"],
+                    name=row["name"],
+                    type=row["type"],
+                    referral_url=row["referral_url"],
+                    blurb=row["blurb"],
+                    sort_order=row["sort_order"],
+                )
+                for row in rows
+            ]
 
     async def _ensure_user(
         self,

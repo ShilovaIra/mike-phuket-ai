@@ -15,6 +15,15 @@ from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
 from db.store import SessionStore
+from partners import MONEY_EXCHANGE_TYPE, build_partner_list_replies
+from buttons import (
+    ASK_MIKE_BUTTON,
+    BEACHES_BUTTON,
+    MONEY_EXCHANGE_BUTTON,
+    NEARBY_BUTTON,
+    REAL_ESTATE_BUTTON,
+    WHERE_TO_EAT_BUTTON,
+)
 
 load_dotenv()
 
@@ -33,7 +42,7 @@ MIKE_PROMPT = """
 
 Говори на русском языке коротко, понятно и живо.
 
-Помогай туристам с пляжами, ресторанами, маршрутами, экскурсиями, транспортом, закатами и недвижимостью.
+Помогай туристам с пляжами, ресторанами, маршрутами, экскурсиями, транспортом и недвижимостью.
 
 Если человек интересуется недвижимостью, мягко выясняй:
 1. Покупка или аренда?
@@ -54,10 +63,10 @@ MIKE_PROMPT = """
 """
 
 keyboard = [
-    ["🍜 Где поесть", "🏖 Пляжи"],
-    [KeyboardButton("📍 Что рядом", request_location=True), "🌅 Закат"],
-    ["🏠 Недвижимость"],
-    ["💬 Спросить Майка"]
+    [WHERE_TO_EAT_BUTTON, BEACHES_BUTTON],
+    [KeyboardButton(NEARBY_BUTTON, request_location=True), MONEY_EXCHANGE_BUTTON],
+    [REAL_ESTATE_BUTTON],
+    [ASK_MIKE_BUTTON],
 ]
 
 reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
@@ -134,7 +143,7 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not location:
         await update.message.reply_text(
-            "Не получил геопозицию. Нажми 📍 Что рядом и разреши отправку локации.",
+            f"Не получил геопозицию. Нажми {NEARBY_BUTTON} и разреши отправку локации.",
             reply_markup=reply_markup
         )
         return
@@ -175,7 +184,16 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
+    if user_text == MONEY_EXCHANGE_BUTTON:
+        await handle_money_exchange(update)
+        return
     await ask_openai(update, context, user_text)
+
+
+async def handle_money_exchange(update: Update):
+    partners = await store.list_active_partners(MONEY_EXCHANGE_TYPE)
+    for text in build_partner_list_replies(partners):
+        await update.message.reply_text(text, reply_markup=reply_markup)
 
 
 async def ask_openai(
