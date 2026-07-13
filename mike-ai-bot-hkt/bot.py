@@ -140,6 +140,28 @@ async def myid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+def is_admin(update: Update) -> bool:
+    if not ADMIN_CHAT_ID:
+        return False
+    admin_id = str(ADMIN_CHAT_ID)
+    return (
+        str(update.effective_user.id) == admin_id
+        or str(update.effective_chat.id) == admin_id
+    )
+
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update):
+        return
+
+    user_stats = await store.get_user_stats()
+    await update.message.reply_text(
+        "📊 Статистика бота\n\n"
+        f"Всего пользователей: {user_stats.total_users}\n"
+        f"Активны сегодня: {user_stats.active_today}"
+    )
+
+
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await store.reset_conversation(CHANNEL, telegram_id(update))
 
@@ -348,6 +370,7 @@ async def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(CommandHandler("myid", myid))
+    app.add_handler(CommandHandler("stats", stats))
 
     app.add_handler(MessageHandler(filters.LOCATION, handle_location))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))

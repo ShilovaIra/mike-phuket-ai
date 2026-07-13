@@ -28,6 +28,12 @@ class LeadRecord:
     webhook_enqueued: bool
 
 
+@dataclass(frozen=True)
+class UserStats:
+    total_users: int
+    active_today: int
+
+
 class SessionStore:
     def __init__(self, pool: asyncpg.Pool) -> None:
         self._pool = pool
@@ -202,6 +208,25 @@ class SessionStore:
                 ctx.conversation_id,
             )
             return exists is not None
+
+    async def get_user_stats(self, *, timezone: str = "Asia/Bangkok") -> UserStats:
+        async with self._pool.acquire() as conn:
+            total_users = await conn.fetchval("SELECT count(*) FROM users")
+            active_today = await conn.fetchval(
+                """
+                SELECT count(DISTINCT c.user_id)
+                FROM messages m
+                JOIN conversations c ON c.id = m.conversation_id
+                WHERE m.role = 'user'
+                  AND (m.created_at AT TIME ZONE $1)::date
+                      = (now() AT TIME ZONE $1)::date
+                """,
+                timezone,
+            )
+            return UserStats(
+                total_users=int(total_users or 0),
+                active_today=int(active_today or 0),
+            )
 
     async def list_active_partners(self, partner_type: str) -> list[Partner]:
         async with self._pool.acquire() as conn:

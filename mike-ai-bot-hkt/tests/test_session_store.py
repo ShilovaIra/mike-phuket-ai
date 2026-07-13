@@ -105,3 +105,17 @@ async def test_first_source_set_on_first_start_after_message_without_start(store
     ctx = await store.start_conversation("telegram", "600", source="instagram")
 
     assert ctx.first_source == "instagram"
+
+
+@requires_db
+async def test_get_user_stats_counts_total_and_active_today(store):
+    await store.start_conversation("telegram", "700", source="unknown")
+    await store.append_message("telegram", "700", role="user", content="hello")
+    await store.append_message("telegram", "700", role="assistant", content="hi")
+
+    await store.start_conversation("telegram", "701", source="unknown")
+
+    stats = await store.get_user_stats()
+
+    assert stats.total_users >= 2
+    assert stats.active_today >= 1
