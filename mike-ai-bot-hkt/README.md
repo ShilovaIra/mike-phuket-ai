@@ -44,3 +44,14 @@ cp .env.staging.example .env   # fill in staging tokens
 ```
 
 Full setup guide: **[docs/STAGING.md](docs/STAGING.md)**
+
+## Production (Docker + DigitalOcean)
+
+Production runs from the **`main` Git branch only**. Promote by merging `staging` → `main`, then redeploy.
+
+```bash
+cp .env.production.example .env   # fill in production tokens
+./scripts/deploy_production.sh    # pulls main + rebuilds (refuses other branches)
+```
+
+Full setup guide: **[docs/PRODUCTION.md](docs/PRODUCTION.md)**
