@@ -6,7 +6,7 @@ from html import escape
 from pathlib import Path
 from uuid import UUID
 
-INTRO = "💰 Вот партнёры для обмена рублей:"
+INTRO = "Вот партнёры для обмена рублей:"
 FALLBACK = (
     "Пока нет доступных партнёров по обмену. "
     "Напишите Майку — подскажу, что можно сделать."
