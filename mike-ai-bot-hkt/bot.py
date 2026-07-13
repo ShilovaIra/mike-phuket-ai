@@ -11,11 +11,21 @@ if str(ROOT) not in sys.path:
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+    Update,
+)
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
 from db.store import SessionStore
-from partners import MONEY_EXCHANGE_TYPE, build_partner_list_replies
+from partners import (
+    MONEY_EXCHANGE_TYPE,
+    build_partner_cards,
+    resolve_logo_path,
+)
 from buttons import (
     ASK_MIKE_BUTTON,
     BEACHES_BUTTON,
@@ -193,8 +203,32 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_money_exchange(update: Update):
     partners = await store.list_active_partners(MONEY_EXCHANGE_TYPE)
-    for text in build_partner_list_replies(partners):
-        await update.message.reply_text(text, reply_markup=reply_markup)
+    intro_or_fallback, cards = build_partner_cards(partners)
+
+    await update.message.reply_text(intro_or_fallback, reply_markup=reply_markup)
+    if not cards:
+        return
+
+    for card in cards:
+        keyboard = InlineKeyboardMarkup(
+            [[InlineKeyboardButton(card.button_text, url=card.referral_url)]]
+        )
+        logo = resolve_logo_path(card.logo_path)
+        if logo is not None:
+            with logo.open("rb") as photo:
+                await update.message.reply_photo(
+                    photo=photo,
+                    caption=card.caption_html,
+                    parse_mode="HTML",
+                    reply_markup=keyboard,
+                )
+        else:
+            await update.message.reply_text(
+                card.caption_html,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+                disable_web_page_preview=True,
+            )
 
 
 async def ask_openai(

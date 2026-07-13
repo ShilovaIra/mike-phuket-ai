@@ -11,5 +11,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY bot.py knowledge.txt partners.py buttons.py ./
 COPY db/ db/
 COPY scripts/ scripts/
+COPY media/ media/
 
 CMD ["python", "bot.py"]

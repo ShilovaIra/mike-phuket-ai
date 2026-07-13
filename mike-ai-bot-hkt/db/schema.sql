@@ -71,23 +71,45 @@ CREATE TABLE IF NOT EXISTS partners (
     type TEXT NOT NULL,
     referral_url TEXT NOT NULL,
     blurb TEXT,
+    logo_path TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
     sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+ALTER TABLE partners ADD COLUMN IF NOT EXISTS logo_path TEXT;
+
 CREATE INDEX IF NOT EXISTS partners_type_active_sort
     ON partners (type, sort_order)
     WHERE is_active;
 
-INSERT INTO partners (id, name, type, referral_url, blurb, is_active, sort_order)
-VALUES (
+INSERT INTO partners (id, name, type, referral_url, blurb, logo_path, is_active, sort_order)
+VALUES
+(
     '00000000-0000-4000-8000-000000000001',
-    'Test Exchange',
+    'Money Shop',
     'money_exchange',
-    'https://t.me/example_exchange_bot?start=test_ref',
-    'Тестовый партнёр',
+    'https://moneyshopphuket.online/links/pp413',
+    'Money Shop - Сеть обменных офисов на Пхукете!',
+    'media/partners/moneyshop.jpeg',
     true,
     1
+),
+(
+    '00000000-0000-4000-8000-000000000002',
+    'Ex24.pro',
+    'money_exchange',
+    'https://ex24qr.com/epihelgnld',
+    'Лицензированный обмен валюты. Таиланд, Вьетнам, ОАЭ, Китай, Бали. Переводы по всему миру.',
+    'media/partners/ex24pro.png',
+    true,
+    2
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    type = EXCLUDED.type,
+    referral_url = EXCLUDED.referral_url,
+    blurb = EXCLUDED.blurb,
+    logo_path = EXCLUDED.logo_path,
+    is_active = EXCLUDED.is_active,
+    sort_order = EXCLUDED.sort_order;

@@ -57,7 +57,7 @@ async def test_list_active_partners_excludes_inactive_and_other_types(store):
 
 
 @requires_db
-async def test_schema_seed_includes_placeholder_money_exchange_partner():
+async def test_schema_seed_includes_money_exchange_partners():
     url = database_url()
     assert url is not None
     pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
@@ -69,10 +69,46 @@ async def test_schema_seed_includes_placeholder_money_exchange_partner():
         store = SessionStore(pool)
         partners = await store.list_active_partners("money_exchange")
 
-        assert len(partners) >= 1
-        seed = next(p for p in partners if p.name == "Test Exchange")
-        assert seed.type == "money_exchange"
-        assert seed.referral_url == "https://t.me/example_exchange_bot?start=test_ref"
-        assert seed.blurb == "Тестовый партнёр"
+        assert [p.name for p in partners] == ["Money Shop", "Ex24.pro"]
+        money, ex24 = partners
+        assert money.referral_url == "https://moneyshopphuket.online/links/pp413"
+        assert money.logo_path == "media/partners/moneyshop.jpeg"
+        assert money.blurb == "Money Shop - Сеть обменных офисов на Пхукете!"
+        assert ex24.referral_url == "https://ex24qr.com/epihelgnld"
+        assert ex24.logo_path == "media/partners/ex24pro.png"
+        assert "Лицензированный обмен валюты" in (ex24.blurb or "")
+    finally:
+        await pool.close()
+
+
+@requires_db
+async def test_schema_seed_upsert_replaces_test_exchange_placeholder():
+    url = database_url()
+    assert url is not None
+    pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
+    try:
+        async with pool.acquire() as conn:
+            await conn.execute("TRUNCATE TABLE partners RESTART IDENTITY CASCADE")
+            await conn.execute(
+                """
+                INSERT INTO partners (id, name, type, referral_url, blurb, is_active, sort_order)
+                VALUES (
+                    '00000000-0000-4000-8000-000000000001',
+                    'Test Exchange',
+                    'money_exchange',
+                    'https://t.me/example_exchange_bot?start=test_ref',
+                    'Тестовый партнёр',
+                    true,
+                    1
+                )
+                """
+            )
+            await apply_schema(conn)
+
+        store = SessionStore(pool)
+        partners = await store.list_active_partners("money_exchange")
+        names = [p.name for p in partners]
+        assert "Test Exchange" not in names
+        assert names[0] == "Money Shop"
     finally:
         await pool.close()

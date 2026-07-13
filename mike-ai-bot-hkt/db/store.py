@@ -207,7 +207,7 @@ class SessionStore:
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(
                 """
-                SELECT id, name, type, referral_url, blurb, sort_order
+                SELECT id, name, type, referral_url, blurb, logo_path, sort_order
                 FROM partners
                 WHERE type = $1 AND is_active = true
                 ORDER BY sort_order ASC, name ASC
@@ -222,6 +222,7 @@ class SessionStore:
                     referral_url=row["referral_url"],
                     blurb=row["blurb"],
                     sort_order=row["sort_order"],
+                    logo_path=row["logo_path"],
                 )
                 for row in rows
             ]
