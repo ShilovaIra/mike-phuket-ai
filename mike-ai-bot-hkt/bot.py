@@ -1,26 +1,58 @@
 import os
 import asyncio
+import sys
 import requests
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+    Update,
+)
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+
+from db.store import SessionStore
+from partners import (
+    MONEY_EXCHANGE_TYPE,
+    build_partner_cards,
+    resolve_logo_path,
+)
+from buttons import (
+    ASK_MIKE_BUTTON,
+    BEACHES_BUTTON,
+    MONEY_EXCHANGE_BUTTON,
+    NEARBY_BUTTON,
+    REAL_ESTATE_BUTTON,
+    WHERE_TO_EAT_BUTTON,
+)
 
 load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+CHANNEL = "telegram"
 
 client = OpenAI(api_key=OPENAI_API_KEY)
+store: SessionStore | None = None
 
 MIKE_PROMPT = """
 Ты Майк — дружелюбный AI-гид по Пхукету и помощник Phuket ProMax.
 
 Говори на русском языке коротко, понятно и живо.
 
-Помогай туристам с пляжами, ресторанами, маршрутами, экскурсиями, транспортом, закатами и недвижимостью.
+Помогай туристам с пляжами, ресторанами, маршрутами, экскурсиями, транспортом и недвижимостью.
 
 Если человек интересуется недвижимостью, мягко выясняй:
 1. Покупка или аренда?
@@ -41,13 +73,18 @@ MIKE_PROMPT = """
 """
 
 keyboard = [
-    ["🍜 Где поесть", "🏖 Пляжи"],
-    [KeyboardButton("📍 Что рядом", request_location=True), "🌅 Закат"],
-    ["🏠 Недвижимость"],
-    ["💬 Спросить Майка"]
+    [WHERE_TO_EAT_BUTTON, BEACHES_BUTTON],
+    [KeyboardButton(NEARBY_BUTTON, request_location=True), MONEY_EXCHANGE_BUTTON],
+    [REAL_ESTATE_BUTTON],
+    [ASK_MIKE_BUTTON],
 ]
 
-reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+# Demo nudge: resize_keyboard=False → taller reply buttons in most clients.
+reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=False)
+
+
+def telegram_id(update: Update) -> str:
+    return str(update.effective_user.id)
 
 
 def get_location_name(lat, lon):
@@ -87,14 +124,8 @@ def get_location_name(lat, lon):
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    source = "unknown"
-
-    if context.args:
-        source = context.args[0]
-
-    context.user_data["source"] = source
-    context.user_data["history"] = []
-    context.user_data["lead_sent"] = False
+    source = context.args[0] if context.args else "unknown"
+    await store.start_conversation(CHANNEL, telegram_id(update), source=source)
 
     await update.message.reply_text(
         "Привет! Я Майк — AI-гид по Пхукету.\n\n"
@@ -109,9 +140,30 @@ async def myid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+def is_admin(update: Update) -> bool:
+    if not ADMIN_CHAT_ID:
+        return False
+    admin_id = str(ADMIN_CHAT_ID)
+    return (
+        str(update.effective_user.id) == admin_id
+        or str(update.effective_chat.id) == admin_id
+    )
+
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_admin(update):
+        return
+
+    user_stats = await store.get_user_stats()
+    await update.message.reply_text(
+        "📊 Статистика бота\n\n"
+        f"Всего пользователей: {user_stats.total_users}\n"
+        f"Активны сегодня: {user_stats.active_today}"
+    )
+
+
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data["history"] = []
-    context.user_data["lead_sent"] = False
+    await store.reset_conversation(CHANNEL, telegram_id(update))
 
     await update.message.reply_text(
         "Память диалога очищена. Начинаем заново 👌",
@@ -124,7 +176,7 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not location:
         await update.message.reply_text(
-            "Не получил геопозицию. Нажми 📍 Что рядом и разреши отправку локации.",
+            "Не получил геопозицию. Нажми «Что рядом» и разреши отправку локации.",
             reply_markup=reply_markup
         )
         return
@@ -153,34 +205,73 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
 Дай короткий ответ: где человек находится, что рядом посмотреть, где поесть и куда съездить.
 """
 
-    await ask_openai(update, context, user_text)
+    metadata = {
+        "message_type": "location",
+        "lat": lat,
+        "lon": lon,
+        "area": area,
+        "full_address": full_address,
+    }
+    await ask_openai(update, context, user_text, metadata=metadata)
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
+    if user_text == MONEY_EXCHANGE_BUTTON:
+        await handle_money_exchange(update)
+        return
     await ask_openai(update, context, user_text)
 
 
-async def ask_openai(update: Update, context: ContextTypes.DEFAULT_TYPE, user_text: str):
-    if "history" not in context.user_data:
-        context.user_data["history"] = []
+async def handle_money_exchange(update: Update):
+    partners = await store.list_active_partners(MONEY_EXCHANGE_TYPE)
+    intro_or_fallback, cards = build_partner_cards(partners)
 
-    if "lead_sent" not in context.user_data:
-        context.user_data["lead_sent"] = False
+    await update.message.reply_text(intro_or_fallback, reply_markup=reply_markup)
+    if not cards:
+        return
 
-    if "source" not in context.user_data:
-        context.user_data["source"] = "unknown"
+    for card in cards:
+        keyboard = InlineKeyboardMarkup(
+            [[InlineKeyboardButton(card.button_text, url=card.referral_url)]]
+        )
+        logo = resolve_logo_path(card.logo_path)
+        if logo is not None:
+            with logo.open("rb") as photo:
+                await update.message.reply_photo(
+                    photo=photo,
+                    caption=card.caption_html,
+                    parse_mode="HTML",
+                    reply_markup=keyboard,
+                )
+        else:
+            await update.message.reply_text(
+                card.caption_html,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+                disable_web_page_preview=True,
+            )
 
-    history = context.user_data["history"]
 
-    history.append({
-        "role": "user",
-        "content": user_text
-    })
+async def ask_openai(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    user_text: str,
+    *,
+    metadata: dict | None = None,
+):
+    tid = telegram_id(update)
 
-    messages = [
-        {"role": "system", "content": MIKE_PROMPT}
-    ] + history
+    await store.append_message(
+        CHANNEL,
+        tid,
+        role="user",
+        content=user_text,
+        metadata=metadata,
+    )
+
+    history = await store.get_ai_context(CHANNEL, tid)
+    messages = [{"role": "system", "content": MIKE_PROMPT}] + history
 
     await update.message.reply_text("Думаю как местный 😎")
 
@@ -195,19 +286,16 @@ async def ask_openai(update: Update, context: ContextTypes.DEFAULT_TYPE, user_te
         lead_ready = "ЗАЯВКА_ГОТОВА" in answer
         answer = answer.replace("ЗАЯВКА_ГОТОВА", "").strip()
 
-        history.append({
-            "role": "assistant",
-            "content": answer
-        })
+        await store.append_message(CHANNEL, tid, role="assistant", content=answer)
 
-        if len(history) > 20:
-            history = history[-20:]
-
-        context.user_data["history"] = history
-
-        if lead_ready and not context.user_data["lead_sent"]:
-            await send_lead_to_admin(update, context)
-            context.user_data["lead_sent"] = True
+        if lead_ready:
+            lead = await store.create_lead(
+                CHANNEL,
+                tid,
+                snapshot=await build_lead_snapshot(update),
+            )
+            if lead and lead.created:
+                await send_lead_to_admin(update, context, lead.source)
 
     except Exception as e:
         answer = f"Ошибка OpenAI:\n{e}"
@@ -215,17 +303,30 @@ async def ask_openai(update: Update, context: ContextTypes.DEFAULT_TYPE, user_te
     await update.message.reply_text(answer, reply_markup=reply_markup)
 
 
-async def send_lead_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def build_lead_snapshot(update: Update) -> dict:
+    tid = telegram_id(update)
+    user = update.effective_user
+    history = await store.get_ai_context(CHANNEL, tid, limit=16)
+    username = f"@{user.username}" if user.username else None
+
+    return {
+        "telegram_id": tid,
+        "telegram_username": username,
+        "telegram_first_name": user.first_name,
+        "dialogue": history,
+    }
+
+
+async def send_lead_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE, source: str):
     if not ADMIN_CHAT_ID:
         return
 
     user = update.effective_user
-    history = context.user_data.get("history", [])
-    source = context.user_data.get("source", "unknown")
+    tid = telegram_id(update)
+    history = await store.get_ai_context(CHANNEL, tid, limit=16)
 
     dialogue = ""
-
-    for message in history[-16:]:
+    for message in history:
         role = "Клиент" if message["role"] == "user" else "Майк"
         dialogue += f"{role}: {message['content']}\n\n"
 
@@ -236,7 +337,7 @@ async def send_lead_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE)
         f"Источник: {source}\n\n"
         f"Имя в Telegram: {user.first_name or 'не указано'}\n"
         f"Username: {username}\n"
-        f"Telegram ID: {user.id}\n\n"
+        f"Telegram ID: {tid}\n\n"
         "Диалог:\n"
         f"{dialogue}"
     )
@@ -248,6 +349,8 @@ async def send_lead_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def main():
+    global store
+
     if not TELEGRAM_BOT_TOKEN:
         print("Ошибка: не найден TELEGRAM_BOT_TOKEN в файле .env")
         return
@@ -256,11 +359,18 @@ async def main():
         print("Ошибка: не найден OPENAI_API_KEY в файле .env")
         return
 
+    if not DATABASE_URL:
+        print("Ошибка: не найден DATABASE_URL в файле .env")
+        return
+
+    store = await SessionStore.create(DATABASE_URL)
+
     app = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("reset", reset))
     app.add_handler(CommandHandler("myid", myid))
+    app.add_handler(CommandHandler("stats", stats))
 
     app.add_handler(MessageHandler(filters.LOCATION, handle_location))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
@@ -272,8 +382,11 @@ async def main():
 
     print("Бот работает. Не закрывай это окно.")
 
-    while True:
-        await asyncio.sleep(3600)
+    try:
+        while True:
+            await asyncio.sleep(3600)
+    finally:
+        await store.close()
 
 
 if __name__ == "__main__":

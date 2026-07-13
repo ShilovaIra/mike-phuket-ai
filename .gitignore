@@ -4,3 +4,10 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+
+# Session exports / staging seed data (PII — never commit)
+mike_sessions_export.json
+mike_sessions_export_staging.json
+**/mike_sessions_export*.json
+mike-ai-bot-hkt/contacts.csv
+.staging_agent_key*
