@@ -3,6 +3,7 @@ from __future__ import annotations
 from uuid import uuid4
 
 from partners import (
+    CAPTION_CTA,
     FALLBACK,
     INTRO,
     Partner,
@@ -49,19 +50,23 @@ def test_nonempty_partners_return_intro_and_one_card_each():
     assert text == INTRO
     assert len(cards) == 2
     assert cards[0].caption_html == (
-        '<a href="https://t.me/alpha?start=ref">Alpha FX</a>\n\nОбмен в Равае'
+        '💰 <a href="https://t.me/alpha?start=ref">Alpha FX</a> 💰\n\n'
+        f"✅ Обмен в Равае\n\n{CAPTION_CTA}"
     )
     assert cards[0].button_text == "Обменять с Alpha FX"
     assert cards[0].referral_url == "https://t.me/alpha?start=ref"
-    assert cards[1].caption_html == '<a href="https://t.me/beta?start=ref">Beta FX</a>'
+    assert cards[1].caption_html == (
+        '💰 <a href="https://t.me/beta?start=ref">Beta FX</a> 💰\n\n'
+        f"{CAPTION_CTA}"
+    )
     assert cards[1].button_text == "Обменять с Beta FX"
 
 
 def test_caption_escapes_html_in_name_and_blurb():
     partner = _partner(name="A<B>&C", blurb="x<y>&z")
     assert build_partner_caption_html(partner) == (
-        '<a href="https://t.me/alpha?start=ref">A&lt;B&gt;&amp;C</a>\n\n'
-        "x&lt;y&gt;&amp;z"
+        '💰 <a href="https://t.me/alpha?start=ref">A&lt;B&gt;&amp;C</a> 💰\n\n'
+        f"✅ x&lt;y&gt;&amp;z\n\n{CAPTION_CTA}"
     )
 
 

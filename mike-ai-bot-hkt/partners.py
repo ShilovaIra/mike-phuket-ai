@@ -6,11 +6,12 @@ from html import escape
 from pathlib import Path
 from uuid import UUID
 
-INTRO = "Вот партнёры для обмена рублей:"
+INTRO = "💰 Вот партнёры для обмена рублей:"
 FALLBACK = (
     "Пока нет доступных партнёров по обмену. "
     "Напишите Майку — подскажу, что можно сделать."
 )
+CAPTION_CTA = "⬇️ Обменять сейчас ⬇️"
 MONEY_EXCHANGE_TYPE = "money_exchange"
 
 # Bot package root (directory containing partners.py / media/).
@@ -49,12 +50,14 @@ def resolve_logo_path(logo_path: str | None, *, root: Path = PACKAGE_ROOT) -> Pa
 
 def build_partner_caption_html(partner: Partner) -> str:
     name_link = (
-        f'<a href="{escape(partner.referral_url, quote=True)}">'
-        f"{escape(partner.name)}</a>"
+        f'💰 <a href="{escape(partner.referral_url, quote=True)}">'
+        f"{escape(partner.name)}</a> 💰"
     )
+    parts = [name_link]
     if partner.blurb:
-        return f"{name_link}\n\n{escape(partner.blurb)}"
-    return name_link
+        parts.append(f"✅ {escape(partner.blurb)}")
+    parts.append(CAPTION_CTA)
+    return "\n\n".join(parts)
 
 
 def build_partner_button_text(partner: Partner) -> str:
