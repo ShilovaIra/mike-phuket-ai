@@ -21,6 +21,7 @@ from telegram import (
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
 from db.store import SessionStore
+from db.url import resolve_database_url
 from partners import (
     MONEY_EXCHANGE_TYPE,
     build_partner_cards,
@@ -29,18 +30,21 @@ from partners import (
 from buttons import (
     ASK_MIKE_BUTTON,
     BEACHES_BUTTON,
+    BUTTON_TO_TOPIC,
     MONEY_EXCHANGE_BUTTON,
     NEARBY_BUTTON,
     REAL_ESTATE_BUTTON,
     WHERE_TO_EAT_BUTTON,
 )
+from stats_report import format_bot_stats
+from topics import TOPIC_NEARBY
 
 load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = resolve_database_url()
 
 CHANNEL = "telegram"
 
@@ -154,12 +158,8 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update):
         return
 
-    user_stats = await store.get_user_stats()
-    await update.message.reply_text(
-        "📊 Статистика бота\n\n"
-        f"Всего пользователей: {user_stats.total_users}\n"
-        f"Активны сегодня: {user_stats.active_today}"
-    )
+    bot_stats = await store.get_bot_stats()
+    await update.message.reply_text(format_bot_stats(bot_stats))
 
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -180,6 +180,8 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup
         )
         return
+
+    await store.record_topic_event(CHANNEL, telegram_id(update), topic=TOPIC_NEARBY)
 
     lat = location.latitude
     lon = location.longitude
@@ -217,6 +219,9 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
+    topic = BUTTON_TO_TOPIC.get(user_text)
+    if topic:
+        await store.record_topic_event(CHANNEL, telegram_id(update), topic=topic)
     if user_text == MONEY_EXCHANGE_BUTTON:
         await handle_money_exchange(update)
         return

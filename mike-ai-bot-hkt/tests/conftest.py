@@ -32,6 +32,7 @@ TRUNCATE_SQL = """
 TRUNCATE TABLE
     webhook_events,
     leads,
+    topic_events,
     messages,
     conversations,
     identities,

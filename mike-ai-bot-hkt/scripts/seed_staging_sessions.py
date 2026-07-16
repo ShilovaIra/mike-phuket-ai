@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import os
 import sys
 from pathlib import Path
 
@@ -36,11 +35,12 @@ async def seed(export_path: Path, *, fraction: float, force: bool) -> dict[str, 
     from dotenv import load_dotenv
 
     from db.store import SessionStore
+    from db.url import resolve_database_url
 
     load_dotenv()
-    database_url = os.environ.get("DATABASE_URL")
+    database_url = resolve_database_url()
     if not database_url:
-        raise SystemExit("DATABASE_URL is required")
+        raise SystemExit("DATABASE_URL or POSTGRES_USER/PASSWORD/DB is required")
 
     store = await SessionStore.create(database_url)
     try:
