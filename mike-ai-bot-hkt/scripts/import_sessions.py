@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import os
 import sys
 from pathlib import Path
 
@@ -15,6 +14,7 @@ sys.path.insert(0, str(ROOT))
 
 from db.import_sessions import import_from_export
 from db.store import SessionStore
+from db.url import resolve_database_url
 
 
 async def main() -> None:
@@ -34,9 +34,9 @@ async def main() -> None:
     )
     args = parser.parse_args()
 
-    database_url = os.environ.get("DATABASE_URL")
+    database_url = resolve_database_url()
     if not database_url:
-        raise SystemExit("DATABASE_URL is required")
+        raise SystemExit("DATABASE_URL or POSTGRES_USER/PASSWORD/DB is required")
 
     export_path = Path(args.path).resolve()
     if not export_path.exists():

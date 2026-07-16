@@ -40,6 +40,19 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX IF NOT EXISTS messages_conversation_created
     ON messages (conversation_id, created_at DESC, id DESC);
 
+CREATE TABLE IF NOT EXISTS topic_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    topic TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS topic_events_topic_created
+    ON topic_events (topic, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS topic_events_user_topic
+    ON topic_events (user_id, topic, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS leads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     conversation_id UUID NOT NULL REFERENCES conversations (id) ON DELETE CASCADE,

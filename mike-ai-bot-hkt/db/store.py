@@ -29,9 +29,29 @@ class LeadRecord:
 
 
 @dataclass(frozen=True)
+class TopicCount:
+    unique_users: int
+    taps: int
+
+
+@dataclass(frozen=True)
+class BotStats:
+    total_users: int
+    new_users_today: int
+    active_today: int
+    new_users_7d: int
+    topics_all_time: dict[str, TopicCount]
+    topics_7d: dict[str, TopicCount]
+    leads_all_time: int
+    leads_7d: int
+
+
+@dataclass(frozen=True)
 class UserStats:
     total_users: int
     active_today: int
+    new_users_today: int = 0
+    new_users_7d: int = 0
 
 
 class SessionStore:
@@ -209,6 +229,25 @@ class SessionStore:
             )
             return exists is not None
 
+    async def record_topic_event(
+        self,
+        channel: str,
+        external_id: str,
+        *,
+        topic: str,
+    ) -> None:
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                user_id, _ = await self._ensure_user(conn, channel, external_id, "unknown")
+                await conn.execute(
+                    """
+                    INSERT INTO topic_events (user_id, topic)
+                    VALUES ($1, $2)
+                    """,
+                    user_id,
+                    topic,
+                )
+
     async def get_user_stats(self, *, timezone: str = "Asia/Bangkok") -> UserStats:
         async with self._pool.acquire() as conn:
             total_users = await conn.fetchval("SELECT count(*) FROM users")
@@ -223,10 +262,55 @@ class SessionStore:
                 """,
                 timezone,
             )
+            new_users_today = await conn.fetchval(
+                """
+                SELECT count(*)
+                FROM users
+                WHERE (created_at AT TIME ZONE $1)::date
+                      = (now() AT TIME ZONE $1)::date
+                """,
+                timezone,
+            )
+            new_users_7d = await conn.fetchval(
+                """
+                SELECT count(*)
+                FROM users
+                WHERE created_at >= now() - interval '7 days'
+                """
+            )
             return UserStats(
                 total_users=int(total_users or 0),
                 active_today=int(active_today or 0),
+                new_users_today=int(new_users_today or 0),
+                new_users_7d=int(new_users_7d or 0),
             )
+
+    async def get_bot_stats(self, *, timezone: str = "Asia/Bangkok") -> BotStats:
+        user_stats = await self.get_user_stats(timezone=timezone)
+        async with self._pool.acquire() as conn:
+            topics_all_time = await self._fetch_topic_counts(conn)
+            topics_7d = await self._fetch_topic_counts(
+                conn,
+                since_interval="7 days",
+            )
+            leads_all_time = await conn.fetchval("SELECT count(*) FROM leads")
+            leads_7d = await conn.fetchval(
+                """
+                SELECT count(*)
+                FROM leads
+                WHERE created_at >= now() - interval '7 days'
+                """
+            )
+        return BotStats(
+            total_users=user_stats.total_users,
+            new_users_today=user_stats.new_users_today,
+            active_today=user_stats.active_today,
+            new_users_7d=user_stats.new_users_7d,
+            topics_all_time=topics_all_time,
+            topics_7d=topics_7d,
+            leads_all_time=int(leads_all_time or 0),
+            leads_7d=int(leads_7d or 0),
+        )
 
     async def list_active_partners(self, partner_type: str) -> list[Partner]:
         async with self._pool.acquire() as conn:
@@ -251,6 +335,42 @@ class SessionStore:
                 )
                 for row in rows
             ]
+
+    async def _fetch_topic_counts(
+        self,
+        conn: asyncpg.Connection,
+        *,
+        since_interval: str | None = None,
+    ) -> dict[str, TopicCount]:
+        if since_interval:
+            rows = await conn.fetch(
+                """
+                SELECT topic,
+                       count(*)::int AS taps,
+                       count(DISTINCT user_id)::int AS unique_users
+                FROM topic_events
+                WHERE created_at >= now() - ($1::text)::interval
+                GROUP BY topic
+                """,
+                since_interval,
+            )
+        else:
+            rows = await conn.fetch(
+                """
+                SELECT topic,
+                       count(*)::int AS taps,
+                       count(DISTINCT user_id)::int AS unique_users
+                FROM topic_events
+                GROUP BY topic
+                """
+            )
+        return {
+            row["topic"]: TopicCount(
+                unique_users=row["unique_users"],
+                taps=row["taps"],
+            )
+            for row in rows
+        }
 
     async def _ensure_user(
         self,

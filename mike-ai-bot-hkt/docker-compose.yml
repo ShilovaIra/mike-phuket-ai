@@ -23,7 +23,8 @@ services:
         condition: service_healthy
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-mike}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-mike}
+      # Bot builds DATABASE_URL from POSTGRES_* + this host (URL-encodes passwords).
+      POSTGRES_HOST: db
 
 volumes:
   postgres_data:
