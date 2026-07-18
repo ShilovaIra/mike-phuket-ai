@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import asyncio
 import sys
@@ -43,8 +45,17 @@ load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID")
 DATABASE_URL = resolve_database_url()
+
+
+def parse_admin_ids(raw: str | None) -> frozenset[str]:
+    """Comma-separated Telegram user/chat ids, e.g. '111,222'."""
+    if not raw:
+        return frozenset()
+    return frozenset(part.strip() for part in raw.split(",") if part.strip())
+
+
+ADMIN_IDS = parse_admin_ids(os.getenv("ADMIN_CHAT_ID"))
 
 CHANNEL = "telegram"
 
@@ -145,12 +156,11 @@ async def myid(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def is_admin(update: Update) -> bool:
-    if not ADMIN_CHAT_ID:
+    if not ADMIN_IDS:
         return False
-    admin_id = str(ADMIN_CHAT_ID)
     return (
-        str(update.effective_user.id) == admin_id
-        or str(update.effective_chat.id) == admin_id
+        str(update.effective_user.id) in ADMIN_IDS
+        or str(update.effective_chat.id) in ADMIN_IDS
     )
 
 
@@ -323,7 +333,7 @@ async def build_lead_snapshot(update: Update) -> dict:
 
 
 async def send_lead_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE, source: str):
-    if not ADMIN_CHAT_ID:
+    if not ADMIN_IDS:
         return
 
     user = update.effective_user
@@ -347,10 +357,11 @@ async def send_lead_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE,
         f"{dialogue}"
     )
 
-    await context.bot.send_message(
-        chat_id=ADMIN_CHAT_ID,
-        text=lead_text
-    )
+    for admin_id in ADMIN_IDS:
+        await context.bot.send_message(
+            chat_id=admin_id,
+            text=lead_text
+        )
 
 
 async def main():
