@@ -38,12 +38,14 @@ pytest
 
 Staging runs from the **`staging` Git branch only**.
 
+Push or merge to `staging` auto-deploys via GitHub Actions (SSH → `deploy_staging.sh`). Manual fallback:
+
 ```bash
 cp .env.staging.example .env   # fill in staging tokens
 ./scripts/deploy_staging.sh    # pulls staging + rebuilds (refuses other branches)
 ```
 
-Full setup guide: **[docs/STAGING.md](docs/STAGING.md)**
+Full setup guide (including CI secrets/firewall): **[docs/STAGING.md](docs/STAGING.md)**
 
 ## Production (Docker + DigitalOcean)
 
