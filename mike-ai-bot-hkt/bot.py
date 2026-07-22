@@ -27,16 +27,12 @@ from db.url import resolve_database_url
 from partners import (
     PartnerType,
     build_partner_cards,
-    build_partner_keyboard_rows,
     resolve_logo_path,
 )
 from buttons import (
-    ASK_MIKE_BUTTON,
-    BEACHES_BUTTON,
     BUTTON_TO_TOPIC,
     NEARBY_BUTTON,
-    REAL_ESTATE_BUTTON,
-    WHERE_TO_EAT_BUTTON,
+    build_reply_keyboard_rows,
 )
 from stats_report import format_bot_stats
 from topics import TOPIC_NEARBY
@@ -91,11 +87,11 @@ MIKE_PROMPT = """
 async def build_reply_markup() -> ReplyKeyboardMarkup:
     partner_types = await store.list_partner_types()
     keyboard = [
-        [WHERE_TO_EAT_BUTTON, BEACHES_BUTTON],
-        [KeyboardButton(NEARBY_BUTTON, request_location=True)],
-        *build_partner_keyboard_rows(partner_types),
-        [REAL_ESTATE_BUTTON],
-        [ASK_MIKE_BUTTON],
+        [
+            KeyboardButton(label, request_location=(label == NEARBY_BUTTON))
+            for label in row
+        ]
+        for row in build_reply_keyboard_rows(partner_types)
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=False)
 

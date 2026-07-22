@@ -54,13 +54,6 @@ def resolve_logo_path(logo_path: str | None, *, root: Path = PACKAGE_ROOT) -> Pa
     return None
 
 
-def build_partner_keyboard_rows(
-    partner_types: Sequence[PartnerType],
-) -> list[list[str]]:
-    ordered = sorted(partner_types, key=lambda t: (t.sort_order, t.slug))
-    return [[t.button_label] for t in ordered]
-
-
 def build_partner_caption_html(partner: Partner, partner_type: PartnerType) -> str:
     emoji = partner_type.caption_emoji
     name_link = (
