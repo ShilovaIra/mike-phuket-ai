@@ -25,15 +25,15 @@ from telegram.ext import Application, CommandHandler, MessageHandler, ContextTyp
 from db.store import SessionStore
 from db.url import resolve_database_url
 from partners import (
-    MONEY_EXCHANGE_TYPE,
+    PartnerType,
     build_partner_cards,
+    build_partner_keyboard_rows,
     resolve_logo_path,
 )
 from buttons import (
     ASK_MIKE_BUTTON,
     BEACHES_BUTTON,
     BUTTON_TO_TOPIC,
-    MONEY_EXCHANGE_BUTTON,
     NEARBY_BUTTON,
     REAL_ESTATE_BUTTON,
     WHERE_TO_EAT_BUTTON,
@@ -87,15 +87,17 @@ MIKE_PROMPT = """
 Если получаешь геолокацию, не выдумывай район сам. Используй только район и адрес, которые переданы в сообщении.
 """
 
-keyboard = [
-    [WHERE_TO_EAT_BUTTON, BEACHES_BUTTON],
-    [KeyboardButton(NEARBY_BUTTON, request_location=True), MONEY_EXCHANGE_BUTTON],
-    [REAL_ESTATE_BUTTON],
-    [ASK_MIKE_BUTTON],
-]
 
-# Demo nudge: resize_keyboard=False → taller reply buttons in most clients.
-reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=False)
+async def build_reply_markup() -> ReplyKeyboardMarkup:
+    partner_types = await store.list_partner_types()
+    keyboard = [
+        [WHERE_TO_EAT_BUTTON, BEACHES_BUTTON],
+        [KeyboardButton(NEARBY_BUTTON, request_location=True)],
+        *build_partner_keyboard_rows(partner_types),
+        [REAL_ESTATE_BUTTON],
+        [ASK_MIKE_BUTTON],
+    ]
+    return ReplyKeyboardMarkup(keyboard, resize_keyboard=False)
 
 
 def telegram_id(update: Update) -> str:
@@ -145,7 +147,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Привет! Я Майк — AI-гид по Пхукету.\n\n"
         "Могу помочь с пляжами, ресторанами, маршрутами, районами и недвижимостью.",
-        reply_markup=reply_markup
+        reply_markup=await build_reply_markup(),
     )
 
 
@@ -169,7 +171,10 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     bot_stats = await store.get_bot_stats()
-    await update.message.reply_text(format_bot_stats(bot_stats))
+    partner_types = await store.list_partner_types()
+    await update.message.reply_text(
+        format_bot_stats(bot_stats, partner_types=partner_types)
+    )
 
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -177,7 +182,7 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         "Память диалога очищена. Начинаем заново 👌",
-        reply_markup=reply_markup
+        reply_markup=await build_reply_markup(),
     )
 
 
@@ -187,7 +192,7 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not location:
         await update.message.reply_text(
             "Не получил геопозицию. Нажми «Что рядом» и разреши отправку локации.",
-            reply_markup=reply_markup
+            reply_markup=await build_reply_markup(),
         )
         return
 
@@ -229,20 +234,29 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
+    partner_types = await store.list_partner_types()
+    partner_by_label = {t.button_label: t for t in partner_types}
+
     topic = BUTTON_TO_TOPIC.get(user_text)
+    partner_type = partner_by_label.get(user_text)
+    if partner_type is not None:
+        topic = partner_type.slug
     if topic:
         await store.record_topic_event(CHANNEL, telegram_id(update), topic=topic)
-    if user_text == MONEY_EXCHANGE_BUTTON:
-        await handle_money_exchange(update)
+    if partner_type is not None:
+        await handle_partner_topic(update, partner_type)
         return
     await ask_openai(update, context, user_text)
 
 
-async def handle_money_exchange(update: Update):
-    partners = await store.list_active_partners(MONEY_EXCHANGE_TYPE)
-    intro_or_fallback, cards = build_partner_cards(partners)
+async def handle_partner_topic(update: Update, partner_type: PartnerType):
+    partners = await store.list_active_partners(partner_type.slug)
+    intro_or_fallback, cards = build_partner_cards(partners, partner_type)
 
-    await update.message.reply_text(intro_or_fallback, reply_markup=reply_markup)
+    await update.message.reply_text(
+        intro_or_fallback,
+        reply_markup=await build_reply_markup(),
+    )
     if not cards:
         return
 
@@ -315,7 +329,7 @@ async def ask_openai(
     except Exception as e:
         answer = f"Ошибка OpenAI:\n{e}"
 
-    await update.message.reply_text(answer, reply_markup=reply_markup)
+    await update.message.reply_text(answer, reply_markup=await build_reply_markup())
 
 
 async def build_lead_snapshot(update: Update) -> dict:
