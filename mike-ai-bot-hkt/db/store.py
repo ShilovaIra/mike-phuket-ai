@@ -8,7 +8,7 @@ from uuid import UUID
 import asyncpg
 
 from db.migrate import apply_schema_pool
-from partners import Partner
+from partners import Partner, PartnerType
 
 
 @dataclass(frozen=True)
@@ -52,6 +52,21 @@ class UserStats:
     active_today: int
     new_users_today: int = 0
     new_users_7d: int = 0
+
+
+def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
+    return PartnerType(
+        slug=row["slug"],
+        is_menu_visible=row["is_menu_visible"],
+        sort_order=row["sort_order"],
+        button_label=row["button_label"],
+        topic_label=row["topic_label"],
+        intro=row["intro"],
+        fallback=row["fallback"],
+        caption_emoji=row["caption_emoji"],
+        caption_cta=row["caption_cta"],
+        button_template=row["button_template"],
+    )
 
 
 class SessionStore:
@@ -311,6 +326,33 @@ class SessionStore:
             leads_all_time=int(leads_all_time or 0),
             leads_7d=int(leads_7d or 0),
         )
+
+    async def list_partner_types(self) -> list[PartnerType]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT slug, is_menu_visible, sort_order, button_label, topic_label,
+                       intro, fallback, caption_emoji, caption_cta, button_template
+                FROM partner_types
+                ORDER BY sort_order ASC, slug ASC
+                """
+            )
+            return [_partner_type_from_row(row) for row in rows]
+
+    async def get_partner_type(self, slug: str) -> PartnerType | None:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT slug, is_menu_visible, sort_order, button_label, topic_label,
+                       intro, fallback, caption_emoji, caption_cta, button_template
+                FROM partner_types
+                WHERE slug = $1
+                """,
+                slug,
+            )
+            if row is None:
+                return None
+            return _partner_type_from_row(row)
 
     async def list_active_partners(self, partner_type: str) -> list[Partner]:
         async with self._pool.acquire() as conn:

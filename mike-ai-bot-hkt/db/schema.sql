@@ -78,6 +78,79 @@ CREATE INDEX IF NOT EXISTS webhook_events_pending
     ON webhook_events (status, next_retry_at)
     WHERE status = 'pending';
 
+CREATE TABLE IF NOT EXISTS partner_types (
+    slug TEXT PRIMARY KEY,
+    is_menu_visible BOOLEAN NOT NULL DEFAULT true,
+    sort_order INT NOT NULL DEFAULT 0,
+    button_label TEXT NOT NULL,
+    topic_label TEXT NOT NULL,
+    intro TEXT NOT NULL,
+    fallback TEXT NOT NULL,
+    caption_emoji TEXT NOT NULL,
+    caption_cta TEXT NOT NULL,
+    button_template TEXT NOT NULL
+);
+
+INSERT INTO partner_types (
+    slug,
+    is_menu_visible,
+    sort_order,
+    button_label,
+    topic_label,
+    intro,
+    fallback,
+    caption_emoji,
+    caption_cta,
+    button_template
+)
+VALUES
+(
+    'money_exchange',
+    true,
+    10,
+    E'💰 \nОбмен Рублей',
+    '💰 Обмен',
+    'Вот партнёры для обмена рублей:',
+    'Пока нет доступных партнёров по обмену. Напишите Майку — подскажу, что можно сделать.',
+    '💰',
+    '⬇️ Обменять сейчас ⬇️',
+    'Обменять с {name}'
+),
+(
+    'vehicle_rental',
+    false,
+    20,
+    E'🛵 \nАренда транспорта',
+    '🛵 Аренда транспорта',
+    'Вот партнёры по аренде транспорта:',
+    'Пока нет доступных партнёров по аренде транспорта. Напишите Майку — подскажу, что можно сделать.',
+    '🛵',
+    '⬇️ Арендовать сейчас ⬇️',
+    'Арендовать у {name}'
+),
+(
+    'excursions',
+    true,
+    30,
+    E'🇹🇭 \nЭкскурсии',
+    '🇹🇭 Экскурсии',
+    'Вот партнёры по экскурсиям:',
+    'Пока нет доступных партнёров по экскурсиям. Напишите Майку — подскажу, что можно сделать.',
+    '🇹🇭',
+    '⬇️ Забронировать сейчас ⬇️',
+    'Забронировать с {name}'
+)
+ON CONFLICT (slug) DO UPDATE SET
+    is_menu_visible = EXCLUDED.is_menu_visible,
+    sort_order = EXCLUDED.sort_order,
+    button_label = EXCLUDED.button_label,
+    topic_label = EXCLUDED.topic_label,
+    intro = EXCLUDED.intro,
+    fallback = EXCLUDED.fallback,
+    caption_emoji = EXCLUDED.caption_emoji,
+    caption_cta = EXCLUDED.caption_cta,
+    button_template = EXCLUDED.button_template;
+
 CREATE TABLE IF NOT EXISTS partners (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
@@ -91,6 +164,15 @@ CREATE TABLE IF NOT EXISTS partners (
 );
 
 ALTER TABLE partners ADD COLUMN IF NOT EXISTS logo_path TEXT;
+
+DO $$
+BEGIN
+    ALTER TABLE partners
+        ADD CONSTRAINT partners_type_fkey
+        FOREIGN KEY (type) REFERENCES partner_types (slug) ON DELETE RESTRICT;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE INDEX IF NOT EXISTS partners_type_active_sort
     ON partners (type, sort_order)
@@ -117,6 +199,16 @@ VALUES
     'media/partners/ex24pro.png',
     true,
     2
+),
+(
+    '00000000-0000-4000-8000-000000000003',
+    'Остров Сокровищ',
+    'excursions',
+    'https://tisland.link/excurs?ref=72s5z3yp3jb79r7',
+    'С 2003 года в туризме. Авторские групповые и индивидуальные экскурсии.',
+    'media/partners/excursions.png',
+    true,
+    1
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,

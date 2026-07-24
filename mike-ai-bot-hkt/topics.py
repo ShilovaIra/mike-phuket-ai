@@ -11,7 +11,6 @@ TOPIC_ORDER = (
     TOPIC_WHERE_TO_EAT,
     TOPIC_BEACHES,
     TOPIC_NEARBY,
-    TOPIC_MONEY_EXCHANGE,
     TOPIC_REAL_ESTATE,
     TOPIC_ASK_MIKE,
 )
@@ -20,7 +19,6 @@ TOPIC_LABELS = {
     TOPIC_WHERE_TO_EAT: "🍜 Где поесть",
     TOPIC_BEACHES: "🏖 Пляжи",
     TOPIC_NEARBY: "📍 Что рядом",
-    TOPIC_MONEY_EXCHANGE: "💰 Обмен",
     TOPIC_REAL_ESTATE: "🏠 Недвижимость",
     TOPIC_ASK_MIKE: "💬 Спросить Майка",
 }

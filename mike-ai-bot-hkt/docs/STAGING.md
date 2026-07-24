@@ -45,9 +45,11 @@ DigitalOcean → **Networking** → **Firewalls** → Create:
 
 | Inbound | Protocol | Port | Sources |
 |---|---|---|---|
-| SSH | TCP | 22 | Your IP only |
+| SSH | TCP | 22 | `0.0.0.0/0` (key-only auth; required for GitHub Actions deploy) |
 
 Attach the firewall to the droplet. Do **not** open 5432 or 80 — the bot uses outbound polling to Telegram.
+
+Use **SSH key authentication only** (disable password login). Broad SSH source is needed so GitHub-hosted runners can reach the Droplet; do not reuse personal keys for CI — see [CI/CD auto-deploy](#cicd-auto-deploy) below.
 
 ---
 
@@ -245,7 +247,42 @@ rm -f mike_sessions_export*.json
 
 ## 8. Day-to-day operations
 
-**Redeploy after pushing to `staging`:**
+### CI/CD auto-deploy
+
+Push or merge to the **`staging`** branch runs [`.github/workflows/deploy-staging.yml`](../../.github/workflows/deploy-staging.yml). The workflow SSHs into the Droplet and runs `deploy_staging.sh` (pull + `docker compose up -d --build`). You can also trigger it manually: GitHub → **Actions** → **Deploy staging** → **Run workflow**.
+
+**One-time setup**
+
+1. On your laptop, generate a dedicated deploy key (do not reuse your personal SSH key):
+
+```bash
+ssh-keygen -t ed25519 -C "github-actions-staging-deploy" -f ./staging_deploy_key -N ""
+```
+
+2. On the Droplet, append the **public** key to the deploy user’s `authorized_keys` (e.g. `root` or `deploy`):
+
+```bash
+# from your laptop
+ssh root@YOUR_DROPLET_IP "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
+cat staging_deploy_key.pub | ssh root@YOUR_DROPLET_IP "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+```
+
+3. In the GitHub repo → **Settings** → **Secrets and variables** → **Actions**, add:
+
+| Secret | Value |
+|---|---|
+| `STAGING_HOST` | Droplet IP or hostname |
+| `STAGING_SSH_USER` | `root` or `deploy` |
+| `STAGING_SSH_KEY` | Full contents of `staging_deploy_key` (private key) |
+| `STAGING_SSH_PORT` | Optional; defaults to `22` if unset |
+
+4. Confirm the DigitalOcean firewall allows SSH from `0.0.0.0/0` with key-only auth (see [Firewall](#firewall-recommended)).
+
+5. Delete the local key files after storing the private key in GitHub (`rm staging_deploy_key staging_deploy_key.pub`), or keep them only in a password manager.
+
+**Failures:** open the failed run under **Actions** for SSH/script logs. On the Droplet, `docker compose logs -f bot` shows app startup issues after a successful SSH deploy.
+
+### Manual redeploy (fallback)
 
 ```bash
 ssh root@YOUR_DROPLET_IP
@@ -257,7 +294,8 @@ That script pulls `origin/staging` with `--ff-only` and rebuilds. It exits with 
 
 | Task | Command |
 |---|---|
-| Redeploy from `staging` | `./scripts/deploy_staging.sh` |
+| Auto-deploy | Push/merge to `staging` (or Actions → Run workflow) |
+| Manual redeploy from `staging` | `./scripts/deploy_staging.sh` |
 | View bot logs | `docker compose logs -f bot` |
 | Restart bot | `docker compose restart bot` |
 | Confirm branch on server | `git -C /opt/mike-phuket-ai branch --show-current` |
@@ -302,7 +340,9 @@ Schema still applies automatically on bot start.
 - [ ] One-time half-export seed run (section 7) — or skipped intentionally
 - [ ] `leads` row created when lead flow completes (if tested)
 - [ ] Production bot token is **not** in staging `.env`
-- [ ] Firewall allows SSH only from your IP
+- [ ] Firewall allows SSH from `0.0.0.0/0` with key-only auth (for GitHub Actions)
+- [ ] GitHub Actions secrets set (`STAGING_HOST`, `STAGING_SSH_USER`, `STAGING_SSH_KEY`)
+- [ ] Push to `staging` triggers a green **Deploy staging** workflow
 - [ ] `POSTGRES_PASSWORD` is strong and not committed to git
 - [ ] `mike_sessions_export*.json` deleted from Droplet and never committed
 
