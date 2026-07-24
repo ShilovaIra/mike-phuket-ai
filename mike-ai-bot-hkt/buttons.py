@@ -34,7 +34,10 @@ def build_reply_keyboard_rows(
     partner_types: Sequence[PartnerType],
 ) -> list[list[str]]:
     """Pack main menu 2-up; Ask Mike always alone on the last row."""
-    ordered_partners = sorted(partner_types, key=lambda t: (t.sort_order, t.slug))
+    ordered_partners = sorted(
+        (t for t in partner_types if t.is_menu_visible),
+        key=lambda t: (t.sort_order, t.slug),
+    )
     before_ask_mike = [
         WHERE_TO_EAT_BUTTON,
         BEACHES_BUTTON,

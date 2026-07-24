@@ -62,6 +62,9 @@ async def test_list_partner_types_returns_seeded_in_sort_order():
         assert types[0].button_label == "💰 \nОбмен Рублей"
         assert types[1].button_label == "🛵 \nАренда транспорта"
         assert types[2].button_label == "🇹🇭 \nЭкскурсии"
+        assert types[0].is_menu_visible is True
+        assert types[1].is_menu_visible is False
+        assert types[2].is_menu_visible is True
         assert types[0].intro == "Вот партнёры для обмена рублей:"
         assert types[1].button_template == "Арендовать у {name}"
         assert types[2].caption_emoji == "🇹🇭"
