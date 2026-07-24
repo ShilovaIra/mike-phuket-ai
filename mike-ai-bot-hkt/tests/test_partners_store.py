@@ -145,6 +145,33 @@ async def test_schema_seed_includes_money_exchange_partners():
 
 
 @requires_db
+async def test_schema_seed_includes_excursions_partner():
+    url = database_url()
+    assert url is not None
+    pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
+    try:
+        async with pool.acquire() as conn:
+            await apply_schema(conn)
+            await conn.execute(
+                "TRUNCATE TABLE partners, partner_types RESTART IDENTITY CASCADE"
+            )
+            await apply_schema(conn)
+
+        store = SessionStore(pool)
+        partners = await store.list_active_partners("excursions")
+
+        assert [p.name for p in partners] == ["Остров Сокровищ"]
+        partner = partners[0]
+        assert partner.referral_url == "https://tisland.link/excurs?ref=72s5z3yp3jb79r7"
+        assert partner.logo_path == "media/partners/excursions.png"
+        assert partner.blurb == (
+            "С 2003 года в туризме. Авторские групповые и индивидуальные экскурсии."
+        )
+    finally:
+        await pool.close()
+
+
+@requires_db
 async def test_schema_seed_upsert_replaces_test_exchange_placeholder():
     url = database_url()
     assert url is not None

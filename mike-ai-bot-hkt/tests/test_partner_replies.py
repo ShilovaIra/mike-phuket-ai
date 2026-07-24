@@ -121,5 +121,7 @@ def test_resolve_logo_path_returns_none_when_missing():
 def test_resolve_logo_path_finds_bundled_logos():
     money = resolve_logo_path("media/partners/moneyshop.jpeg")
     ex24 = resolve_logo_path("media/partners/ex24pro.png")
+    excursions = resolve_logo_path("media/partners/excursions.png")
     assert money is not None and money.is_file()
     assert ex24 is not None and ex24.is_file()
+    assert excursions is not None and excursions.is_file()

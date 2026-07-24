@@ -199,6 +199,16 @@ VALUES
     'media/partners/ex24pro.png',
     true,
     2
+),
+(
+    '00000000-0000-4000-8000-000000000003',
+    'Остров Сокровищ',
+    'excursions',
+    'https://tisland.link/excurs?ref=72s5z3yp3jb79r7',
+    'С 2003 года в туризме. Авторские групповые и индивидуальные экскурсии.',
+    'media/partners/excursions.png',
+    true,
+    1
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
