@@ -46,8 +46,9 @@ DigitalOcean → **Networking** → **Firewalls** → Create:
 | Inbound | Protocol | Port | Sources |
 |---|---|---|---|
 | SSH | TCP | 22 | `0.0.0.0/0` (key-only auth; required for GitHub Actions deploy) |
+| Admin panel | TCP | 8080 | Your IP / office VPN (HTTP admin UI + `/api` proxy). Do **not** leave open to the world long-term without TLS. |
 
-Attach the firewall to the droplet. Do **not** open 5432 or 80 — the bot uses outbound polling to Telegram.
+Attach the firewall to the droplet. Do **not** open **5432**. Port **80/443** are optional later (Caddy/nginx TLS in front of admin-web). The bot still uses outbound polling to Telegram.
 
 Use **SSH key authentication only** (disable password login). Broad SSH source is needed so GitHub-hosted runners can reach the Droplet; do not reuse personal keys for CI — see [CI/CD auto-deploy](#cicd-auto-deploy) below.
 
@@ -249,7 +250,21 @@ rm -f mike_sessions_export*.json
 
 ### CI/CD auto-deploy
 
-Push or merge to the **`staging`** branch runs [`.github/workflows/deploy-staging.yml`](../../.github/workflows/deploy-staging.yml). The workflow SSHs into the Droplet and runs `deploy_staging.sh` (pull + `docker compose up -d --build`). You can also trigger it manually: GitHub → **Actions** → **Deploy staging** → **Run workflow**.
+Push or merge to the **`staging`** branch runs [`.github/workflows/deploy-staging.yml`](../../.github/workflows/deploy-staging.yml). The workflow SSHs into the Droplet, runs `deploy_staging.sh` (pull + `docker compose up -d --build` for **bot**, **admin-api**, and **admin-web**), then verifies the admin UI responds on port **8080**. You can also trigger it manually: GitHub → **Actions** → **Deploy staging** → **Run workflow**.
+
+**First-time admin panel setup on the Droplet**
+
+1. Ensure `.env` includes `ADMIN_JWT_SECRET` (long random string) and optional `ADMIN_WEB_PORT=8080`.
+2. Open firewall TCP **8080** (preferably restricted to your IP).
+3. After deploy, create an admin user once:
+
+```bash
+cd /opt/mike-phuket-ai/mike-ai-bot-hkt
+docker compose run --rm bot python scripts/create_admin_user.py \
+  --email you@example.com --password 'choose-a-strong-password'
+```
+
+4. Open `http://YOUR_DROPLET_IP:8080/` and sign in.
 
 **One-time setup**
 
@@ -280,7 +295,7 @@ cat staging_deploy_key.pub | ssh root@YOUR_DROPLET_IP "cat >> ~/.ssh/authorized_
 
 5. Delete the local key files after storing the private key in GitHub (`rm staging_deploy_key staging_deploy_key.pub`), or keep them only in a password manager.
 
-**Failures:** open the failed run under **Actions** for SSH/script logs. On the Droplet, `docker compose logs -f bot` shows app startup issues after a successful SSH deploy.
+**Failures:** open the failed run under **Actions** for SSH/script logs. On the Droplet, `docker compose logs -f bot admin-api admin-web` shows startup issues after a successful SSH deploy.
 
 ### Manual redeploy (fallback)
 
@@ -296,8 +311,11 @@ That script pulls `origin/staging` with `--ff-only` and rebuilds. It exits with 
 |---|---|
 | Auto-deploy | Push/merge to `staging` (or Actions → Run workflow) |
 | Manual redeploy from `staging` | `./scripts/deploy_staging.sh` |
+| Admin UI | `http://DROPLET_IP:8080/` (nginx → SPA + `/api` proxy) |
 | View bot logs | `docker compose logs -f bot` |
+| View admin API logs | `docker compose logs -f admin-api` |
 | Restart bot | `docker compose restart bot` |
+| Restart admin stack | `docker compose restart admin-api admin-web` |
 | Confirm branch on server | `git -C /opt/mike-phuket-ai branch --show-current` |
 | Stop everything | `docker compose down` |
 | Stop but keep DB data | `docker compose down` (volume `postgres_data` persists) |

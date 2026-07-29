@@ -36,8 +36,22 @@ services:
     env_file: .env
     environment:
       POSTGRES_HOST: db
+      ADMIN_API_HOST: 0.0.0.0
+      ADMIN_API_PORT: "8000"
+      # UI is same-origin via admin-web nginx proxy.
+      ADMIN_CORS_ORIGINS: ${ADMIN_CORS_ORIGINS:-}
+
+  admin-web:
+    build:
+      context: ../mike-ai-bot-hkt-admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+    restart: unless-stopped
+    depends_on:
+      - admin-api
     ports:
-      - "8000:8000"
+      - "${ADMIN_WEB_PORT:-8080}:80"
 
 volumes:
   postgres_data:
