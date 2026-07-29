@@ -44,6 +44,7 @@ class BotStats:
     topics_7d: dict[str, TopicCount]
     leads_all_time: int
     leads_7d: int
+    users_by_first_source: dict[str, int]
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,13 @@ class UserStats:
     active_today: int
     new_users_today: int = 0
     new_users_7d: int = 0
+
+
+@dataclass(frozen=True)
+class AdminUser:
+    id: UUID
+    email: str
+    password_hash: str
 
 
 def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
@@ -81,6 +89,36 @@ class SessionStore:
 
     async def close(self) -> None:
         await self._pool.close()
+
+    async def create_admin_user(self, *, email: str, password: str) -> AdminUser:
+        from admin_api.passwords import hash_password
+
+        password_hash = hash_password(password)
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                INSERT INTO admin_users (email, password_hash)
+                VALUES ($1, $2)
+                RETURNING id, email, password_hash
+                """,
+                email.lower().strip(),
+                password_hash,
+            )
+        return AdminUser(id=row["id"], email=row["email"], password_hash=row["password_hash"])
+
+    async def get_admin_by_email(self, email: str) -> AdminUser | None:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT id, email, password_hash
+                FROM admin_users
+                WHERE email = $1
+                """,
+                email.lower().strip(),
+            )
+        if row is None:
+            return None
+        return AdminUser(id=row["id"], email=row["email"], password_hash=row["password_hash"])
 
     async def start_conversation(
         self,
@@ -316,6 +354,14 @@ class SessionStore:
                 WHERE created_at >= now() - interval '7 days'
                 """
             )
+            source_rows = await conn.fetch(
+                """
+                SELECT first_source, count(*)::int AS count
+                FROM users
+                GROUP BY first_source
+                ORDER BY count DESC, first_source ASC
+                """
+            )
         return BotStats(
             total_users=user_stats.total_users,
             new_users_today=user_stats.new_users_today,
@@ -325,6 +371,7 @@ class SessionStore:
             topics_7d=topics_7d,
             leads_all_time=int(leads_all_time or 0),
             leads_7d=int(leads_7d or 0),
+            users_by_first_source={row["first_source"]: int(row["count"]) for row in source_rows},
         )
 
     async def list_partner_types(self) -> list[PartnerType]:
@@ -354,6 +401,124 @@ class SessionStore:
                 return None
             return _partner_type_from_row(row)
 
+    async def create_partner_type(self, partner_type: PartnerType) -> PartnerType:
+        async with self._pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO partner_types (
+                    slug, is_menu_visible, sort_order, button_label, topic_label,
+                    intro, fallback, caption_emoji, caption_cta, button_template
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                """,
+                partner_type.slug,
+                partner_type.is_menu_visible,
+                partner_type.sort_order,
+                partner_type.button_label,
+                partner_type.topic_label,
+                partner_type.intro,
+                partner_type.fallback,
+                partner_type.caption_emoji,
+                partner_type.caption_cta,
+                partner_type.button_template,
+            )
+        return partner_type
+
+    async def update_partner_type(self, slug: str, partner_type: PartnerType) -> PartnerType:
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                existing = await conn.fetchrow(
+                    "SELECT slug FROM partner_types WHERE slug = $1",
+                    slug,
+                )
+                if existing is None:
+                    raise KeyError(slug)
+
+                if partner_type.slug == slug:
+                    await conn.execute(
+                        """
+                        UPDATE partner_types SET
+                            is_menu_visible = $2,
+                            sort_order = $3,
+                            button_label = $4,
+                            topic_label = $5,
+                            intro = $6,
+                            fallback = $7,
+                            caption_emoji = $8,
+                            caption_cta = $9,
+                            button_template = $10
+                        WHERE slug = $1
+                        """,
+                        slug,
+                        partner_type.is_menu_visible,
+                        partner_type.sort_order,
+                        partner_type.button_label,
+                        partner_type.topic_label,
+                        partner_type.intro,
+                        partner_type.fallback,
+                        partner_type.caption_emoji,
+                        partner_type.caption_cta,
+                        partner_type.button_template,
+                    )
+                    return partner_type
+
+                conflict = await conn.fetchrow(
+                    "SELECT slug FROM partner_types WHERE slug = $1",
+                    partner_type.slug,
+                )
+                if conflict is not None:
+                    raise ValueError("partner type slug already exists")
+
+                await conn.execute(
+                    """
+                    INSERT INTO partner_types (
+                        slug, is_menu_visible, sort_order, button_label, topic_label,
+                        intro, fallback, caption_emoji, caption_cta, button_template
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    """,
+                    partner_type.slug,
+                    partner_type.is_menu_visible,
+                    partner_type.sort_order,
+                    partner_type.button_label,
+                    partner_type.topic_label,
+                    partner_type.intro,
+                    partner_type.fallback,
+                    partner_type.caption_emoji,
+                    partner_type.caption_cta,
+                    partner_type.button_template,
+                )
+                await conn.execute(
+                    "UPDATE partners SET type = $1 WHERE type = $2",
+                    partner_type.slug,
+                    slug,
+                )
+                await conn.execute("DELETE FROM partner_types WHERE slug = $1", slug)
+                return partner_type
+
+    async def list_partners(self) -> list[Partner]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, name, type, referral_url, blurb, logo_path, is_active, sort_order
+                FROM partners
+                ORDER BY type ASC, sort_order ASC, name ASC
+                """
+            )
+            return [
+                Partner(
+                    id=row["id"],
+                    name=row["name"],
+                    type=row["type"],
+                    referral_url=row["referral_url"],
+                    blurb=row["blurb"],
+                    sort_order=row["sort_order"],
+                    logo_path=row["logo_path"],
+                    is_active=row["is_active"],
+                )
+                for row in rows
+            ]
+
     async def list_active_partners(self, partner_type: str) -> list[Partner]:
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(
@@ -377,6 +542,87 @@ class SessionStore:
                 )
                 for row in rows
             ]
+
+    async def create_partner(
+        self,
+        *,
+        name: str,
+        type: str,
+        referral_url: str,
+        blurb: str = "",
+        is_active: bool = True,
+        sort_order: int = 0,
+    ) -> Partner:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                INSERT INTO partners (name, type, referral_url, blurb, logo_path, is_active, sort_order)
+                VALUES ($1, $2, $3, $4, '', $5, $6)
+                RETURNING id, name, type, referral_url, blurb, logo_path, is_active, sort_order
+                """,
+                name,
+                type,
+                referral_url,
+                blurb,
+                is_active,
+                sort_order,
+            )
+        return Partner(
+            id=row["id"],
+            name=row["name"],
+            type=row["type"],
+            referral_url=row["referral_url"],
+            blurb=row["blurb"],
+            sort_order=row["sort_order"],
+            logo_path=row["logo_path"],
+            is_active=row["is_active"],
+        )
+
+    async def update_partner(
+        self,
+        partner_id: UUID,
+        *,
+        name: str,
+        type: str,
+        referral_url: str,
+        blurb: str = "",
+        is_active: bool = True,
+        sort_order: int = 0,
+    ) -> Partner:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE partners SET
+                    name = $2,
+                    type = $3,
+                    referral_url = $4,
+                    blurb = $5,
+                    logo_path = '',
+                    is_active = $6,
+                    sort_order = $7
+                WHERE id = $1
+                RETURNING id, name, type, referral_url, blurb, logo_path, is_active, sort_order
+                """,
+                partner_id,
+                name,
+                type,
+                referral_url,
+                blurb,
+                is_active,
+                sort_order,
+            )
+        if row is None:
+            raise KeyError(partner_id)
+        return Partner(
+            id=row["id"],
+            name=row["name"],
+            type=row["type"],
+            referral_url=row["referral_url"],
+            blurb=row["blurb"],
+            sort_order=row["sort_order"],
+            logo_path=row["logo_path"],
+            is_active=row["is_active"],
+        )
 
     async def _fetch_topic_counts(
         self,

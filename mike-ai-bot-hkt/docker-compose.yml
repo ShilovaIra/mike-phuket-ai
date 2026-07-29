@@ -26,5 +26,18 @@ services:
       # Bot builds DATABASE_URL from POSTGRES_* + this host (URL-encodes passwords).
       POSTGRES_HOST: db
 
+  admin-api:
+    build: .
+    restart: unless-stopped
+    command: ["python", "-m", "admin_api"]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+    ports:
+      - "8000:8000"
+
 volumes:
   postgres_data:

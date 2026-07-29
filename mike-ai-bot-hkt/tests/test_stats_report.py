@@ -19,6 +19,7 @@ def test_format_bot_stats_shows_users_topics_and_taps():
         },
         leads_all_time=8,
         leads_7d=2,
+        users_by_first_source={"instagram": 3, "unknown": 97},
     )
 
     text = format_bot_stats(stats)
@@ -45,6 +46,7 @@ def test_format_bot_stats_uses_partner_type_topic_labels():
         },
         leads_all_time=0,
         leads_7d=0,
+        users_by_first_source={},
     )
     partner_types = [
         PartnerType(
