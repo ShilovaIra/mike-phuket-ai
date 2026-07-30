@@ -43,9 +43,13 @@ echo "→ Building and starting containers (bot, admin-api, admin-web, db)"
 docker compose up -d --build
 
 echo "→ Waiting for admin panel"
-for _ in $(seq 1 30); do
-  if curl -fsS "http://127.0.0.1:${ADMIN_WEB_PORT}/" >/dev/null; then
-    break
+stats_code=""
+for _ in $(seq 1 45); do
+  if curl -fsS "http://127.0.0.1:${ADMIN_WEB_PORT}/" >/dev/null 2>&1; then
+    stats_code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${ADMIN_WEB_PORT}/api/stats" || true)"
+    if [[ "$stats_code" == "401" ]]; then
+      break
+    fi
   fi
   sleep 2
 done
