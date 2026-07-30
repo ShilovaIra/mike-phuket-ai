@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { partnerTypesApi, type PartnerType } from '../partner-types/partnerTypesApi'
 import { PartnerFormModal } from './PartnerFormModal'
 import { partnersApi, type Partner } from './partnersApi'
@@ -8,11 +7,9 @@ export function PartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([])
   const [types, setTypes] = useState<PartnerType[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
   const [modal, setModal] = useState<{ mode: 'create' | 'edit'; partnerId?: string } | null>(
     null,
   )
-  const menuRef = useRef<HTMLDivElement>(null)
 
   async function reload() {
     const [partnerItems, typeItems] = await Promise.all([
@@ -25,25 +22,13 @@ export function PartnersPage() {
 
   useEffect(() => {
     let cancelled = false
-    reload()
-      .catch((err: Error) => {
-        if (!cancelled) setError(err.message)
-      })
+    reload().catch((err: Error) => {
+      if (!cancelled) setError(err.message)
+    })
     return () => {
       cancelled = true
     }
   }, [])
-
-  useEffect(() => {
-    if (!menuOpen) return
-    function onPointerDown(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', onPointerDown)
-    return () => document.removeEventListener('mousedown', onPointerDown)
-  }, [menuOpen])
 
   const typeLabel = Object.fromEntries(types.map((t) => [t.slug, t.topic_label]))
 
@@ -51,43 +36,13 @@ export function PartnersPage() {
     <main className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight">Партнёры</h1>
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen((open) => !open)}
-            className="rounded bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800"
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-          >
-            Управлять партнёрами
-          </button>
-          {menuOpen ? (
-            <div
-              role="menu"
-              className="absolute right-0 z-10 mt-1 min-w-48 rounded border border-slate-200 bg-white py-1 shadow-md"
-            >
-              <button
-                type="button"
-                role="menuitem"
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
-                onClick={() => {
-                  setMenuOpen(false)
-                  setModal({ mode: 'create' })
-                }}
-              >
-                Добавить партнёра
-              </button>
-              <Link
-                role="menuitem"
-                to="/partner-types"
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-50"
-                onClick={() => setMenuOpen(false)}
-              >
-                Типы партнёров
-              </Link>
-            </div>
-          ) : null}
-        </div>
+        <button
+          type="button"
+          onClick={() => setModal({ mode: 'create' })}
+          className="rounded bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800"
+        >
+          Добавить партнёра
+        </button>
       </div>
       {error ? <p role="alert">{error}</p> : null}
       <table className="w-full border-collapse text-left text-sm">

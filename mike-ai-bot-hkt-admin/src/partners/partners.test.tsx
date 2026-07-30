@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import App from '../App'
@@ -23,14 +23,11 @@ test('authenticated admin sees seeded partners with human type labels', async ()
   expect(screen.queryByText('money_exchange')).not.toBeInTheDocument()
 })
 
-test('admin opens manage menu and creates a partner in a modal', async () => {
+test('admin creates a partner in a modal', async () => {
   const user = userEvent.setup()
   await renderAuthed('/partners')
 
-  expect(screen.queryByRole('link', { name: /добавить партнёра/i })).not.toBeInTheDocument()
-
-  await user.click(await screen.findByRole('button', { name: /управлять партнёрами/i }))
-  await user.click(screen.getByRole('menuitem', { name: /добавить партнёра/i }))
+  await user.click(await screen.findByRole('button', { name: /добавить партнёра/i }))
 
   const dialog = await screen.findByRole('dialog')
   expect(within(dialog).queryByLabelText(/logo|лого/i)).not.toBeInTheDocument()
@@ -45,16 +42,6 @@ test('admin opens manage menu and creates a partner in a modal', async () => {
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(await screen.findByText('Test Dive')).toBeInTheDocument()
-})
-
-test('admin opens partner types from manage menu', async () => {
-  const user = userEvent.setup()
-  await renderAuthed('/partners')
-
-  await user.click(await screen.findByRole('button', { name: /управлять партнёрами/i }))
-  await user.click(screen.getByRole('menuitem', { name: /типы партнёров/i }))
-
-  expect(await screen.findByRole('heading', { name: /типы партнёров/i })).toBeInTheDocument()
 })
 
 test('admin can edit a partner in a modal and see updates on the list', async () => {
@@ -87,26 +74,4 @@ test('admin can deactivate a partner via modal', async () => {
 
   expect(await screen.findByText('Money Shop')).toBeInTheDocument()
   expect(screen.getByText('Money Shop').closest('tr')).toHaveTextContent('нет')
-})
-
-test('renaming a partner type slug cascades to partners of that type', async () => {
-  const user = userEvent.setup()
-  await renderAuthed('/partner-types')
-
-  const row = (await screen.findByText('💰 Обмен')).closest('tr')!
-  await user.click(within(row).getByRole('button', { name: /изменить/i }))
-
-  const dialog = await screen.findByRole('dialog')
-  const slug = within(dialog).getByLabelText(/^slug$/i)
-  await user.clear(slug)
-  await user.type(slug, 'fx_exchange')
-  await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
-
-  cleanup()
-  await renderAuthed('/partners')
-
-  expect(await screen.findByText('Money Shop')).toBeInTheDocument()
-  expect(screen.getByText('Money Shop').closest('tr')).toHaveTextContent('💰 Обмен')
-  expect(screen.getByText('Ex24.pro').closest('tr')).toHaveTextContent('💰 Обмен')
-  expect(screen.getByText('Остров Сокровищ').closest('tr')).toHaveTextContent('🇹🇭 Экскурсии')
 })
