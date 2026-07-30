@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import App from '../App'
@@ -78,4 +78,21 @@ test('authenticated visit to /login redirects to stats', async () => {
 
   expect(screen.getByRole('heading', { name: /статистика/i })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: /войти/i })).not.toBeInTheDocument()
+})
+
+test('authenticated shell shows sidebar nav without partner types link', async () => {
+  await authApi.login({ email: 'admin@example.com', password: 'admin123' })
+
+  render(
+    <MemoryRouter initialEntries={['/stats']}>
+      <App />
+    </MemoryRouter>,
+  )
+
+  const nav = await screen.findByRole('navigation')
+  expect(nav.className).toMatch(/flex-col/)
+  expect(within(nav).getByRole('link', { name: /статистика/i })).toBeInTheDocument()
+  expect(within(nav).getByRole('link', { name: /партнёры/i })).toBeInTheDocument()
+  expect(within(nav).queryByRole('link', { name: /типы партнёров/i })).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /выйти/i })).toBeInTheDocument()
 })

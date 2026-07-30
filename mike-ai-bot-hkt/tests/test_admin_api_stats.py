@@ -59,3 +59,32 @@ async def test_authenticated_stats_includes_kpis_and_first_source(store):
     assert body["users_by_first_source"]["unknown"] == 1
     assert "topics_all_time" in body
     assert "leads_all_time" in body
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_authenticated_stats_includes_topic_labels(store):
+    from admin_api.app import create_app
+
+    await store.create_admin_user(email="admin@example.com", password="admin123")
+    await store.start_conversation("telegram", "1101", source="unknown")
+    await store.record_topic_event("telegram", "1101", topic="beaches")
+    await store.record_topic_event("telegram", "1101", topic="money_exchange")
+
+    app = create_app(store=store)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        token = await _login(client)
+        response = await client.get(
+            "/api/stats",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert response.status_code == 200
+    by_slug = {row["slug"]: row for row in response.json()["topics_all_time"]}
+    assert by_slug["beaches"]["label"] == "🏖 Пляжи"
+    assert by_slug["beaches"]["unique_users"] == 1
+    assert by_slug["beaches"]["taps"] == 1
+    assert by_slug["money_exchange"]["label"] == "💰 Обмен"
+    assert by_slug["money_exchange"]["unique_users"] == 1
+    assert by_slug["money_exchange"]["taps"] == 1

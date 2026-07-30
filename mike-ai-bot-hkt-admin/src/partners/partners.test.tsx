@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import App from '../App'
@@ -13,73 +13,100 @@ async function renderAuthed(path: string) {
   )
 }
 
-test('authenticated admin sees seeded partners on the list', async () => {
+test('authenticated admin sees seeded partners with human type labels', async () => {
   await renderAuthed('/partners')
 
   expect(screen.getByRole('heading', { name: /партнёры/i })).toBeInTheDocument()
   expect(await screen.findByText('Money Shop')).toBeInTheDocument()
-  expect(screen.getByText('Ex24.pro')).toBeInTheDocument()
-  expect(screen.getByText('Остров Сокровищ')).toBeInTheDocument()
+  expect(screen.getByText('Money Shop').closest('tr')).toHaveTextContent('💰 Обмен')
+  expect(screen.getByText('Остров Сокровищ').closest('tr')).toHaveTextContent('🇹🇭 Экскурсии')
+  expect(screen.queryByText('money_exchange')).not.toBeInTheDocument()
 })
 
-test('admin can create a partner without logo and see it on the list', async () => {
+test('admin opens manage menu and creates a partner in a modal', async () => {
   const user = userEvent.setup()
-  await renderAuthed('/partners/new')
+  await renderAuthed('/partners')
 
-  expect(screen.queryByLabelText(/logo|лого/i)).not.toBeInTheDocument()
+  expect(screen.queryByRole('link', { name: /добавить партнёра/i })).not.toBeInTheDocument()
 
-  await user.type(await screen.findByLabelText(/^имя$/i), 'Test Dive')
-  await user.selectOptions(await screen.findByLabelText(/^тип$/i), 'excursions')
-  await user.type(await screen.findByLabelText(/referral/i), 'https://example.com/dive')
-  await user.type(await screen.findByLabelText(/описание/i), 'Дайвинг-партнёр')
-  await user.clear(await screen.findByLabelText(/порядок/i))
-  await user.type(await screen.findByLabelText(/порядок/i), '5')
-  await user.click(screen.getByRole('button', { name: /сохранить/i }))
+  await user.click(await screen.findByRole('button', { name: /управлять партнёрами/i }))
+  await user.click(screen.getByRole('menuitem', { name: /добавить партнёра/i }))
 
-  expect(await screen.findByRole('heading', { name: /партнёры/i })).toBeInTheDocument()
-  expect(screen.getByText('Test Dive')).toBeInTheDocument()
+  const dialog = await screen.findByRole('dialog')
+  expect(within(dialog).queryByLabelText(/logo|лого/i)).not.toBeInTheDocument()
+
+  await user.type(within(dialog).getByLabelText(/^имя$/i), 'Test Dive')
+  await user.selectOptions(within(dialog).getByLabelText(/^тип$/i), 'excursions')
+  await user.type(within(dialog).getByLabelText(/referral/i), 'https://example.com/dive')
+  await user.type(within(dialog).getByLabelText(/описание/i), 'Дайвинг-партнёр')
+  await user.clear(within(dialog).getByLabelText(/порядок/i))
+  await user.type(within(dialog).getByLabelText(/порядок/i), '5')
+  await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(await screen.findByText('Test Dive')).toBeInTheDocument()
 })
 
-test('admin can edit a partner and see updates on the list', async () => {
+test('admin opens partner types from manage menu', async () => {
   const user = userEvent.setup()
-  await renderAuthed('/partners/00000000-0000-4000-8000-000000000001/edit')
+  await renderAuthed('/partners')
 
-  const name = await screen.findByLabelText(/^имя$/i)
+  await user.click(await screen.findByRole('button', { name: /управлять партнёрами/i }))
+  await user.click(screen.getByRole('menuitem', { name: /типы партнёров/i }))
+
+  expect(await screen.findByRole('heading', { name: /типы партнёров/i })).toBeInTheDocument()
+})
+
+test('admin can edit a partner in a modal and see updates on the list', async () => {
+  const user = userEvent.setup()
+  await renderAuthed('/partners')
+
+  const row = (await screen.findByText('Money Shop')).closest('tr')!
+  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+
+  const dialog = await screen.findByRole('dialog')
+  const name = within(dialog).getByLabelText(/^имя$/i)
   await user.clear(name)
   await user.type(name, 'Money Shop Updated')
-  await user.click(screen.getByRole('button', { name: /сохранить/i }))
+  await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
-  expect(await screen.findByRole('heading', { name: /партнёры/i })).toBeInTheDocument()
-  expect(screen.getByText('Money Shop Updated')).toBeInTheDocument()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(await screen.findByText('Money Shop Updated')).toBeInTheDocument()
 })
 
-test('admin can deactivate a partner', async () => {
+test('admin can deactivate a partner via modal', async () => {
   const user = userEvent.setup()
-  await renderAuthed('/partners/00000000-0000-4000-8000-000000000001/edit')
+  await renderAuthed('/partners')
 
-  await user.click(await screen.findByLabelText(/^активен$/i))
-  await user.click(screen.getByRole('button', { name: /сохранить/i }))
+  const row = (await screen.findByText('Money Shop')).closest('tr')!
+  await user.click(within(row).getByRole('button', { name: /изменить/i }))
 
-  expect(await screen.findByRole('heading', { name: /партнёры/i })).toBeInTheDocument()
-  const row = screen.getByText('Money Shop').closest('tr')
-  expect(row).toHaveTextContent('нет')
+  const dialog = await screen.findByRole('dialog')
+  await user.click(within(dialog).getByLabelText(/^активен$/i))
+  await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
+
+  expect(await screen.findByText('Money Shop')).toBeInTheDocument()
+  expect(screen.getByText('Money Shop').closest('tr')).toHaveTextContent('нет')
 })
 
 test('renaming a partner type slug cascades to partners of that type', async () => {
   const user = userEvent.setup()
-  await renderAuthed('/partner-types/money_exchange/edit')
+  await renderAuthed('/partner-types')
 
-  const slug = await screen.findByLabelText(/^slug$/i)
+  const row = (await screen.findByText('💰 Обмен')).closest('tr')!
+  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+
+  const dialog = await screen.findByRole('dialog')
+  const slug = within(dialog).getByLabelText(/^slug$/i)
   await user.clear(slug)
   await user.type(slug, 'fx_exchange')
-  await user.click(screen.getByRole('button', { name: /сохранить/i }))
-  expect(await screen.findByRole('heading', { name: /типы партнёров/i })).toBeInTheDocument()
+  await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
   cleanup()
   await renderAuthed('/partners')
 
   expect(await screen.findByText('Money Shop')).toBeInTheDocument()
-  expect(screen.getByText('Money Shop').closest('tr')).toHaveTextContent('fx_exchange')
-  expect(screen.getByText('Ex24.pro').closest('tr')).toHaveTextContent('fx_exchange')
-  expect(screen.getByText('Остров Сокровищ').closest('tr')).toHaveTextContent('excursions')
+  expect(screen.getByText('Money Shop').closest('tr')).toHaveTextContent('💰 Обмен')
+  expect(screen.getByText('Ex24.pro').closest('tr')).toHaveTextContent('💰 Обмен')
+  expect(screen.getByText('Остров Сокровищ').closest('tr')).toHaveTextContent('🇹🇭 Экскурсии')
 })

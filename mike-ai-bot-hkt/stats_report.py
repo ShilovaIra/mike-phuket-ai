@@ -6,7 +6,8 @@ from collections.abc import Sequence
 
 from db.store import BotStats, TopicCount
 from partners import PartnerType
-from topics import TOPIC_ORDER, TOPIC_LABELS, TOPIC_REAL_ESTATE
+from topics import TOPIC_ORDER, TOPIC_REAL_ESTATE
+from topic_labels import topic_label_catalog
 
 
 def _leads_label(count: int) -> str:
@@ -24,13 +25,11 @@ def _format_topic_line(label: str, count: TopicCount) -> str:
 def _topic_catalog(
     partner_types: Sequence[PartnerType],
 ) -> tuple[tuple[str, ...], dict[str, str]]:
-    partner_labels = {t.slug: t.topic_label for t in partner_types}
-    labels = {**TOPIC_LABELS, **partner_labels}
-    partner_slugs = set(partner_labels)
+    labels = topic_label_catalog(partner_types)
+    partner_slugs = {t.slug for t in partner_types}
     order = tuple(t for t in TOPIC_ORDER if t not in partner_slugs) + tuple(
         t.slug for t in sorted(partner_types, key=lambda t: (t.sort_order, t.slug))
     )
-    # Include any tapped topics missing from catalog (raw slug as label).
     return order, labels
 
 

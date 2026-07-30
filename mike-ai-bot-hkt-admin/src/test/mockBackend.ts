@@ -135,16 +135,16 @@ export function installFetchMock(): void {
         new_users_today: 4,
         active_today: 17,
         new_users_7d: 22,
-        topics_all_time: {
-          beaches: { unique_users: 40, taps: 55 },
-          ask_mike: { unique_users: 36, taps: 80 },
-          money_exchange: { unique_users: 28, taps: 33 },
-        },
-        topics_7d: {
-          beaches: { unique_users: 12, taps: 15 },
-          ask_mike: { unique_users: 10, taps: 18 },
-          money_exchange: { unique_users: 8, taps: 9 },
-        },
+        topics_all_time: [
+          { slug: 'beaches', label: '🏖 Пляжи', unique_users: 40, taps: 55 },
+          { slug: 'ask_mike', label: '💬 Спросить Майка', unique_users: 36, taps: 80 },
+          { slug: 'money_exchange', label: '💰 Обмен', unique_users: 28, taps: 33 },
+        ],
+        topics_7d: [
+          { slug: 'beaches', label: '🏖 Пляжи', unique_users: 12, taps: 15 },
+          { slug: 'ask_mike', label: '💬 Спросить Майка', unique_users: 10, taps: 18 },
+          { slug: 'money_exchange', label: '💰 Обмен', unique_users: 8, taps: 9 },
+        ],
         leads_all_time: 9,
         leads_7d: 2,
         users_by_first_source: { unknown: 90, instagram: 25, facebook: 13 },

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { statsApi, type BotStats, type TopicCount } from './statsApi'
+import { statsApi, type BotStats, type TopicStat } from './statsApi'
 
-function topicRows(topics: Record<string, TopicCount>) {
-  return Object.entries(topics).sort((a, b) => b[1].unique_users - a[1].unique_users)
+function topicRows(topics: TopicStat[]) {
+  return [...topics].sort((a, b) => b.unique_users - a.unique_users)
 }
 
 function sourceRows(sources: Record<string, number>) {
@@ -84,16 +84,16 @@ export function StatsPage() {
             <thead>
               <tr className="border-b border-slate-300">
                 <th className="py-2 pr-4 font-medium">Тема</th>
-                <th className="py-2 pr-4 font-medium">Уники</th>
-                <th className="py-2 font-medium">Тапы</th>
+                <th className="py-2 pr-4 font-medium">Пользователи</th>
+                <th className="py-2 font-medium">Нажатия</th>
               </tr>
             </thead>
             <tbody>
-              {topicRows(stats.topics_all_time).map(([topic, count]) => (
-                <tr key={`all-${topic}`} className="border-b border-slate-200">
-                  <td className="py-2 pr-4 font-mono text-xs">{topic}</td>
-                  <td className="py-2 pr-4">{count.unique_users}</td>
-                  <td className="py-2">{count.taps}</td>
+              {topicRows(stats.topics_all_time).map((row) => (
+                <tr key={`all-${row.slug}`} className="border-b border-slate-200">
+                  <td className="py-2 pr-4">{row.label}</td>
+                  <td className="py-2 pr-4">{row.unique_users}</td>
+                  <td className="py-2">{row.taps}</td>
                 </tr>
               ))}
             </tbody>
@@ -105,16 +105,16 @@ export function StatsPage() {
             <thead>
               <tr className="border-b border-slate-300">
                 <th className="py-2 pr-4 font-medium">Тема</th>
-                <th className="py-2 pr-4 font-medium">Уники</th>
-                <th className="py-2 font-medium">Тапы</th>
+                <th className="py-2 pr-4 font-medium">Пользователи</th>
+                <th className="py-2 font-medium">Нажатия</th>
               </tr>
             </thead>
             <tbody>
-              {topicRows(stats.topics_7d).map(([topic, count]) => (
-                <tr key={`7d-${topic}`} className="border-b border-slate-200">
-                  <td className="py-2 pr-4 font-mono text-xs">{topic}</td>
-                  <td className="py-2 pr-4">{count.unique_users}</td>
-                  <td className="py-2">{count.taps}</td>
+              {topicRows(stats.topics_7d).map((row) => (
+                <tr key={`7d-${row.slug}`} className="border-b border-slate-200">
+                  <td className="py-2 pr-4">{row.label}</td>
+                  <td className="py-2 pr-4">{row.unique_users}</td>
+                  <td className="py-2">{row.taps}</td>
                 </tr>
               ))}
             </tbody>
@@ -127,14 +127,14 @@ export function StatsPage() {
         <table className="w-full max-w-md border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-slate-300">
-              <th className="py-2 pr-4 font-medium">first_source</th>
+              <th className="py-2 pr-4 font-medium">Источник</th>
               <th className="py-2 font-medium">Пользователи</th>
             </tr>
           </thead>
           <tbody>
             {sourceRows(stats.users_by_first_source).map(([source, count]) => (
               <tr key={source} className="border-b border-slate-200">
-                <td className="py-2 pr-4 font-mono text-xs">{source}</td>
+                <td className="py-2 pr-4">{source}</td>
                 <td className="py-2">{count}</td>
               </tr>
             ))}

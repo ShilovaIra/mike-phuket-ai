@@ -18,6 +18,7 @@ from admin_api.tokens import create_access_token, decode_access_token
 from db.store import AdminUser, SessionStore
 from db.url import resolve_database_url
 from partners import Partner, PartnerType
+from topic_labels import labeled_topic_rows
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -135,14 +136,14 @@ def create_app(*, store: SessionStore | None = None) -> FastAPI:
         admin: AdminUser = Depends(require_admin),
     ) -> dict:
         _ = admin
-        bot_stats = await _store(request).get_bot_stats()
+        store = _store(request)
+        bot_stats = await store.get_bot_stats()
+        partner_types = await store.list_partner_types()
         payload = asdict(bot_stats)
-        payload["topics_all_time"] = {
-            key: asdict(value) for key, value in bot_stats.topics_all_time.items()
-        }
-        payload["topics_7d"] = {
-            key: asdict(value) for key, value in bot_stats.topics_7d.items()
-        }
+        payload["topics_all_time"] = labeled_topic_rows(
+            bot_stats.topics_all_time, partner_types
+        )
+        payload["topics_7d"] = labeled_topic_rows(bot_stats.topics_7d, partner_types)
         return payload
 
     @app.get("/api/partner-types")
