@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react'
-import { statsApi, type BotStats, type TopicStat } from './statsApi'
-
-function topicRows(topics: TopicStat[]) {
-  return [...topics].sort((a, b) => b.unique_users - a.unique_users)
-}
-
-function sourceRows(sources: Record<string, number>) {
-  return Object.entries(sources).sort((a, b) => b[1] - a[1])
-}
+import { buildDonutSlices } from './buildDonutSlices'
+import { ShareDonut } from './ShareDonut'
+import { statsApi, type BotStats } from './statsApi'
+import { sourceLabel } from './sourceLabel'
+import { stripLeadingEmoji } from './stripLeadingEmoji'
 
 export function StatsPage() {
   const [stats, setStats] = useState<BotStats | null>(null)
@@ -46,6 +42,21 @@ export function StatsPage() {
     )
   }
 
+  const topicSlices = buildDonutSlices(
+    stats.topics_all_time.map((topic) => ({
+      key: topic.slug,
+      label: stripLeadingEmoji(topic.label),
+      value: topic.unique_users,
+    })),
+  )
+  const sourceSlices = buildDonutSlices(
+    Object.entries(stats.users_by_first_source).map(([key, value]) => ({
+      key,
+      label: sourceLabel(key),
+      value,
+    })),
+  )
+
   return (
     <main className="mx-auto max-w-5xl space-y-10 px-4 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">Статистика</h1>
@@ -79,67 +90,13 @@ export function StatsPage() {
 
       <section className="grid gap-8 lg:grid-cols-2">
         <div>
-          <h2 className="mb-3 text-lg font-semibold">Темы (всё время)</h2>
-          <table className="w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-300">
-                <th className="py-2 pr-4 font-medium">Тема</th>
-                <th className="py-2 pr-4 font-medium">Пользователи</th>
-                <th className="py-2 font-medium">Нажатия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topicRows(stats.topics_all_time).map((row) => (
-                <tr key={`all-${row.slug}`} className="border-b border-slate-200">
-                  <td className="py-2 pr-4">{row.label}</td>
-                  <td className="py-2 pr-4">{row.unique_users}</td>
-                  <td className="py-2">{row.taps}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <h2 className="mb-3 text-lg font-semibold">Популярные темы</h2>
+          <ShareDonut slices={topicSlices} />
         </div>
         <div>
-          <h2 className="mb-3 text-lg font-semibold">Темы (7 дней)</h2>
-          <table className="w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-300">
-                <th className="py-2 pr-4 font-medium">Тема</th>
-                <th className="py-2 pr-4 font-medium">Пользователи</th>
-                <th className="py-2 font-medium">Нажатия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topicRows(stats.topics_7d).map((row) => (
-                <tr key={`7d-${row.slug}`} className="border-b border-slate-200">
-                  <td className="py-2 pr-4">{row.label}</td>
-                  <td className="py-2 pr-4">{row.unique_users}</td>
-                  <td className="py-2">{row.taps}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <h2 className="mb-3 text-lg font-semibold">Источники пользователей</h2>
+          <ShareDonut slices={sourceSlices} />
         </div>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Источники пользователей</h2>
-        <table className="w-full max-w-md border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-slate-300">
-              <th className="py-2 pr-4 font-medium">Источник</th>
-              <th className="py-2 font-medium">Пользователи</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sourceRows(stats.users_by_first_source).map(([source, count]) => (
-              <tr key={source} className="border-b border-slate-200">
-                <td className="py-2 pr-4">{source}</td>
-                <td className="py-2">{count}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </section>
     </main>
   )
