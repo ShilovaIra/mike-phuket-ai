@@ -88,8 +88,12 @@ CREATE TABLE IF NOT EXISTS partner_types (
     fallback TEXT NOT NULL,
     caption_emoji TEXT NOT NULL,
     caption_cta TEXT NOT NULL,
-    button_template TEXT NOT NULL
+    button_template TEXT NOT NULL,
+    follow_up_text TEXT NOT NULL DEFAULT ''
 );
+
+ALTER TABLE partner_types
+    ADD COLUMN IF NOT EXISTS follow_up_text TEXT NOT NULL DEFAULT '';
 
 INSERT INTO partner_types (
     slug,
@@ -101,7 +105,8 @@ INSERT INTO partner_types (
     fallback,
     caption_emoji,
     caption_cta,
-    button_template
+    button_template,
+    follow_up_text
 )
 VALUES
 (
@@ -114,7 +119,8 @@ VALUES
     'Пока нет доступных партнёров по обмену. Напишите Майку — подскажу, что можно сделать.',
     '💰',
     '⬇️ Обменять сейчас ⬇️',
-    'Обменять с {name}'
+    'Обменять с {name}',
+    'Как прошел обмен? Нужна ли ещё помощь? 😊'
 ),
 (
     'vehicle_rental',
@@ -126,7 +132,8 @@ VALUES
     'Пока нет доступных партнёров по аренде транспорта. Напишите Майку — подскажу, что можно сделать.',
     '🛵',
     '⬇️ Арендовать сейчас ⬇️',
-    'Арендовать у {name}'
+    'Арендовать у {name}',
+    ''
 ),
 (
     'excursions',
@@ -138,7 +145,8 @@ VALUES
     'Пока нет доступных партнёров по экскурсиям. Напишите Майку — подскажу, что можно сделать.',
     '🇹🇭',
     '⬇️ Забронировать сейчас ⬇️',
-    'Забронировать с {name}'
+    'Забронировать с {name}',
+    'Как все прошло? Получилось ли воспользоваться рекомендацией? 😊'
 )
 ON CONFLICT (slug) DO UPDATE SET
     is_menu_visible = EXCLUDED.is_menu_visible,
@@ -149,7 +157,8 @@ ON CONFLICT (slug) DO UPDATE SET
     fallback = EXCLUDED.fallback,
     caption_emoji = EXCLUDED.caption_emoji,
     caption_cta = EXCLUDED.caption_cta,
-    button_template = EXCLUDED.button_template;
+    button_template = EXCLUDED.button_template,
+    follow_up_text = EXCLUDED.follow_up_text;
 
 CREATE TABLE IF NOT EXISTS partners (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -225,3 +234,34 @@ CREATE TABLE IF NOT EXISTS admin_users (
     password_hash TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS last_inbound_at TIMESTAMPTZ;
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS follow_up_blocked_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS follow_up_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK (kind IN ('partner_topic', 'win_back')),
+    topic TEXT,
+    scheduled_at TIMESTAMPTZ NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'claimed', 'sent', 'cancelled', 'failed')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    sent_at TIMESTAMPTZ,
+    last_error TEXT
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS one_pending_partner_follow_up_per_user
+    ON follow_up_jobs (user_id)
+    WHERE status = 'pending' AND kind = 'partner_topic';
+
+CREATE UNIQUE INDEX IF NOT EXISTS one_pending_win_back_per_user
+    ON follow_up_jobs (user_id)
+    WHERE status = 'pending' AND kind = 'win_back';
+
+CREATE INDEX IF NOT EXISTS follow_up_jobs_due
+    ON follow_up_jobs (status, scheduled_at)
+    WHERE status = 'pending';

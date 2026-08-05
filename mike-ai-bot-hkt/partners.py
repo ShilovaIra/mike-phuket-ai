@@ -22,6 +22,7 @@ class PartnerType:
     caption_emoji: str
     caption_cta: str
     button_template: str
+    follow_up_text: str = ""
 
 
 @dataclass(frozen=True)

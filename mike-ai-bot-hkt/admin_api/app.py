@@ -44,6 +44,7 @@ class PartnerTypeIn(BaseModel):
     caption_emoji: str
     caption_cta: str
     button_template: str
+    follow_up_text: str = ""
 
 
 class PartnerIn(BaseModel):
