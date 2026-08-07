@@ -9,6 +9,18 @@ from partners import PartnerType
 from topics import TOPIC_ORDER, TOPIC_REAL_ESTATE
 from topic_labels import topic_label_catalog
 
+_SOURCE_LABELS = {
+    "unknown": "Неизвестно",
+    "instagram": "Instagram",
+    "facebook": "Facebook",
+}
+
+
+def _source_label(source: str) -> str:
+    if source in _SOURCE_LABELS:
+        return _SOURCE_LABELS[source]
+    return source[:1].upper() + source[1:] if source else source
+
 
 def _leads_label(count: int) -> str:
     if count % 10 == 1 and count % 100 != 11:
@@ -61,6 +73,19 @@ def _format_topic_section(
     return lines
 
 
+def _format_source_section(users_by_first_source: dict[str, int]) -> list[str]:
+    lines = ["Источники:"]
+    ranked = sorted(
+        users_by_first_source.items(),
+        key=lambda item: (-item[1], item[0]),
+    )
+    for source, count in ranked:
+        lines.append(f"  {_source_label(source)}: {count}")
+    if len(lines) == 1:
+        lines.append("  —")
+    return lines
+
+
 def format_bot_stats(
     stats: BotStats,
     *,
@@ -89,6 +114,8 @@ def format_bot_stats(
         f"  Всего: {stats.total_users}",
         f"  Новые сегодня: {stats.new_users_today}",
         f"  Активны сегодня: {stats.active_today}",
+        "",
+        *_format_source_section(stats.users_by_first_source),
         "",
         "За 7 дней:",
         f"  Новые пользователи: {stats.new_users_7d}",

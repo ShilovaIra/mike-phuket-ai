@@ -32,6 +32,106 @@ def test_format_bot_stats_shows_users_topics_and_taps():
     assert "Всё время: 8 users (9 taps) → 8 заявок" in text
 
 
+def test_format_bot_stats_lists_first_source_counts_with_labels():
+    stats = BotStats(
+        total_users=100,
+        new_users_today=5,
+        active_today=12,
+        new_users_7d=20,
+        topics_all_time={},
+        topics_7d={},
+        leads_all_time=0,
+        leads_7d=0,
+        users_by_first_source={"instagram": 3, "unknown": 97},
+    )
+
+    text = format_bot_stats(stats)
+
+    assert "Instagram: 3" in text
+    assert "Неизвестно: 97" in text
+
+
+def test_format_bot_stats_places_sources_between_users_and_7d():
+    stats = BotStats(
+        total_users=10,
+        new_users_today=1,
+        active_today=2,
+        new_users_7d=3,
+        topics_all_time={},
+        topics_7d={},
+        leads_all_time=0,
+        leads_7d=0,
+        users_by_first_source={"instagram": 4},
+    )
+
+    text = format_bot_stats(stats)
+    users_idx = text.index("Активны сегодня:")
+    sources_idx = text.index("Источники:")
+    week_idx = text.index("За 7 дней:")
+
+    assert users_idx < sources_idx < week_idx
+
+
+def test_format_bot_stats_shows_dash_when_no_sources():
+    stats = BotStats(
+        total_users=0,
+        new_users_today=0,
+        active_today=0,
+        new_users_7d=0,
+        topics_all_time={},
+        topics_7d={},
+        leads_all_time=0,
+        leads_7d=0,
+        users_by_first_source={},
+    )
+
+    text = format_bot_stats(stats)
+    sources_block = text.split("Источники:")[1].split("За 7 дней:")[0]
+
+    assert "—" in sources_block
+    assert "Instagram" not in sources_block
+
+
+def test_format_bot_stats_orders_sources_by_count_desc():
+    stats = BotStats(
+        total_users=10,
+        new_users_today=0,
+        active_today=0,
+        new_users_7d=0,
+        topics_all_time={},
+        topics_7d={},
+        leads_all_time=0,
+        leads_7d=0,
+        users_by_first_source={"instagram": 2, "facebook": 5, "unknown": 3},
+    )
+
+    text = format_bot_stats(stats)
+    sources_block = text.split("Источники:")[1].split("За 7 дней:")[0]
+    facebook_idx = sources_block.index("Facebook:")
+    unknown_idx = sources_block.index("Неизвестно:")
+    instagram_idx = sources_block.index("Instagram:")
+
+    assert facebook_idx < unknown_idx < instagram_idx
+
+
+def test_format_bot_stats_title_cases_unknown_source_keys():
+    stats = BotStats(
+        total_users=1,
+        new_users_today=0,
+        active_today=0,
+        new_users_7d=0,
+        topics_all_time={},
+        topics_7d={},
+        leads_all_time=0,
+        leads_7d=0,
+        users_by_first_source={"tiktok": 1},
+    )
+
+    text = format_bot_stats(stats)
+
+    assert "Tiktok: 1" in text
+
+
 def test_format_bot_stats_uses_partner_type_topic_labels():
     stats = BotStats(
         total_users=10,
