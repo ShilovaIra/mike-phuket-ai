@@ -124,7 +124,7 @@ VALUES
 ),
 (
     'vehicle_rental',
-    false,
+    true,
     20,
     E'🛵 \nАренда транспорта',
     '🛵 Аренда транспорта',
@@ -216,6 +216,16 @@ VALUES
     'https://tisland.link/excurs?ref=72s5z3yp3jb79r7',
     'С 2003 года в туризме. Авторские групповые и индивидуальные экскурсии.',
     'media/partners/excursions.png',
+    true,
+    1
+),
+(
+    '00000000-0000-4000-8000-000000000004',
+    'Boomerang',
+    'vehicle_rental',
+    'https://boomerang.rent/catalog/?utm_source=MikePhuketAIBot',
+    'Boomerang - надежный сервис аренды автомобилей и мотобайков на Пхукете. Доставка по всему острову.',
+    'media/partners/boomerang.jpeg',
     true,
     1
 )

@@ -63,7 +63,7 @@ async def test_list_partner_types_returns_seeded_in_sort_order():
         assert types[1].button_label == "🛵 \nАренда транспорта"
         assert types[2].button_label == "🇹🇭 \nЭкскурсии"
         assert types[0].is_menu_visible is True
-        assert types[1].is_menu_visible is False
+        assert types[1].is_menu_visible is True
         assert types[2].is_menu_visible is True
         assert types[0].intro == "Вот партнёры для обмена рублей:"
         assert types[1].button_template == "Арендовать у {name}"
@@ -169,6 +169,36 @@ async def test_schema_seed_includes_excursions_partner():
         assert partner.logo_path == "media/partners/excursions.png"
         assert partner.blurb == (
             "С 2003 года в туризме. Авторские групповые и индивидуальные экскурсии."
+        )
+    finally:
+        await pool.close()
+
+
+@requires_db
+async def test_schema_seed_includes_vehicle_rental_partner():
+    url = database_url()
+    assert url is not None
+    pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
+    try:
+        async with pool.acquire() as conn:
+            await apply_schema(conn)
+            await conn.execute(
+                "TRUNCATE TABLE partners, partner_types RESTART IDENTITY CASCADE"
+            )
+            await apply_schema(conn)
+
+        store = SessionStore(pool)
+        partners = await store.list_active_partners("vehicle_rental")
+
+        assert [p.name for p in partners] == ["Boomerang"]
+        partner = partners[0]
+        assert partner.referral_url == (
+            "https://boomerang.rent/catalog/?utm_source=MikePhuketAIBot"
+        )
+        assert partner.logo_path == "media/partners/boomerang.jpeg"
+        assert partner.blurb == (
+            "Boomerang - надежный сервис аренды автомобилей и мотобайков "
+            "на Пхукете. Доставка по всему острову."
         )
     finally:
         await pool.close()
