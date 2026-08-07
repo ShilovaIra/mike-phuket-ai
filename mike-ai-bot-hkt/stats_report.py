@@ -6,7 +6,20 @@ from collections.abc import Sequence
 
 from db.store import BotStats, TopicCount
 from partners import PartnerType
-from topics import TOPIC_ORDER, TOPIC_LABELS, TOPIC_REAL_ESTATE
+from topics import TOPIC_ORDER, TOPIC_REAL_ESTATE
+from topic_labels import topic_label_catalog
+
+_SOURCE_LABELS = {
+    "unknown": "Неизвестно",
+    "instagram": "Instagram",
+    "facebook": "Facebook",
+}
+
+
+def _source_label(source: str) -> str:
+    if source in _SOURCE_LABELS:
+        return _SOURCE_LABELS[source]
+    return source[:1].upper() + source[1:] if source else source
 
 
 def _leads_label(count: int) -> str:
@@ -24,13 +37,11 @@ def _format_topic_line(label: str, count: TopicCount) -> str:
 def _topic_catalog(
     partner_types: Sequence[PartnerType],
 ) -> tuple[tuple[str, ...], dict[str, str]]:
-    partner_labels = {t.slug: t.topic_label for t in partner_types}
-    labels = {**TOPIC_LABELS, **partner_labels}
-    partner_slugs = set(partner_labels)
+    labels = topic_label_catalog(partner_types)
+    partner_slugs = {t.slug for t in partner_types}
     order = tuple(t for t in TOPIC_ORDER if t not in partner_slugs) + tuple(
         t.slug for t in sorted(partner_types, key=lambda t: (t.sort_order, t.slug))
     )
-    # Include any tapped topics missing from catalog (raw slug as label).
     return order, labels
 
 
@@ -57,6 +68,19 @@ def _format_topic_section(
         if count.taps == 0:
             continue
         lines.append(_format_topic_line(topic_labels.get(topic, topic), count))
+    if len(lines) == 1:
+        lines.append("  —")
+    return lines
+
+
+def _format_source_section(users_by_first_source: dict[str, int]) -> list[str]:
+    lines = ["Источники:"]
+    ranked = sorted(
+        users_by_first_source.items(),
+        key=lambda item: (-item[1], item[0]),
+    )
+    for source, count in ranked:
+        lines.append(f"  {_source_label(source)}: {count}")
     if len(lines) == 1:
         lines.append("  —")
     return lines
@@ -90,6 +114,8 @@ def format_bot_stats(
         f"  Всего: {stats.total_users}",
         f"  Новые сегодня: {stats.new_users_today}",
         f"  Активны сегодня: {stats.active_today}",
+        "",
+        *_format_source_section(stats.users_by_first_source),
         "",
         "За 7 дней:",
         f"  Новые пользователи: {stats.new_users_7d}",

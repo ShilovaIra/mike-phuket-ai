@@ -21,6 +21,7 @@ from telegram import (
     Update,
 )
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.error import Forbidden, TelegramError
 
 from db.store import SessionStore
 from db.url import resolve_database_url
@@ -42,6 +43,7 @@ load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DATABASE_URL = resolve_database_url()
+FOLLOW_UP_POLL_SECONDS = 60
 
 
 def parse_admin_ids(raw: str | None) -> frozenset[str]:
@@ -138,7 +140,9 @@ def get_location_name(lat, lon):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     source = context.args[0] if context.args else "unknown"
-    await store.start_conversation(CHANNEL, telegram_id(update), source=source)
+    tid = telegram_id(update)
+    await store.start_conversation(CHANNEL, tid, source=source)
+    await store.record_inbound(CHANNEL, tid)
 
     await update.message.reply_text(
         "Привет! Я Майк — AI-гид по Пхукету.\n\n"
@@ -174,7 +178,9 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await store.reset_conversation(CHANNEL, telegram_id(update))
+    tid = telegram_id(update)
+    await store.reset_conversation(CHANNEL, tid)
+    await store.record_inbound(CHANNEL, tid)
 
     await update.message.reply_text(
         "Память диалога очищена. Начинаем заново 👌",
@@ -192,7 +198,9 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    await store.record_topic_event(CHANNEL, telegram_id(update), topic=TOPIC_NEARBY)
+    tid = telegram_id(update)
+    await store.record_inbound(CHANNEL, tid)
+    await store.record_topic_event(CHANNEL, tid, topic=TOPIC_NEARBY)
 
     lat = location.latitude
     lon = location.longitude
@@ -232,16 +240,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
     partner_types = await store.list_partner_types()
     partner_by_label = {t.button_label: t for t in partner_types}
+    tid = telegram_id(update)
 
     topic = BUTTON_TO_TOPIC.get(user_text)
     partner_type = partner_by_label.get(user_text)
     if partner_type is not None:
         topic = partner_type.slug
     if topic:
-        await store.record_topic_event(CHANNEL, telegram_id(update), topic=topic)
+        await store.record_topic_event(CHANNEL, tid, topic=topic)
     if partner_type is not None:
+        await store.schedule_partner_follow_up(CHANNEL, tid, partner_type.slug)
         await handle_partner_topic(update, partner_type)
         return
+    await store.record_inbound(CHANNEL, tid)
     await ask_openai(update, context, user_text)
 
 
@@ -374,6 +385,22 @@ async def send_lead_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE,
         )
 
 
+async def process_due_follow_ups(bot) -> None:
+    jobs = await store.claim_due_jobs(limit=20)
+    for job in jobs:
+        try:
+            await bot.send_message(chat_id=int(job.external_id), text=job.message_text)
+            await store.mark_job_sent(job.id, message_text=job.message_text)
+        except Forbidden as exc:
+            await store.mark_job_failed(
+                job.id, permanent=True, error=str(exc)
+            )
+        except (TelegramError, ValueError) as exc:
+            await store.mark_job_failed(
+                job.id, permanent=False, error=str(exc)
+            )
+
+
 async def main():
     global store
 
@@ -410,7 +437,11 @@ async def main():
 
     try:
         while True:
-            await asyncio.sleep(3600)
+            try:
+                await process_due_follow_ups(app.bot)
+            except Exception as exc:
+                print(f"Follow-up poll error: {exc}")
+            await asyncio.sleep(FOLLOW_UP_POLL_SECONDS)
     finally:
         await store.close()
 

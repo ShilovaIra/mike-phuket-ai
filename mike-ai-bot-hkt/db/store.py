@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
@@ -9,6 +10,13 @@ import asyncpg
 
 from db.migrate import apply_schema_pool
 from partners import Partner, PartnerType
+
+PARTNER_FOLLOW_UP_DELAY = timedelta(hours=24)
+WIN_BACK_DELAY = timedelta(days=7)
+PARTNER_FOLLOW_UP_COOLDOWN = timedelta(days=7)
+WIN_BACK_TEXT = (
+    "Привет! Как дела? Что-то давно тебя не было! Хочешь узнать что-то новенькое?😊"
+)
 
 
 @dataclass(frozen=True)
@@ -44,6 +52,7 @@ class BotStats:
     topics_7d: dict[str, TopicCount]
     leads_all_time: int
     leads_7d: int
+    users_by_first_source: dict[str, int]
 
 
 @dataclass(frozen=True)
@@ -52,6 +61,23 @@ class UserStats:
     active_today: int
     new_users_today: int = 0
     new_users_7d: int = 0
+
+
+@dataclass(frozen=True)
+class AdminUser:
+    id: UUID
+    email: str
+    password_hash: str
+
+
+@dataclass(frozen=True)
+class DueFollowUpJob:
+    id: UUID
+    kind: str
+    topic: str | None
+    message_text: str
+    channel: str
+    external_id: str
 
 
 def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
@@ -66,6 +92,7 @@ def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
         caption_emoji=row["caption_emoji"],
         caption_cta=row["caption_cta"],
         button_template=row["button_template"],
+        follow_up_text=row["follow_up_text"] or "",
     )
 
 
@@ -81,6 +108,36 @@ class SessionStore:
 
     async def close(self) -> None:
         await self._pool.close()
+
+    async def create_admin_user(self, *, email: str, password: str) -> AdminUser:
+        from admin_api.passwords import hash_password
+
+        password_hash = hash_password(password)
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                INSERT INTO admin_users (email, password_hash)
+                VALUES ($1, $2)
+                RETURNING id, email, password_hash
+                """,
+                email.lower().strip(),
+                password_hash,
+            )
+        return AdminUser(id=row["id"], email=row["email"], password_hash=row["password_hash"])
+
+    async def get_admin_by_email(self, email: str) -> AdminUser | None:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT id, email, password_hash
+                FROM admin_users
+                WHERE email = $1
+                """,
+                email.lower().strip(),
+            )
+        if row is None:
+            return None
+        return AdminUser(id=row["id"], email=row["email"], password_hash=row["password_hash"])
 
     async def start_conversation(
         self,
@@ -263,6 +320,318 @@ class SessionStore:
                     topic,
                 )
 
+    async def schedule_partner_follow_up(
+        self,
+        channel: str,
+        external_id: str,
+        topic: str,
+        *,
+        at: datetime | None = None,
+    ) -> None:
+        tapped_at = at or datetime.now(timezone.utc)
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                follow_up_text = await conn.fetchval(
+                    "SELECT follow_up_text FROM partner_types WHERE slug = $1",
+                    topic,
+                )
+                if not follow_up_text:
+                    return
+
+                user_id, _ = await self._ensure_user(conn, channel, external_id, "unknown")
+                blocked = await conn.fetchval(
+                    "SELECT follow_up_blocked_at FROM users WHERE id = $1",
+                    user_id,
+                )
+                if blocked is not None:
+                    return
+
+                await conn.execute(
+                    """
+                    UPDATE users
+                    SET last_inbound_at = $2
+                    WHERE id = $1
+                    """,
+                    user_id,
+                    tapped_at,
+                )
+
+                recent_sent = await conn.fetchval(
+                    """
+                    SELECT 1
+                    FROM follow_up_jobs
+                    WHERE user_id = $1
+                      AND kind = 'partner_topic'
+                      AND status = 'sent'
+                      AND sent_at > $2
+                    LIMIT 1
+                    """,
+                    user_id,
+                    tapped_at - PARTNER_FOLLOW_UP_COOLDOWN,
+                )
+                if recent_sent is not None:
+                    await self._reschedule_win_back(conn, user_id, tapped_at)
+                    return
+
+                await conn.execute(
+                    """
+                    UPDATE follow_up_jobs
+                    SET status = 'cancelled'
+                    WHERE user_id = $1
+                      AND kind = 'partner_topic'
+                      AND status = 'pending'
+                    """,
+                    user_id,
+                )
+                await conn.execute(
+                    """
+                    INSERT INTO follow_up_jobs (user_id, kind, topic, scheduled_at)
+                    VALUES ($1, 'partner_topic', $2, $3)
+                    """,
+                    user_id,
+                    topic,
+                    tapped_at + PARTNER_FOLLOW_UP_DELAY,
+                )
+                await self._reschedule_win_back(conn, user_id, tapped_at)
+
+    async def record_inbound(
+        self,
+        channel: str,
+        external_id: str,
+        *,
+        at: datetime | None = None,
+    ) -> None:
+        inbound_at = at or datetime.now(timezone.utc)
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                user_id, _ = await self._ensure_user(conn, channel, external_id, "unknown")
+                await conn.execute(
+                    """
+                    UPDATE users
+                    SET last_inbound_at = $2
+                    WHERE id = $1
+                    """,
+                    user_id,
+                    inbound_at,
+                )
+                await conn.execute(
+                    """
+                    UPDATE follow_up_jobs
+                    SET status = 'cancelled'
+                    WHERE user_id = $1
+                      AND kind = 'partner_topic'
+                      AND status = 'pending'
+                    """,
+                    user_id,
+                )
+                await self._reschedule_win_back(conn, user_id, inbound_at)
+
+    async def _reschedule_win_back(
+        self,
+        conn: asyncpg.Connection,
+        user_id: UUID,
+        inbound_at: datetime,
+    ) -> None:
+        blocked = await conn.fetchval(
+            "SELECT follow_up_blocked_at FROM users WHERE id = $1",
+            user_id,
+        )
+        if blocked is not None:
+            return
+        already_sent = await conn.fetchval(
+            """
+            SELECT 1
+            FROM follow_up_jobs
+            WHERE user_id = $1
+              AND kind = 'win_back'
+              AND status = 'sent'
+            LIMIT 1
+            """,
+            user_id,
+        )
+        if already_sent is not None:
+            return
+        await conn.execute(
+            """
+            UPDATE follow_up_jobs
+            SET status = 'cancelled'
+            WHERE user_id = $1
+              AND kind = 'win_back'
+              AND status = 'pending'
+            """,
+            user_id,
+        )
+        await conn.execute(
+            """
+            INSERT INTO follow_up_jobs (user_id, kind, topic, scheduled_at)
+            VALUES ($1, 'win_back', NULL, $2)
+            """,
+            user_id,
+            inbound_at + WIN_BACK_DELAY,
+        )
+
+    async def claim_due_jobs(
+        self,
+        *,
+        now: datetime | None = None,
+        limit: int = 50,
+    ) -> list[DueFollowUpJob]:
+        claim_at = now or datetime.now(timezone.utc)
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                rows = await conn.fetch(
+                    """
+                    WITH due AS (
+                        SELECT j.id
+                        FROM follow_up_jobs j
+                        WHERE j.status = 'pending'
+                          AND j.scheduled_at <= $1
+                        ORDER BY
+                            CASE j.kind WHEN 'partner_topic' THEN 0 ELSE 1 END,
+                            j.scheduled_at ASC
+                        LIMIT $2
+                        FOR UPDATE OF j SKIP LOCKED
+                    )
+                    UPDATE follow_up_jobs AS j
+                    SET status = 'claimed'
+                    FROM due
+                    WHERE j.id = due.id
+                    RETURNING j.id, j.kind, j.topic, j.user_id
+                    """,
+                    claim_at,
+                    limit,
+                )
+                jobs: list[DueFollowUpJob] = []
+                for row in rows:
+                    identity = await conn.fetchrow(
+                        """
+                        SELECT channel, external_id
+                        FROM identities
+                        WHERE user_id = $1
+                        ORDER BY created_at ASC
+                        LIMIT 1
+                        """,
+                        row["user_id"],
+                    )
+                    if identity is None:
+                        continue
+                    if row["kind"] == "partner_topic":
+                        message_text = await conn.fetchval(
+                            "SELECT follow_up_text FROM partner_types WHERE slug = $1",
+                            row["topic"],
+                        )
+                        message_text = message_text or ""
+                    else:
+                        message_text = WIN_BACK_TEXT
+                    if not message_text:
+                        await conn.execute(
+                            """
+                            UPDATE follow_up_jobs
+                            SET status = 'cancelled'
+                            WHERE id = $1
+                            """,
+                            row["id"],
+                        )
+                        continue
+                    jobs.append(
+                        DueFollowUpJob(
+                            id=row["id"],
+                            kind=row["kind"],
+                            topic=row["topic"],
+                            message_text=message_text,
+                            channel=identity["channel"],
+                            external_id=identity["external_id"],
+                        )
+                    )
+                return jobs
+
+    async def mark_job_sent(
+        self,
+        job_id: UUID,
+        *,
+        message_text: str,
+        at: datetime | None = None,
+    ) -> None:
+        sent_at = at or datetime.now(timezone.utc)
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                row = await conn.fetchrow(
+                    """
+                    SELECT j.user_id, i.channel, i.external_id
+                    FROM follow_up_jobs j
+                    JOIN identities i ON i.user_id = j.user_id
+                    WHERE j.id = $1
+                    ORDER BY i.created_at ASC
+                    LIMIT 1
+                    """,
+                    job_id,
+                )
+                if row is None:
+                    raise KeyError(job_id)
+                await conn.execute(
+                    """
+                    UPDATE follow_up_jobs
+                    SET status = 'sent', sent_at = $2, last_error = NULL
+                    WHERE id = $1
+                    """,
+                    job_id,
+                    sent_at,
+                )
+                ctx = await self._get_or_create_active(
+                    conn, row["channel"], row["external_id"]
+                )
+                await conn.execute(
+                    """
+                    INSERT INTO messages (conversation_id, role, content, metadata)
+                    VALUES ($1, 'assistant', $2, '{}'::jsonb)
+                    """,
+                    ctx.conversation_id,
+                    message_text,
+                )
+
+    async def mark_job_failed(
+        self,
+        job_id: UUID,
+        *,
+        permanent: bool = False,
+        error: str | None = None,
+    ) -> None:
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                row = await conn.fetchrow(
+                    "SELECT user_id FROM follow_up_jobs WHERE id = $1",
+                    job_id,
+                )
+                if row is None:
+                    raise KeyError(job_id)
+                await conn.execute(
+                    """
+                    UPDATE follow_up_jobs
+                    SET status = 'failed', last_error = $2
+                    WHERE id = $1
+                    """,
+                    job_id,
+                    error,
+                )
+                if permanent:
+                    await conn.execute(
+                        """
+                        UPDATE users
+                        SET follow_up_blocked_at = COALESCE(follow_up_blocked_at, now())
+                        WHERE id = $1
+                        """,
+                        row["user_id"],
+                    )
+                    await conn.execute(
+                        """
+                        UPDATE follow_up_jobs
+                        SET status = 'cancelled'
+                        WHERE user_id = $1
+                          AND status = 'pending'
+                        """,
+                        row["user_id"],
+                    )
+
     async def get_user_stats(self, *, timezone: str = "Asia/Bangkok") -> UserStats:
         async with self._pool.acquire() as conn:
             total_users = await conn.fetchval("SELECT count(*) FROM users")
@@ -316,6 +685,14 @@ class SessionStore:
                 WHERE created_at >= now() - interval '7 days'
                 """
             )
+            source_rows = await conn.fetch(
+                """
+                SELECT first_source, count(*)::int AS count
+                FROM users
+                GROUP BY first_source
+                ORDER BY count DESC, first_source ASC
+                """
+            )
         return BotStats(
             total_users=user_stats.total_users,
             new_users_today=user_stats.new_users_today,
@@ -325,6 +702,7 @@ class SessionStore:
             topics_7d=topics_7d,
             leads_all_time=int(leads_all_time or 0),
             leads_7d=int(leads_7d or 0),
+            users_by_first_source={row["first_source"]: int(row["count"]) for row in source_rows},
         )
 
     async def list_partner_types(self) -> list[PartnerType]:
@@ -332,7 +710,8 @@ class SessionStore:
             rows = await conn.fetch(
                 """
                 SELECT slug, is_menu_visible, sort_order, button_label, topic_label,
-                       intro, fallback, caption_emoji, caption_cta, button_template
+                       intro, fallback, caption_emoji, caption_cta, button_template,
+                       follow_up_text
                 FROM partner_types
                 ORDER BY sort_order ASC, slug ASC
                 """
@@ -344,7 +723,8 @@ class SessionStore:
             row = await conn.fetchrow(
                 """
                 SELECT slug, is_menu_visible, sort_order, button_label, topic_label,
-                       intro, fallback, caption_emoji, caption_cta, button_template
+                       intro, fallback, caption_emoji, caption_cta, button_template,
+                       follow_up_text
                 FROM partner_types
                 WHERE slug = $1
                 """,
@@ -353,6 +733,130 @@ class SessionStore:
             if row is None:
                 return None
             return _partner_type_from_row(row)
+
+    async def create_partner_type(self, partner_type: PartnerType) -> PartnerType:
+        async with self._pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO partner_types (
+                    slug, is_menu_visible, sort_order, button_label, topic_label,
+                    intro, fallback, caption_emoji, caption_cta, button_template,
+                    follow_up_text
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                """,
+                partner_type.slug,
+                partner_type.is_menu_visible,
+                partner_type.sort_order,
+                partner_type.button_label,
+                partner_type.topic_label,
+                partner_type.intro,
+                partner_type.fallback,
+                partner_type.caption_emoji,
+                partner_type.caption_cta,
+                partner_type.button_template,
+                partner_type.follow_up_text,
+            )
+        return partner_type
+
+    async def update_partner_type(self, slug: str, partner_type: PartnerType) -> PartnerType:
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                existing = await conn.fetchrow(
+                    "SELECT slug FROM partner_types WHERE slug = $1",
+                    slug,
+                )
+                if existing is None:
+                    raise KeyError(slug)
+
+                if partner_type.slug == slug:
+                    await conn.execute(
+                        """
+                        UPDATE partner_types SET
+                            is_menu_visible = $2,
+                            sort_order = $3,
+                            button_label = $4,
+                            topic_label = $5,
+                            intro = $6,
+                            fallback = $7,
+                            caption_emoji = $8,
+                            caption_cta = $9,
+                            button_template = $10,
+                            follow_up_text = $11
+                        WHERE slug = $1
+                        """,
+                        slug,
+                        partner_type.is_menu_visible,
+                        partner_type.sort_order,
+                        partner_type.button_label,
+                        partner_type.topic_label,
+                        partner_type.intro,
+                        partner_type.fallback,
+                        partner_type.caption_emoji,
+                        partner_type.caption_cta,
+                        partner_type.button_template,
+                        partner_type.follow_up_text,
+                    )
+                    return partner_type
+
+                conflict = await conn.fetchrow(
+                    "SELECT slug FROM partner_types WHERE slug = $1",
+                    partner_type.slug,
+                )
+                if conflict is not None:
+                    raise ValueError("partner type slug already exists")
+
+                await conn.execute(
+                    """
+                    INSERT INTO partner_types (
+                        slug, is_menu_visible, sort_order, button_label, topic_label,
+                        intro, fallback, caption_emoji, caption_cta, button_template,
+                        follow_up_text
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    """,
+                    partner_type.slug,
+                    partner_type.is_menu_visible,
+                    partner_type.sort_order,
+                    partner_type.button_label,
+                    partner_type.topic_label,
+                    partner_type.intro,
+                    partner_type.fallback,
+                    partner_type.caption_emoji,
+                    partner_type.caption_cta,
+                    partner_type.button_template,
+                    partner_type.follow_up_text,
+                )
+                await conn.execute(
+                    "UPDATE partners SET type = $1 WHERE type = $2",
+                    partner_type.slug,
+                    slug,
+                )
+                await conn.execute("DELETE FROM partner_types WHERE slug = $1", slug)
+                return partner_type
+
+    async def list_partners(self) -> list[Partner]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, name, type, referral_url, blurb, logo_path, is_active, sort_order
+                FROM partners
+                ORDER BY type ASC, sort_order ASC, name ASC
+                """
+            )
+            return [
+                Partner(
+                    id=row["id"],
+                    name=row["name"],
+                    type=row["type"],
+                    referral_url=row["referral_url"],
+                    blurb=row["blurb"],
+                    sort_order=row["sort_order"],
+                    logo_path=row["logo_path"],
+                    is_active=row["is_active"],
+                )
+                for row in rows
+            ]
 
     async def list_active_partners(self, partner_type: str) -> list[Partner]:
         async with self._pool.acquire() as conn:
@@ -377,6 +881,87 @@ class SessionStore:
                 )
                 for row in rows
             ]
+
+    async def create_partner(
+        self,
+        *,
+        name: str,
+        type: str,
+        referral_url: str,
+        blurb: str = "",
+        is_active: bool = True,
+        sort_order: int = 0,
+    ) -> Partner:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                INSERT INTO partners (name, type, referral_url, blurb, logo_path, is_active, sort_order)
+                VALUES ($1, $2, $3, $4, '', $5, $6)
+                RETURNING id, name, type, referral_url, blurb, logo_path, is_active, sort_order
+                """,
+                name,
+                type,
+                referral_url,
+                blurb,
+                is_active,
+                sort_order,
+            )
+        return Partner(
+            id=row["id"],
+            name=row["name"],
+            type=row["type"],
+            referral_url=row["referral_url"],
+            blurb=row["blurb"],
+            sort_order=row["sort_order"],
+            logo_path=row["logo_path"],
+            is_active=row["is_active"],
+        )
+
+    async def update_partner(
+        self,
+        partner_id: UUID,
+        *,
+        name: str,
+        type: str,
+        referral_url: str,
+        blurb: str = "",
+        is_active: bool = True,
+        sort_order: int = 0,
+    ) -> Partner:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE partners SET
+                    name = $2,
+                    type = $3,
+                    referral_url = $4,
+                    blurb = $5,
+                    logo_path = '',
+                    is_active = $6,
+                    sort_order = $7
+                WHERE id = $1
+                RETURNING id, name, type, referral_url, blurb, logo_path, is_active, sort_order
+                """,
+                partner_id,
+                name,
+                type,
+                referral_url,
+                blurb,
+                is_active,
+                sort_order,
+            )
+        if row is None:
+            raise KeyError(partner_id)
+        return Partner(
+            id=row["id"],
+            name=row["name"],
+            type=row["type"],
+            referral_url=row["referral_url"],
+            blurb=row["blurb"],
+            sort_order=row["sort_order"],
+            logo_path=row["logo_path"],
+            is_active=row["is_active"],
+        )
 
     async def _fetch_topic_counts(
         self,

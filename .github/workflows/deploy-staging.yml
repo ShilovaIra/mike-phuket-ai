@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy to staging Droplet
+    name: Deploy bot + admin panel to staging
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
@@ -24,5 +24,32 @@ jobs:
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
           script_stop: true
           script: |
+            set -euo pipefail
             cd /opt/mike-phuket-ai
             ./mike-ai-bot-hkt/scripts/deploy_staging.sh
+
+      - name: Verify admin panel responds on Droplet
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            ADMIN_WEB_PORT="${ADMIN_WEB_PORT:-8080}"
+            code=""
+            for _ in $(seq 1 45); do
+              if curl -fsS "http://127.0.0.1:${ADMIN_WEB_PORT}/" >/dev/null 2>&1; then
+                code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${ADMIN_WEB_PORT}/api/stats" || true)"
+                if [[ "$code" == "401" ]]; then
+                  break
+                fi
+              fi
+              sleep 2
+            done
+            test "$code" = "401"
+            cd /opt/mike-phuket-ai/mike-ai-bot-hkt
+            docker compose ps
+            echo "Admin panel healthy on :${ADMIN_WEB_PORT}"

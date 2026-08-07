@@ -30,6 +30,7 @@ requires_db = pytest.mark.skipif(
 
 TRUNCATE_SQL = """
 TRUNCATE TABLE
+    follow_up_jobs,
     webhook_events,
     leads,
     topic_events,
@@ -37,8 +38,14 @@ TRUNCATE TABLE
     conversations,
     identities,
     users,
-    partners
+    partners,
+    admin_users
 RESTART IDENTITY CASCADE
+"""
+
+RESET_PARTNER_TYPES_SQL = """
+DELETE FROM partner_types
+WHERE slug NOT IN ('money_exchange', 'vehicle_rental', 'excursions')
 """
 
 
@@ -48,6 +55,9 @@ async def store() -> SessionStore:
     assert url is not None
     pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
     async with pool.acquire() as conn:
+        await apply_schema(conn)
+        await conn.execute(TRUNCATE_SQL)
+        await conn.execute(RESET_PARTNER_TYPES_SQL)
         await apply_schema(conn)
         await conn.execute(TRUNCATE_SQL)
 

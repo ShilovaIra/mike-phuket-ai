@@ -9,6 +9,7 @@ set -euo pipefail
 STAGING_BRANCH="staging"
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_ROOT="$(cd "$APP_DIR/.." && pwd)"
+ADMIN_WEB_PORT="${ADMIN_WEB_PORT:-8080}"
 
 cd "$REPO_ROOT"
 
@@ -31,9 +32,42 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-echo "→ Building and starting containers"
+if ! grep -qE '^ADMIN_JWT_SECRET=.+' .env; then
+  echo "Missing ADMIN_JWT_SECRET in .env — admin-api will not start."
+  echo "Add a long random value, e.g.:"
+  echo "  ADMIN_JWT_SECRET=\$(openssl rand -hex 32)"
+  exit 1
+fi
+
+echo "→ Building and starting containers (bot, admin-api, admin-web, db)"
 docker compose up -d --build
+
+echo "→ Waiting for admin panel"
+stats_code=""
+for _ in $(seq 1 45); do
+  if curl -fsS "http://127.0.0.1:${ADMIN_WEB_PORT}/" >/dev/null 2>&1; then
+    stats_code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${ADMIN_WEB_PORT}/api/stats" || true)"
+    if [[ "$stats_code" == "401" ]]; then
+      break
+    fi
+  fi
+  sleep 2
+done
+
+echo "→ Health checks"
+curl -fsS "http://127.0.0.1:${ADMIN_WEB_PORT}/" >/dev/null
+# Unauthenticated stats must reject (proves API proxy is up).
+stats_code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${ADMIN_WEB_PORT}/api/stats" || true)"
+if [[ "$stats_code" != "401" ]]; then
+  echo "Expected /api/stats → 401, got ${stats_code}"
+  docker compose logs --tail=80 admin-api admin-web
+  exit 1
+fi
 
 echo "→ Branch: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
 docker compose ps
-echo "Done. Logs: docker compose logs -f bot"
+echo "Done."
+echo "  Bot logs:        docker compose logs -f bot"
+echo "  Admin API logs:  docker compose logs -f admin-api"
+echo "  Admin UI:        http://<droplet-ip>:${ADMIN_WEB_PORT}/"
+echo "  Create admin:    docker compose run --rm bot python scripts/create_admin_user.py --email you@example.com --password '…'"

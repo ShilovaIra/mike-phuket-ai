@@ -26,5 +26,45 @@ services:
       # Bot builds DATABASE_URL from POSTGRES_* + this host (URL-encodes passwords).
       POSTGRES_HOST: db
 
+  admin-api:
+    build: .
+    restart: unless-stopped
+    command: ["python", "-m", "admin_api"]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
+      ADMIN_API_HOST: 0.0.0.0
+      ADMIN_API_PORT: "8000"
+      # UI is same-origin via admin-web nginx proxy.
+      ADMIN_CORS_ORIGINS: ${ADMIN_CORS_ORIGINS:-}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.error,urllib.request as u\ntry:\n u.urlopen('http://127.0.0.1:8000/api/stats')\nexcept urllib.error.HTTPError as e:\n raise SystemExit(0 if e.code==401 else 1)\nexcept Exception:\n raise SystemExit(1)",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  admin-web:
+    build:
+      context: ../mike-ai-bot-hkt-admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+    restart: unless-stopped
+    depends_on:
+      admin-api:
+        condition: service_healthy
+    ports:
+      - "${ADMIN_WEB_PORT:-8080}:80"
+
 volumes:
   postgres_data:

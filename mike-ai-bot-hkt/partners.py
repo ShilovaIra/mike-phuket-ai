@@ -22,6 +22,7 @@ class PartnerType:
     caption_emoji: str
     caption_cta: str
     button_template: str
+    follow_up_text: str = ""
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class Partner:
     blurb: str | None
     sort_order: int
     logo_path: str | None = None
+    is_active: bool = True
 
 
 @dataclass(frozen=True)
