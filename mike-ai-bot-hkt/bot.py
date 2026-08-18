@@ -20,7 +20,14 @@ from telegram import (
     ReplyKeyboardMarkup,
     Update,
 )
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import (
+    Application,
+    ChatMemberHandler,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 from telegram.error import Forbidden, TelegramError
 
 from db.store import SessionStore
@@ -37,6 +44,7 @@ from buttons import (
 )
 from stats_report import format_bot_stats
 from topics import TOPIC_NEARBY
+from tgtrack import TgTrack
 
 load_dotenv()
 
@@ -54,6 +62,7 @@ def parse_admin_ids(raw: str | None) -> frozenset[str]:
 
 
 ADMIN_IDS = parse_admin_ids(os.getenv("ADMIN_CHAT_ID"))
+tgtrack = TgTrack(os.getenv("TGTRACK_API_KEY"))
 
 CHANNEL = "telegram"
 
@@ -138,7 +147,12 @@ def get_location_name(lat, lon):
         return "район не определён", f"Ошибка определения адреса: {e}"
 
 
+def schedule_tgtrack(update: Update) -> None:
+    asyncio.create_task(tgtrack.notify(update.to_dict()))
+
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    schedule_tgtrack(update)
     source = context.args[0] if context.args else "unknown"
     tid = telegram_id(update)
     await store.start_conversation(CHANNEL, tid, source=source)
@@ -149,6 +163,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Могу помочь с пляжами, ресторанами, маршрутами, районами и недвижимостью.",
         reply_markup=await build_reply_markup(),
     )
+
+
+async def on_my_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    schedule_tgtrack(update)
 
 
 async def myid(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -425,13 +443,16 @@ async def main():
     app.add_handler(CommandHandler("myid", myid))
     app.add_handler(CommandHandler("stats", stats))
 
+    app.add_handler(
+        ChatMemberHandler(on_my_chat_member, ChatMemberHandler.MY_CHAT_MEMBER)
+    )
     app.add_handler(MessageHandler(filters.LOCATION, handle_location))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Mike Phuket AI запущен...")
     await app.initialize()
     await app.start()
-    await app.updater.start_polling()
+    await app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
 
     print("Бот работает. Не закрывай это окно.")
 
