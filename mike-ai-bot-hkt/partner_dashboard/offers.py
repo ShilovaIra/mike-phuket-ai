@@ -27,6 +27,13 @@ async def wrap_offer_for_user(
     return f"/r/{token}"
 
 
+def _http_public_base(public_base: str) -> str | None:
+    base = public_base.strip().rstrip("/")
+    if base.startswith("http://") or base.startswith("https://"):
+        return base
+    return None
+
+
 async def wrap_partners_for_user(
     pool: asyncpg.Pool,
     partners: Sequence[Partner],
@@ -34,7 +41,11 @@ async def wrap_partners_for_user(
     *,
     public_base: str,
 ) -> list[Partner]:
-    base = public_base.rstrip("/")
+    base = _http_public_base(public_base)
+    if base is None:
+        # Telegram url buttons require http(s). Empty PARTNER_OFFER_BASE_URL
+        # would produce "/r/…" and the API drops every card after the intro.
+        return list(partners)
     wrapped: list[Partner] = []
     for partner in partners:
         path = await wrap_offer_for_user(pool, partner=partner, user_id=user_id)
