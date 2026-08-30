@@ -20,9 +20,24 @@ if [[ "$current" != "$STAGING_BRANCH" ]]; then
   exit 1
 fi
 
-echo "→ Fetching origin/$STAGING_BRANCH"
-git fetch origin "$STAGING_BRANCH"
-git pull --ff-only origin "$STAGING_BRANCH"
+if [[ "${SKIP_GIT_PULL:-}" != "1" ]]; then
+  echo "→ Fetching origin/$STAGING_BRANCH"
+  pulled=0
+  for attempt in 1 2 3 4 5 6; do
+    if timeout 25 git fetch origin "$STAGING_BRANCH"; then
+      git merge --ff-only "origin/$STAGING_BRANCH"
+      pulled=1
+      break
+    fi
+    echo "git fetch failed (attempt ${attempt}/6); retrying in 15s"
+    sleep 15
+  done
+  if [[ "$pulled" != 1 ]]; then
+    echo "Could not fetch origin/${STAGING_BRANCH} (DNS?)."
+    echo "On the Droplet: getent hosts github.com && systemctl restart systemd-resolved"
+    exit 1
+  fi
+fi
 
 cd "$APP_DIR"
 
@@ -39,8 +54,14 @@ if ! grep -qE '^ADMIN_JWT_SECRET=.+' .env; then
   exit 1
 fi
 
-echo "→ Building and starting containers (bot, admin-api, admin-web, partner-web, db)"
-docker compose up -d --build
+# One image at a time: pip + two npm builds in parallel OOMs a 1 GB Droplet
+# and takes down systemd-resolved ("Temporary failure in name resolution").
+echo "→ Building images (bot, admin-web, partner-web)"
+docker compose build bot
+docker compose build admin-web
+docker compose build partner-web
+echo "→ Starting containers"
+docker compose up -d
 
 echo "→ Waiting for admin panel"
 stats_code=""

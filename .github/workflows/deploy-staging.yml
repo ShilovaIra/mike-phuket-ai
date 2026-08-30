@@ -24,11 +24,26 @@ jobs:
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
           # Default is 10m; compose --build of bot/admin/partner images on the Droplet exceeds that.
           command_timeout: 30m
-          script_stop: true
           script: |
             set -euo pipefail
             cd /opt/mike-phuket-ai
-            ./mike-ai-bot-hkt/scripts/deploy_staging.sh
+            echo "→ Fetching origin/staging"
+            pulled=0
+            for attempt in 1 2 3 4 5 6; do
+              if timeout 25 git fetch origin staging; then
+                git merge --ff-only origin/staging
+                pulled=1
+                break
+              fi
+              echo "git fetch failed (attempt ${attempt}/6); retrying in 15s"
+              sleep 15
+            done
+            if [[ "$pulled" != 1 ]]; then
+              echo "Droplet cannot resolve github.com (DNS)."
+              echo "SSH in: getent hosts github.com && systemctl restart systemd-resolved"
+              exit 1
+            fi
+            SKIP_GIT_PULL=1 ./mike-ai-bot-hkt/scripts/deploy_staging.sh
 
       - name: Verify admin panel responds on Droplet
         uses: appleboy/ssh-action@v1.2.5
@@ -37,7 +52,6 @@ jobs:
           username: ${{ secrets.STAGING_SSH_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
-          script_stop: true
           script: |
             set -euo pipefail
             ADMIN_WEB_PORT="${ADMIN_WEB_PORT:-8080}"
