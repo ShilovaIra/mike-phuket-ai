@@ -23,6 +23,10 @@ def test_ssh_deploy_copies_the_tree_from_the_runner():
     assert "actions/checkout@v4" in text
     assert "appleboy/scp-action@" in text
     assert "mike-phuket-ai.tgz" in text
+    assert "RUNNER_TEMP" in text, (
+        "Write the tarball outside the tree. tar czf ./archive . exits 1 with "
+        "'file changed as we read it'."
+    )
     assert "SKIP_GIT_PULL=1" in text
     assert "script_stop" not in text, (
         "appleboy/ssh-action v1.2.5 has no script_stop input; set -e in the script is enough"

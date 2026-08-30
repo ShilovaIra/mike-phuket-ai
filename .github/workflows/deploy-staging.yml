@@ -19,7 +19,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Pack application tree
-        run: tar czf mike-phuket-ai.tgz --exclude .git --exclude .github --exclude ./mike-phuket-ai.tgz .
+        run: |
+          tar czf "$RUNNER_TEMP/mike-phuket-ai.tgz" --exclude .git --exclude .github .
+          cp "$RUNNER_TEMP/mike-phuket-ai.tgz" mike-phuket-ai.tgz
 
       - name: Copy pack to Droplet
         uses: appleboy/scp-action@v1.0.0
