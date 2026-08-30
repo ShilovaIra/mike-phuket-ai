@@ -34,7 +34,10 @@ jobs:
             mike-phuket-admin-web:local \
             mike-phuket-partner-web:local \
             | gzip -1 > "$RUNNER_TEMP/mike-phuket-images.tgz"
-          cp "$RUNNER_TEMP/mike-phuket-images.tgz" mike-phuket-images.tgz
+          cp "$RUNNER_TEMP/mike-phuket-images.tgz" "$GITHUB_WORKSPACE/mike-phuket-images.tgz"
+
+      - name: Confirm packs are in the workspace root
+        run: ls -lh mike-phuket-ai.tgz mike-phuket-images.tgz
 
       - name: Prepare upload directory on Droplet
         uses: appleboy/ssh-action@v1.2.5
@@ -71,6 +74,7 @@ jobs:
           command_timeout: 20m
           script: |
             set -euo pipefail
+            ls -lh /opt/mike-phuket-incoming
             tar xzf /opt/mike-phuket-incoming/mike-phuket-ai.tgz -C /opt/mike-phuket-ai
             gunzip -c /opt/mike-phuket-incoming/mike-phuket-images.tgz | docker load
             SKIP_GIT_PULL=1 SKIP_IMAGE_BUILD=1 /opt/mike-phuket-ai/mike-ai-bot-hkt/scripts/deploy_staging.sh

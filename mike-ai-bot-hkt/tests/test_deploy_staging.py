@@ -31,6 +31,10 @@ def test_ssh_deploy_copies_the_tree_from_the_runner():
     assert "docker load" in text
     assert "SKIP_GIT_PULL=1" in text
     assert "SKIP_IMAGE_BUILD=1" in text
+    assert "GITHUB_WORKSPACE/mike-phuket-images.tgz" in text, (
+        "working-directory is mike-ai-bot-hkt; a relative cp hides the images "
+        "tarball from scp-action (source is workspace root)"
+    )
     assert "target: /opt/mike-phuket-incoming" in text
     assert "target: /tmp" not in text, (
         "/tmp is sticky: leftover mike-phuket-ai.tgz cannot be overwritten "
