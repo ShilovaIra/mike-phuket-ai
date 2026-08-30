@@ -30,3 +30,19 @@ test('admin creates a partner user with access to a partner', async () => {
   expect(await screen.findByText('shop@example.com')).toBeInTheDocument()
   expect(screen.getByText('shop@example.com').closest('tr')).toHaveTextContent('Money Shop')
 })
+
+test('create partner user requires at least one partner', async () => {
+  const user = userEvent.setup()
+  await renderAuthed('/partner-users')
+  await user.click(await screen.findByRole('button', { name: /добавить пользователя/i }))
+
+  const dialog = await screen.findByRole('dialog')
+  await user.type(within(dialog).getByLabelText(/^email$/i), 'shop@example.com')
+  await user.type(within(dialog).getByLabelText(/^пароль$/i), 'shop-secret')
+  await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
+
+  expect(within(dialog).getByRole('alert')).toHaveTextContent(
+    'Выберите хотя бы одного партнёра',
+  )
+  expect(screen.getByRole('dialog')).toBeInTheDocument()
+})

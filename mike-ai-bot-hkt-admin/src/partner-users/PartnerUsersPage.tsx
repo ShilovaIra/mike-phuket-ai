@@ -99,6 +99,10 @@ function CreatePartnerUserModal({
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
+    if (selected.length === 0) {
+      setError('Выберите хотя бы одного партнёра')
+      return
+    }
     try {
       await partnerUsersApi.create({ email, password, partner_ids: selected })
       onSaved()
@@ -141,24 +145,30 @@ function CreatePartnerUserModal({
               required
             />
           </label>
-          <fieldset className="flex flex-col gap-2 text-sm">
-            <legend>Партнёры</legend>
-            {partners.map((partner) => (
-              <label key={partner.id} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(partner.id)}
-                  onChange={(e) => {
-                    setSelected((prev) =>
-                      e.target.checked
-                        ? [...prev, partner.id]
-                        : prev.filter((id) => id !== partner.id),
-                    )
-                  }}
-                />
-                {partner.name}
-              </label>
-            ))}
+          <fieldset className="text-sm">
+            <legend className="mb-2">Партнёры</legend>
+            {partners.length === 0 ? (
+              <p>Нет партнёров. Сначала добавьте их в разделе «Партнёры».</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {partners.map((partner) => (
+                  <label key={partner.id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(partner.id)}
+                      onChange={(e) => {
+                        setSelected((prev) =>
+                          e.target.checked
+                            ? [...prev, partner.id]
+                            : prev.filter((id) => id !== partner.id),
+                        )
+                      }}
+                    />
+                    {partner.name}
+                  </label>
+                ))}
+              </div>
+            )}
           </fieldset>
           {error ? <p role="alert">{error}</p> : null}
           <div className="flex gap-3">
