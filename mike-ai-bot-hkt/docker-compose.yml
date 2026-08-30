@@ -66,5 +66,18 @@ services:
     ports:
       - "${ADMIN_WEB_PORT:-8080}:80"
 
+  partner-web:
+    build:
+      context: ../mike-ai-bot-hkt-partner
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+    restart: unless-stopped
+    depends_on:
+      admin-api:
+        condition: service_healthy
+    ports:
+      - "${PARTNER_WEB_PORT:-8081}:80"
+
 volumes:
   postgres_data:

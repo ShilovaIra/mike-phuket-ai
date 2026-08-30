@@ -93,6 +93,7 @@ test('authenticated shell shows sidebar nav without partner types link', async (
   expect(nav.className).toMatch(/flex-col/)
   expect(within(nav).getByRole('link', { name: /статистика/i })).toBeInTheDocument()
   expect(within(nav).getByRole('link', { name: /партнёры/i })).toBeInTheDocument()
+  expect(within(nav).getByRole('link', { name: /пользователи партнёров/i })).toBeInTheDocument()
   expect(within(nav).queryByRole('link', { name: /типы партнёров/i })).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: /выйти/i })).toBeInTheDocument()
 })

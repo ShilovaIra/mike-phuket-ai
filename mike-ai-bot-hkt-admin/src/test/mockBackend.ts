@@ -106,6 +106,7 @@ const seedPartners: Partner[] = [
 
 let types = structuredClone(seedTypes)
 let partners = structuredClone(seedPartners)
+let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -117,6 +118,7 @@ function json(data: unknown, status = 200): Response {
 export function resetMockBackend(): void {
   types = structuredClone(seedTypes)
   partners = structuredClone(seedPartners)
+  partnerUsers = []
 }
 
 export function installFetchMock(): void {
@@ -203,6 +205,28 @@ export function installFetchMock(): void {
       if (index < 0) return json({ detail: 'not found' }, 404)
       partners[index] = { ...partners[index], ...body, logo_path: '' }
       return json(partners[index])
+    }
+
+    if (path === '/api/partner-users' && method === 'GET') {
+      return json([...partnerUsers])
+    }
+
+    if (path === '/api/partner-users' && method === 'POST') {
+      const selected = partners.filter((p) => (body.partner_ids as string[]).includes(p.id))
+      const row = {
+        id: crypto.randomUUID(),
+        email: body.email as string,
+        partners: selected.map((p) => ({ id: p.id, name: p.name })),
+      }
+      partnerUsers.push(row)
+      return json(row, 201)
+    }
+
+    const partnerUserMatch = path.match(/^\/api\/partner-users\/([^/]+)$/)
+    if (partnerUserMatch && method === 'DELETE') {
+      const id = decodeURIComponent(partnerUserMatch[1])
+      partnerUsers = partnerUsers.filter((u) => u.id !== id)
+      return new Response(null, { status: 204 })
     }
 
     return json({ detail: `unmocked ${method} ${path}` }, 404)

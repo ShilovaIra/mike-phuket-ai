@@ -109,6 +109,10 @@ class SessionStore:
     async def close(self) -> None:
         await self._pool.close()
 
+    @property
+    def pool(self) -> asyncpg.Pool:
+        return self._pool
+
     async def create_admin_user(self, *, email: str, password: str) -> AdminUser:
         from admin_api.passwords import hash_password
 

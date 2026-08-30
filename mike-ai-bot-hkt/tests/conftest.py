@@ -38,6 +38,10 @@ TRUNCATE TABLE
     conversations,
     identities,
     users,
+    partner_referral_clicks,
+    partner_views,
+    partner_access,
+    partner_users,
     partners,
     admin_users
 RESTART IDENTITY CASCADE
