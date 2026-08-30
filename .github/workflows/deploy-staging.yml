@@ -22,6 +22,8 @@ jobs:
           username: ${{ secrets.STAGING_SSH_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
+          # Default is 10m; compose --build of bot/admin/partner images on the Droplet exceeds that.
+          command_timeout: 30m
           script_stop: true
           script: |
             set -euo pipefail

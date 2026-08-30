@@ -39,7 +39,7 @@ if ! grep -qE '^ADMIN_JWT_SECRET=.+' .env; then
   exit 1
 fi
 
-echo "→ Building and starting containers (bot, admin-api, admin-web, db)"
+echo "→ Building and starting containers (bot, admin-api, admin-web, partner-web, db)"
 docker compose up -d --build
 
 echo "→ Waiting for admin panel"

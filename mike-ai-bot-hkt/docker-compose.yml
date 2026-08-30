@@ -17,6 +17,7 @@ services:
 
   bot:
     build: .
+    image: mike-phuket-app:local
     restart: unless-stopped
     depends_on:
       db:
@@ -28,6 +29,7 @@ services:
 
   admin-api:
     build: .
+    image: mike-phuket-app:local
     restart: unless-stopped
     command: ["python", "-m", "admin_api"]
     depends_on:
