@@ -36,6 +36,19 @@ jobs:
             | gzip -1 > "$RUNNER_TEMP/mike-phuket-images.tgz"
           cp "$RUNNER_TEMP/mike-phuket-images.tgz" mike-phuket-images.tgz
 
+      - name: Prepare upload directory on Droplet
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT || 22 }}
+          script: |
+            set -euo pipefail
+            mkdir -p /opt/mike-phuket-incoming
+            rm -f /opt/mike-phuket-incoming/*.tgz
+            rm -f /tmp/mike-phuket-ai.tgz /tmp/mike-phuket-images.tgz || true
+
       - name: Copy pack to Droplet
         uses: appleboy/scp-action@v1.0.0
         with:
@@ -44,7 +57,7 @@ jobs:
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
           source: mike-phuket-ai.tgz,mike-phuket-images.tgz
-          target: /tmp
+          target: /opt/mike-phuket-incoming
           overwrite: true
           command_timeout: 15m
 
@@ -58,8 +71,8 @@ jobs:
           command_timeout: 20m
           script: |
             set -euo pipefail
-            tar xzf /tmp/mike-phuket-ai.tgz -C /opt/mike-phuket-ai
-            gunzip -c /tmp/mike-phuket-images.tgz | docker load
+            tar xzf /opt/mike-phuket-incoming/mike-phuket-ai.tgz -C /opt/mike-phuket-ai
+            gunzip -c /opt/mike-phuket-incoming/mike-phuket-images.tgz | docker load
             SKIP_GIT_PULL=1 SKIP_IMAGE_BUILD=1 /opt/mike-phuket-ai/mike-ai-bot-hkt/scripts/deploy_staging.sh
 
       - name: Verify admin panel responds on Droplet

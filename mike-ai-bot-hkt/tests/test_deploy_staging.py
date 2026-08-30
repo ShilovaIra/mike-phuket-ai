@@ -31,6 +31,11 @@ def test_ssh_deploy_copies_the_tree_from_the_runner():
     assert "docker load" in text
     assert "SKIP_GIT_PULL=1" in text
     assert "SKIP_IMAGE_BUILD=1" in text
+    assert "target: /opt/mike-phuket-incoming" in text
+    assert "target: /tmp" not in text, (
+        "/tmp is sticky: leftover mike-phuket-ai.tgz cannot be overwritten "
+        "(tar: Cannot open: Permission denied)"
+    )
     assert "script_stop" not in text, (
         "appleboy/ssh-action v1.2.5 has no script_stop input; set -e in the script is enough"
     )
