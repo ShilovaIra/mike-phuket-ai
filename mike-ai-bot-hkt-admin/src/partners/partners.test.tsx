@@ -32,9 +32,12 @@ test('admin creates a partner in a modal', async () => {
 
   const dialog = await screen.findByRole('dialog')
   expect(within(dialog).queryByLabelText(/logo|лого/i)).not.toBeInTheDocument()
+  expect(within(dialog).getByRole('radio', { name: /обмен/i })).toBeInTheDocument()
+  expect(within(dialog).getByRole('radio', { name: /аренда транспорта/i })).toBeInTheDocument()
+  expect(within(dialog).getByRole('radio', { name: /экскурсии/i })).toBeInTheDocument()
 
   await user.type(within(dialog).getByLabelText(/^имя$/i), 'Test Dive')
-  await user.selectOptions(within(dialog).getByLabelText(/^тип$/i), 'excursions')
+  await user.click(within(dialog).getByRole('radio', { name: /экскурсии/i }))
   await user.type(within(dialog).getByLabelText(/referral/i), 'https://example.com/dive')
   await user.type(within(dialog).getByLabelText(/описание/i), 'Дайвинг-партнёр')
   await user.clear(within(dialog).getByLabelText(/порядок/i))

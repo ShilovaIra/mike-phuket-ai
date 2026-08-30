@@ -110,21 +110,28 @@ export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
                 required
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm">
-              Тип
-              <select
-                value={form.type}
-                onChange={(e) => setField('type', e.target.value)}
-                className="rounded border border-slate-300 bg-white px-3 py-2"
-                required
-              >
-                {typeOptions.map((type) => (
-                  <option key={type.slug} value={type.slug}>
-                    {type.topic_label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <fieldset className="text-sm">
+              <legend className="mb-2">Тип</legend>
+              {typeOptions.length === 0 ? (
+                <p role="alert">Нет типов партнёров. Обновите страницу и попробуйте снова.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {typeOptions.map((type) => (
+                    <label key={type.slug} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="partner-type"
+                        value={type.slug}
+                        checked={form.type === type.slug}
+                        onChange={() => setField('type', type.slug)}
+                        required
+                      />
+                      {type.topic_label}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </fieldset>
             <label className="flex flex-col gap-1 text-sm">
               Referral URL
               <input
