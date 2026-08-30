@@ -11,6 +11,33 @@ APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_ROOT="$(cd "$APP_DIR/.." && pwd)"
 ADMIN_WEB_PORT="${ADMIN_WEB_PORT:-8080}"
 
+cd "$APP_DIR"
+
+echo "→ Stopping leftover containers"
+docker compose stop || true
+
+if [[ "$(id -u)" -eq 0 ]]; then
+  if [[ -z "$(swapon --show 2>/dev/null || true)" ]]; then
+    echo "→ Adding 1G swap so image builds do not OOM systemd-resolved"
+    if [[ ! -f /swapfile ]]; then
+      fallocate -l 1G /swapfile
+      chmod 600 /swapfile
+      mkswap /swapfile
+    fi
+    swapon /swapfile || true
+  fi
+  echo "→ Repairing DNS"
+  systemctl restart systemd-resolved 2>/dev/null || true
+  sleep 2
+  if ! getent hosts registry-1.docker.io >/dev/null 2>&1; then
+    echo "Docker Hub still does not resolve; writing public nameservers"
+    if [[ -L /etc/resolv.conf ]]; then
+      rm -f /etc/resolv.conf
+    fi
+    printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' >/etc/resolv.conf
+  fi
+fi
+
 cd "$REPO_ROOT"
 
 current="$(git rev-parse --abbrev-ref HEAD)"

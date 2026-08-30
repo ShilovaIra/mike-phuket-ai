@@ -15,6 +15,24 @@ jobs:
     name: Deploy bot + admin panel to staging
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout staging
+        uses: actions/checkout@v4
+
+      - name: Pack application tree
+        run: tar czf mike-phuket-ai.tgz --exclude .git --exclude .github --exclude ./mike-phuket-ai.tgz .
+
+      - name: Copy pack to Droplet
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT || 22 }}
+          source: mike-phuket-ai.tgz
+          target: /tmp
+          overwrite: true
+          command_timeout: 5m
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.5
         with:
@@ -22,28 +40,12 @@ jobs:
           username: ${{ secrets.STAGING_SSH_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
-          # Default is 10m; compose --build of bot/admin/partner images on the Droplet exceeds that.
+          # Sequential image builds on a 1 GB Droplet need more than the 10m default.
           command_timeout: 30m
           script: |
             set -euo pipefail
-            cd /opt/mike-phuket-ai
-            echo "→ Fetching origin/staging"
-            pulled=0
-            for attempt in 1 2 3 4 5 6; do
-              if timeout 25 git fetch origin staging; then
-                git merge --ff-only origin/staging
-                pulled=1
-                break
-              fi
-              echo "git fetch failed (attempt ${attempt}/6); retrying in 15s"
-              sleep 15
-            done
-            if [[ "$pulled" != 1 ]]; then
-              echo "Droplet cannot resolve github.com (DNS)."
-              echo "SSH in: getent hosts github.com && systemctl restart systemd-resolved"
-              exit 1
-            fi
-            SKIP_GIT_PULL=1 ./mike-ai-bot-hkt/scripts/deploy_staging.sh
+            tar xzf /tmp/mike-phuket-ai.tgz -C /opt/mike-phuket-ai
+            SKIP_GIT_PULL=1 /opt/mike-phuket-ai/mike-ai-bot-hkt/scripts/deploy_staging.sh
 
       - name: Verify admin panel responds on Droplet
         uses: appleboy/ssh-action@v1.2.5

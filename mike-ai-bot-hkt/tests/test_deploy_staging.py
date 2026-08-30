@@ -10,21 +10,30 @@ WORKFLOW = REPO / ".github/workflows/deploy-staging.yml"
 
 def test_ssh_deploy_timeout_allows_full_compose_build():
     text = WORKFLOW.read_text()
-    match = re.search(r"command_timeout:\s*(\d+)m", text)
-    assert match, (
+    timeouts = [int(m) for m in re.findall(r"command_timeout:\s*(\d+)m", text)]
+    assert timeouts, (
         "Set appleboy/ssh-action command_timeout (default is 10m). "
         "Staging compose --build exceeds that and fails with Run Command Timeout."
     )
-    assert int(match.group(1)) >= 20
+    assert max(timeouts) >= 20
 
 
-def test_ssh_deploy_retries_git_fetch_before_running_droplet_script():
+def test_ssh_deploy_copies_the_tree_from_the_runner():
     text = WORKFLOW.read_text()
-    assert "timeout 25 git fetch origin staging" in text
-    assert "retrying in 15s" in text
+    assert "actions/checkout@v4" in text
+    assert "appleboy/scp-action@" in text
+    assert "mike-phuket-ai.tgz" in text
+    assert "SKIP_GIT_PULL=1" in text
     assert "script_stop" not in text, (
         "appleboy/ssh-action v1.2.5 has no script_stop input; set -e in the script is enough"
     )
+
+
+def test_deploy_script_repairs_dns_before_image_builds():
+    script = (ROOT / "scripts" / "deploy_staging.sh").read_text()
+    assert "swapon" in script
+    assert "systemd-resolved" in script
+    assert "registry-1.docker.io" in script
 
 
 def test_deploy_script_builds_images_one_at_a_time():
