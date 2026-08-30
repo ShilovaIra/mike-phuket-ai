@@ -61,6 +61,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ""
+    image: mike-phuket-admin-web:local
     restart: unless-stopped
     depends_on:
       admin-api:
@@ -74,6 +75,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ""
+    image: mike-phuket-partner-web:local
     restart: unless-stopped
     depends_on:
       admin-api:

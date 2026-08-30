@@ -81,12 +81,14 @@ if ! grep -qE '^ADMIN_JWT_SECRET=.+' .env; then
   exit 1
 fi
 
-# One image at a time: pip + two npm builds in parallel OOMs a 1 GB Droplet
-# and takes down systemd-resolved ("Temporary failure in name resolution").
-echo "→ Building images (bot, admin-web, partner-web)"
-docker compose build bot
-docker compose build admin-web
-docker compose build partner-web
+if [[ "${SKIP_IMAGE_BUILD:-}" != "1" ]]; then
+  # One image at a time: pip + two npm builds in parallel OOMs a 1 GB Droplet
+  # and takes down systemd-resolved ("Temporary failure in name resolution").
+  echo "→ Building images (bot, admin-web, partner-web)"
+  docker compose build bot
+  docker compose build admin-web
+  docker compose build partner-web
+fi
 echo "→ Starting containers"
 docker compose up -d
 

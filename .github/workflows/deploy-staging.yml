@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: deploy-staging
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -23,6 +23,19 @@ jobs:
           tar czf "$RUNNER_TEMP/mike-phuket-ai.tgz" --exclude .git --exclude .github .
           cp "$RUNNER_TEMP/mike-phuket-ai.tgz" mike-phuket-ai.tgz
 
+      - name: Build images on the runner
+        working-directory: mike-ai-bot-hkt
+        env:
+          POSTGRES_PASSWORD: unused
+        run: |
+          docker compose build bot admin-web partner-web
+          docker save \
+            mike-phuket-app:local \
+            mike-phuket-admin-web:local \
+            mike-phuket-partner-web:local \
+            | gzip -1 > "$RUNNER_TEMP/mike-phuket-images.tgz"
+          cp "$RUNNER_TEMP/mike-phuket-images.tgz" mike-phuket-images.tgz
+
       - name: Copy pack to Droplet
         uses: appleboy/scp-action@v1.0.0
         with:
@@ -30,10 +43,10 @@ jobs:
           username: ${{ secrets.STAGING_SSH_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
-          source: mike-phuket-ai.tgz
+          source: mike-phuket-ai.tgz,mike-phuket-images.tgz
           target: /tmp
           overwrite: true
-          command_timeout: 5m
+          command_timeout: 15m
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.5
@@ -42,12 +55,12 @@ jobs:
           username: ${{ secrets.STAGING_SSH_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
-          # Sequential image builds on a 1 GB Droplet need more than the 10m default.
-          command_timeout: 30m
+          command_timeout: 20m
           script: |
             set -euo pipefail
             tar xzf /tmp/mike-phuket-ai.tgz -C /opt/mike-phuket-ai
-            SKIP_GIT_PULL=1 /opt/mike-phuket-ai/mike-ai-bot-hkt/scripts/deploy_staging.sh
+            gunzip -c /tmp/mike-phuket-images.tgz | docker load
+            SKIP_GIT_PULL=1 SKIP_IMAGE_BUILD=1 /opt/mike-phuket-ai/mike-ai-bot-hkt/scripts/deploy_staging.sh
 
       - name: Verify admin panel responds on Droplet
         uses: appleboy/ssh-action@v1.2.5
