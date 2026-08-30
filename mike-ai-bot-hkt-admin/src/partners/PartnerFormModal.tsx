@@ -48,7 +48,7 @@ export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
           sort_order: existing.sort_order,
         })
       } else {
-        setForm({ ...emptyForm, type: types[0]?.slug ?? '' })
+        setForm({ ...emptyForm })
       }
       setReady(true)
     })().catch((err: Error) => {
@@ -110,28 +110,28 @@ export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
                 required
               />
             </label>
-            <fieldset className="text-sm">
-              <legend className="mb-2">Тип</legend>
+            <label className="flex flex-col gap-1 text-sm">
+              Тип
               {typeOptions.length === 0 ? (
                 <p role="alert">Нет типов партнёров. Обновите страницу и попробуйте снова.</p>
               ) : (
-                <div className="flex flex-col gap-2">
+                <select
+                  value={form.type}
+                  onChange={(e) => setField('type', e.target.value)}
+                  className="rounded border border-slate-300 bg-white px-3 py-2"
+                  required
+                >
+                  <option value="" disabled>
+                    Выберите тип
+                  </option>
                   {typeOptions.map((type) => (
-                    <label key={type.slug} className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="partner-type"
-                        value={type.slug}
-                        checked={form.type === type.slug}
-                        onChange={() => setField('type', type.slug)}
-                        required
-                      />
+                    <option key={type.slug} value={type.slug}>
                       {type.topic_label}
-                    </label>
+                    </option>
                   ))}
-                </div>
+                </select>
               )}
-            </fieldset>
+            </label>
             <label className="flex flex-col gap-1 text-sm">
               Referral URL
               <input
