@@ -40,14 +40,14 @@ fi
 
 cd "$REPO_ROOT"
 
-current="$(git rev-parse --abbrev-ref HEAD)"
-if [[ "$current" != "$STAGING_BRANCH" ]]; then
-  echo "Refusing to deploy: current branch is '$current', expected '$STAGING_BRANCH'."
-  echo "Run: git fetch origin && git checkout $STAGING_BRANCH"
-  exit 1
-fi
-
 if [[ "${SKIP_GIT_PULL:-}" != "1" ]]; then
+  git config --global --add safe.directory "$REPO_ROOT" || true
+  current="$(git rev-parse --abbrev-ref HEAD)"
+  if [[ "$current" != "$STAGING_BRANCH" ]]; then
+    echo "Refusing to deploy: current branch is '$current', expected '$STAGING_BRANCH'."
+    echo "Run: git fetch origin && git checkout $STAGING_BRANCH"
+    exit 1
+  fi
   echo "→ Fetching origin/$STAGING_BRANCH"
   pulled=0
   for attempt in 1 2 3 4 5 6; do
@@ -114,7 +114,11 @@ if [[ "$stats_code" != "401" ]]; then
   exit 1
 fi
 
-echo "→ Branch: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
+if [[ "${SKIP_GIT_PULL:-}" != "1" ]]; then
+  echo "→ Branch: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
+else
+  echo "→ CI pack deploy (git skipped)"
+fi
 docker compose ps
 echo "Done."
 echo "  Bot logs:        docker compose logs -f bot"

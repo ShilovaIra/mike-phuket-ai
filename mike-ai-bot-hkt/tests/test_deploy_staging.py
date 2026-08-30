@@ -62,6 +62,16 @@ def test_deploy_script_builds_images_one_at_a_time():
     )
 
 
+def test_deploy_script_skips_git_when_ci_copied_the_tree():
+    script = (ROOT / "scripts" / "deploy_staging.sh").read_text()
+    before, sep, after = script.partition('if [[ "${SKIP_GIT_PULL:-}" != "1" ]];')
+    assert sep, "CI must set SKIP_GIT_PULL so git is not used after a tar overlay"
+    assert "git rev-parse" not in before, (
+        "git rev-parse before SKIP_GIT_PULL fails with dubious ownership after tar extract"
+    )
+    assert "git rev-parse --abbrev-ref HEAD" in after
+
+
 def test_deploy_script_skips_image_build_when_ci_loaded_images():
     script = (ROOT / "scripts" / "deploy_staging.sh").read_text()
     assert "SKIP_IMAGE_BUILD" in script
