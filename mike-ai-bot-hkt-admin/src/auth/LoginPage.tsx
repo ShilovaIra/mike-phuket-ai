@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import logo from '../assets/logo/mike-phuket-ai.png'
 import { authApi } from './authApi'
 
 export function LoginPage() {
@@ -28,6 +29,7 @@ export function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
+      <img src={logo} alt="Mike Phuket AI" width={240} height={120} className="mb-6 h-auto w-[240px] self-center" />
       <h1 className="mb-6 text-2xl font-semibold tracking-tight">Вход</h1>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1 text-sm">
@@ -56,7 +58,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={pending}
-          className="rounded bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 disabled:opacity-60"
+          className="rounded bg-[#053e7a] px-4 py-2 text-white hover:bg-[#042f5c] disabled:opacity-60"
         >
           Войти
         </button>

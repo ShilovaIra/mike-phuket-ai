@@ -28,6 +28,8 @@ test('unauthenticated visit to /stats redirects to login', () => {
   )
 
   expect(screen.getByRole('button', { name: /войти/i })).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: /mike phuket ai/i })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: /^вход$/i })).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: /статистика/i })).not.toBeInTheDocument()
 })
 

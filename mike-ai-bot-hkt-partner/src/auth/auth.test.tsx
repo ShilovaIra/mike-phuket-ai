@@ -31,6 +31,8 @@ test('unauthenticated visit to /stats redirects to login', () => {
   )
 
   expect(screen.getByRole('button', { name: /войти/i })).toBeInTheDocument()
+  expect(screen.getByRole('img', { name: /mike phuket ai/i })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: /^вход$/i })).toBeInTheDocument()
 })
 
 test('invalid credentials stay on login with an error', async () => {
