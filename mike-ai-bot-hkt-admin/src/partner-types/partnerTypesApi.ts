@@ -17,7 +17,9 @@ export const partnerTypesApi = {
   async list(): Promise<PartnerType[]> {
     const response = await apiFetch('/api/partner-types')
     if (!response.ok) throw new Error('Не удалось загрузить типы партнёров')
-    return response.json()
+    const data: unknown = await response.json()
+    if (!Array.isArray(data)) throw new Error('Не удалось загрузить типы партнёров')
+    return data
   },
 
   async get(slug: string): Promise<PartnerType | null> {

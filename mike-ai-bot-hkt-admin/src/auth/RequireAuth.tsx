@@ -27,6 +27,12 @@ export function RequireAuth() {
             Партнёры
           </Link>
           <Link
+            to="/partner-types"
+            className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+          >
+            Типы партнёров
+          </Link>
+          <Link
             to="/partner-users"
             className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
           >

@@ -44,6 +44,16 @@ async def authed_client(store):
 
 @requires_db
 @pytest.mark.asyncio
+async def test_list_partner_types_includes_seeded_slugs(store):
+    async with authed_client(store) as client:
+        listed = await client.get("/api/partner-types")
+    assert listed.status_code == 200
+    slugs = {item["slug"] for item in listed.json()}
+    assert slugs >= {"money_exchange", "vehicle_rental", "excursions"}
+
+
+@requires_db
+@pytest.mark.asyncio
 async def test_create_partner_type_appears_in_list(store):
     async with authed_client(store) as client:
         created = await client.post("/api/partner-types", json=DIVING)

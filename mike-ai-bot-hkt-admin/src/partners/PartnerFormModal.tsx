@@ -14,12 +14,13 @@ const emptyForm: PartnerInput = {
 type Props = {
   mode: 'create' | 'edit'
   partnerId?: string
+  types: PartnerType[]
   onClose: () => void
   onSaved: () => void
 }
 
-export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
-  const [typeOptions, setTypeOptions] = useState<PartnerType[]>([])
+export function PartnerFormModal({ mode, partnerId, types, onClose, onSaved }: Props) {
+  const [typeOptions, setTypeOptions] = useState<PartnerType[]>(types)
   const [form, setForm] = useState<PartnerInput>(emptyForm)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
@@ -27,9 +28,20 @@ export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const types = await partnerTypesApi.list()
+      let loaded = types
+      if (loaded.length === 0) {
+        try {
+          loaded = await partnerTypesApi.list()
+        } catch (err) {
+          if (!cancelled) {
+            setError(err instanceof Error ? err.message : 'Не удалось загрузить типы партнёров')
+            setReady(true)
+          }
+          return
+        }
+      }
       if (cancelled) return
-      setTypeOptions(types)
+      setTypeOptions(loaded)
 
       if (mode === 'edit' && partnerId) {
         const existing = await partnersApi.get(partnerId)
@@ -51,16 +63,11 @@ export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
         setForm({ ...emptyForm })
       }
       setReady(true)
-    })().catch((err: Error) => {
-      if (!cancelled) {
-        setError(err.message)
-        setReady(true)
-      }
-    })
+    })()
     return () => {
       cancelled = true
     }
-  }, [mode, partnerId])
+  }, [mode, partnerId, types])
 
   function setField<K extends keyof PartnerInput>(key: K, value: PartnerInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -113,7 +120,7 @@ export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
             <label className="flex flex-col gap-1 text-sm">
               Тип
               {typeOptions.length === 0 ? (
-                <p role="alert">Нет типов партнёров. Обновите страницу и попробуйте снова.</p>
+                <p role="alert">{error ?? 'Нет типов партнёров. Откройте «Типы партнёров» или обновите страницу.'}</p>
               ) : (
                 <select
                   value={form.type}
