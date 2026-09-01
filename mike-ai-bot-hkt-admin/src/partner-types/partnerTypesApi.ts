@@ -1,4 +1,4 @@
-import { apiFetch } from '../auth/authApi'
+import { apiErrorMessage, apiFetch } from '../auth/authApi'
 
 export type PartnerType = {
   slug: string
@@ -16,9 +16,11 @@ export type PartnerType = {
 export const partnerTypesApi = {
   async list(): Promise<PartnerType[]> {
     const response = await apiFetch('/api/partner-types')
-    if (!response.ok) throw new Error('Не удалось загрузить типы партнёров')
+    if (!response.ok) throw new Error(await apiErrorMessage(response, 'Не удалось загрузить типы партнёров'))
     const data: unknown = await response.json()
-    if (!Array.isArray(data)) throw new Error('Не удалось загрузить типы партнёров')
+    if (!Array.isArray(data)) {
+      throw new Error('Не удалось загрузить типы партнёров (ответ не список)')
+    }
     return data
   },
 

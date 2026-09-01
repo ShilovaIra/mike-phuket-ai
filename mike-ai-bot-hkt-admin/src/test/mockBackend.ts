@@ -107,6 +107,7 @@ const seedPartners: Partner[] = [
 let types = structuredClone(seedTypes)
 let partners = structuredClone(seedPartners)
 let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
+let partnerTypesListFailure: { status: number; detail: string } | null = null
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -119,6 +120,11 @@ export function resetMockBackend(): void {
   types = structuredClone(seedTypes)
   partners = structuredClone(seedPartners)
   partnerUsers = []
+  partnerTypesListFailure = null
+}
+
+export function failPartnerTypesList(status: number, detail: string): void {
+  partnerTypesListFailure = { status, detail }
 }
 
 export function installFetchMock(): void {
@@ -164,6 +170,9 @@ export function installFetchMock(): void {
     }
 
     if (path === '/api/partner-types' && method === 'GET') {
+      if (partnerTypesListFailure) {
+        return json({ detail: partnerTypesListFailure.detail }, partnerTypesListFailure.status)
+      }
       return json([...types].sort((a, b) => a.sort_order - b.sort_order))
     }
 

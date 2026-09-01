@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import App from '../App'
 import { authApi } from '../auth/authApi'
+import { failPartnerTypesList } from '../test/mockBackend'
 
 async function renderAuthed(path: string) {
   await authApi.login({ email: 'admin@example.com', password: 'admin123' })
@@ -20,6 +21,15 @@ test('authenticated admin sees seeded partner types on the list', async () => {
   expect(await screen.findByText('money_exchange')).toBeInTheDocument()
   expect(screen.getByText('vehicle_rental')).toBeInTheDocument()
   expect(screen.getByText('excursions')).toBeInTheDocument()
+})
+
+test('shows HTTP status when partner types fail to load', async () => {
+  failPartnerTypesList(500, 'column "follow_up_text" does not exist')
+  await renderAuthed('/partner-types')
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Не удалось загрузить типы партнёров (500: column "follow_up_text" does not exist)',
+  )
 })
 
 test('admin can create a partner type in a modal and see it on the list', async () => {

@@ -32,6 +32,17 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   return fetch(`${API_BASE}${path}`, { ...init, headers })
 }
 
+export async function apiErrorMessage(response: Response, fallback: string): Promise<string> {
+  const body: unknown = await response.json().catch(() => null)
+  let extra = ''
+  if (body && typeof body === 'object' && 'detail' in body) {
+    const detail = (body as { detail: unknown }).detail
+    if (typeof detail === 'string') extra = `: ${detail}`
+    else if (Array.isArray(detail)) extra = `: ${JSON.stringify(detail)}`
+  }
+  return `${fallback} (${response.status}${extra})`
+}
+
 export const authApi = {
   getSession(): AdminSession | null {
     const raw = localStorage.getItem(SESSION_KEY)

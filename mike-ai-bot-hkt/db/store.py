@@ -81,6 +81,8 @@ class DueFollowUpJob:
 
 
 def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
+    names = set(row.keys())
+    follow = row["follow_up_text"] if "follow_up_text" in names else ""
     return PartnerType(
         slug=row["slug"],
         is_menu_visible=row["is_menu_visible"],
@@ -92,7 +94,7 @@ def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
         caption_emoji=row["caption_emoji"],
         caption_cta=row["caption_cta"],
         button_template=row["button_template"],
-        follow_up_text=row["follow_up_text"] or "",
+        follow_up_text=follow or "",
     )
 
 
@@ -713,9 +715,7 @@ class SessionStore:
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(
                 """
-                SELECT slug, is_menu_visible, sort_order, button_label, topic_label,
-                       intro, fallback, caption_emoji, caption_cta, button_template,
-                       follow_up_text
+                SELECT *
                 FROM partner_types
                 ORDER BY sort_order ASC, slug ASC
                 """
@@ -725,13 +725,7 @@ class SessionStore:
     async def get_partner_type(self, slug: str) -> PartnerType | None:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
-                """
-                SELECT slug, is_menu_visible, sort_order, button_label, topic_label,
-                       intro, fallback, caption_emoji, caption_cta, button_template,
-                       follow_up_text
-                FROM partner_types
-                WHERE slug = $1
-                """,
+                "SELECT * FROM partner_types WHERE slug = $1",
                 slug,
             )
             if row is None:

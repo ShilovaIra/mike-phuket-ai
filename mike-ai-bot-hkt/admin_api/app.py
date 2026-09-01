@@ -126,12 +126,19 @@ def create_app(*, store: SessionStore | None = None) -> FastAPI:
         return payload
 
     @app.get("/api/partner-types")
+    @app.get("/api/partner-types/", include_in_schema=False)
     async def list_partner_types(
         request: Request,
         admin: AdminUser = Depends(require_admin),
     ) -> list[dict]:
         _ = admin
-        return [_partner_type_payload(item) for item in await _store(request).list_partner_types()]
+        try:
+            items = await _store(request).list_partner_types()
+            return [_partner_type_payload(item) for item in items]
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     @app.post("/api/partner-types", status_code=201)
     async def create_partner_type(

@@ -73,6 +73,32 @@ async def test_list_partner_types_returns_seeded_in_sort_order():
 
 
 @requires_db
+async def test_list_partner_types_works_without_follow_up_text_column():
+    url = database_url()
+    assert url is not None
+    pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
+    try:
+        async with pool.acquire() as conn:
+            await apply_schema(conn)
+            await conn.execute(
+                "ALTER TABLE partner_types DROP COLUMN IF EXISTS follow_up_text"
+            )
+
+        store = SessionStore(pool)
+        types = await store.list_partner_types()
+        assert {t.slug for t in types} >= {
+            "money_exchange",
+            "vehicle_rental",
+            "excursions",
+        }
+        assert all(t.follow_up_text == "" for t in types)
+    finally:
+        async with pool.acquire() as conn:
+            await apply_schema(conn)
+        await pool.close()
+
+
+@requires_db
 async def test_get_partner_type_returns_copy_for_slug():
     url = database_url()
     assert url is not None
