@@ -143,8 +143,9 @@ export function installFetchMock(): void {
     }
 
     const auth = new Headers(init?.headers).get('Authorization')
-    if (path !== '/api/auth/login' && auth !== 'Bearer test-token') {
-      // allow login-less checks to 401 for protected routes when no session token path
+    if (path === '/api/auth/me' && method === 'GET') {
+      if (auth !== 'Bearer test-token') return json({ detail: 'Invalid token' }, 401)
+      return json({ email: 'admin@example.com' })
     }
 
     if (path === '/api/stats' && method === 'GET') {

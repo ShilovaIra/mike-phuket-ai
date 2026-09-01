@@ -20,7 +20,13 @@ async def require_admin(
         raise HTTPException(status_code=401, detail="Not authenticated")
     try:
         payload = decode_access_token(credentials.credentials)
+        if payload.get("role") == "partner_user":
+            raise HTTPException(status_code=401, detail="Invalid token")
         email = str(payload["email"])
+    except HTTPException:
+        raise
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Сессия истекла") from None
     except (jwt.PyJWTError, KeyError, TypeError):
         raise HTTPException(status_code=401, detail="Invalid token") from None
 

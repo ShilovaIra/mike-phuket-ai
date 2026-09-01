@@ -6,6 +6,7 @@ export type AdminSession = {
 }
 
 const SESSION_KEY = 'mike-ai-admin-session'
+export const SESSION_EVENT = 'mike-ai-admin-session'
 
 export type LoginCredentials = {
   email: string
@@ -29,7 +30,11 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   if (token) {
     headers.set('Authorization', `Bearer ${token}`)
   }
-  return fetch(`${API_BASE}${path}`, { ...init, headers })
+  const response = await fetch(`${API_BASE}${path}`, { ...init, headers })
+  if (response.status === 401 && path !== '/api/auth/login') {
+    authApi.logout()
+  }
+  return response
 }
 
 export async function apiErrorMessage(response: Response, fallback: string): Promise<string> {
@@ -66,10 +71,12 @@ export const authApi = {
     const body = (await response.json()) as { access_token: string }
     const session: AdminSession = { email, accessToken: body.access_token }
     localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+    window.dispatchEvent(new Event(SESSION_EVENT))
     return { ok: true, session }
   },
 
   logout(): void {
     localStorage.removeItem(SESSION_KEY)
+    window.dispatchEvent(new Event(SESSION_EVENT))
   },
 }

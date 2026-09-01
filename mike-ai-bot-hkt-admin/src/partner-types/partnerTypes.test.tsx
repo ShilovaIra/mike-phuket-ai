@@ -32,6 +32,14 @@ test('shows HTTP status when partner types fail to load', async () => {
   )
 })
 
+test('invalid token while loading partner types sends the admin back to login', async () => {
+  failPartnerTypesList(401, 'Invalid token')
+  await renderAuthed('/partner-types')
+
+  expect(await screen.findByRole('button', { name: /войти/i })).toBeInTheDocument()
+  expect(screen.queryByRole('heading', { name: /типы партнёров/i })).not.toBeInTheDocument()
+})
+
 test('admin can create a partner type in a modal and see it on the list', async () => {
   const user = userEvent.setup()
   await renderAuthed('/partner-types')

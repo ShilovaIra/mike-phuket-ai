@@ -1,10 +1,23 @@
+import { useEffect, useState } from 'react'
 import { Link, Navigate, Outlet, useNavigate } from 'react-router-dom'
-import { authApi } from './authApi'
+import { apiFetch, authApi, SESSION_EVENT } from './authApi'
 
 export function RequireAuth() {
   const navigate = useNavigate()
+  const [session, setSession] = useState(() => authApi.getSession())
 
-  if (!authApi.getSession()) {
+  useEffect(() => {
+    const sync = () => setSession(authApi.getSession())
+    window.addEventListener(SESSION_EVENT, sync)
+    return () => window.removeEventListener(SESSION_EVENT, sync)
+  }, [])
+
+  useEffect(() => {
+    if (!session) return
+    void apiFetch('/api/auth/me')
+  }, [session])
+
+  if (!session) {
     return <Navigate to="/login" replace />
   }
 

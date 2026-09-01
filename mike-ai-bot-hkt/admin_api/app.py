@@ -109,6 +109,10 @@ def create_app(*, store: SessionStore | None = None) -> FastAPI:
         token = create_access_token(admin_id=admin.id, email=admin.email)
         return LoginResponse(access_token=token)
 
+    @app.get("/api/auth/me")
+    async def me(admin: AdminUser = Depends(require_admin)) -> dict:
+        return {"email": admin.email}
+
     @app.get("/api/stats")
     async def stats(
         request: Request,
