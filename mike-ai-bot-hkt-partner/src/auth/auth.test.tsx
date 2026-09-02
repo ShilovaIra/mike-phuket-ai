@@ -63,3 +63,17 @@ test('logout returns to login', async () => {
   await userEvent.setup().click(screen.getByRole('button', { name: /выйти/i }))
   expect(await screen.findByRole('button', { name: /войти/i })).toBeInTheDocument()
 })
+
+test('signed-in partner user can go home from the header logo', async () => {
+  await authApi.login({ email: 'shop@example.com', password: 'shop-secret' })
+  render(
+    <MemoryRouter initialEntries={['/stats']}>
+      <App />
+    </MemoryRouter>,
+  )
+
+  const home = await screen.findByRole('link', { name: /mike phuket ai/i })
+  await userEvent.setup().click(home)
+
+  expect(await screen.findByRole('heading', { name: /статистика/i })).toBeInTheDocument()
+})
