@@ -47,7 +47,7 @@ export function StatsPage() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="mb-6 text-2xl font-semibold tracking-tight">Статистика</h1>
         <p role="alert">{error}</p>
       </main>
@@ -56,7 +56,7 @@ export function StatsPage() {
 
   if (!partners) {
     return (
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-8">
         <h1 className="mb-6 text-2xl font-semibold tracking-tight">Статистика</h1>
         <p>Загрузка…</p>
       </main>
@@ -80,7 +80,7 @@ export function StatsPage() {
     : []
 
   return (
-    <main className="mx-auto max-w-5xl space-y-10 px-4 py-8">
+    <main className="mx-auto max-w-6xl space-y-10 px-4 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">Статистика</h1>
       {partners.length > 1 ? (
         <label className="flex max-w-sm flex-col gap-1 text-sm">
@@ -104,32 +104,32 @@ export function StatsPage() {
       {!stats ? (
         <p>Загрузка…</p>
       ) : (
-        <div className="flex flex-col gap-8 md:flex-row md:items-start">
-          <div className="min-w-0 flex-1 space-y-6">
-            <section aria-label="За всё время" className="grid gap-4 sm:grid-cols-2">
-              <article className="rounded border border-slate-200 bg-white p-4">
+        <div className="flex flex-col gap-8 md:flex-row md:items-center">
+          <div className="min-w-0 flex-1 space-y-5">
+            <section aria-label="За всё время" className="grid gap-5 sm:grid-cols-2">
+              <article className="rounded-lg border border-slate-200 bg-white p-6">
                 <p className="text-sm text-slate-600">Показы (всё время)</p>
-                <p className="text-2xl font-semibold">{stats.all_time.views}</p>
+                <p className="mt-3 text-4xl font-semibold tracking-tight">{stats.all_time.views}</p>
               </article>
-              <article className="rounded border border-slate-200 bg-white p-4">
+              <article className="rounded-lg border border-slate-200 bg-white p-6">
                 <p className="text-sm text-slate-600">Переходы (всё время)</p>
-                <p className="text-2xl font-semibold">{stats.all_time.referral_clicks}</p>
+                <p className="mt-3 text-4xl font-semibold tracking-tight">{stats.all_time.referral_clicks}</p>
               </article>
             </section>
-            <section aria-label="За 30 дней" className="grid gap-4 sm:grid-cols-2">
-              <article className="rounded border border-slate-200 bg-white p-4">
+            <section aria-label="За 30 дней" className="grid gap-5 sm:grid-cols-2">
+              <article className="rounded-lg border border-slate-200 bg-white p-6">
                 <p className="text-sm text-slate-600">Показы (30 дней)</p>
-                <p className="text-2xl font-semibold">{stats.last_30_days.views}</p>
+                <p className="mt-3 text-4xl font-semibold tracking-tight">{stats.last_30_days.views}</p>
               </article>
-              <article className="rounded border border-slate-200 bg-white p-4">
+              <article className="rounded-lg border border-slate-200 bg-white p-6">
                 <p className="text-sm text-slate-600">Переходы (30 дней)</p>
-                <p className="text-2xl font-semibold">{stats.last_30_days.referral_clicks}</p>
+                <p className="mt-3 text-4xl font-semibold tracking-tight">{stats.last_30_days.referral_clicks}</p>
               </article>
             </section>
           </div>
           <section
             aria-label="Показы с переходом и без"
-            className="min-w-0 md:w-72 md:shrink-0"
+            className="min-w-0 md:w-80 md:shrink-0"
           >
             <ShareDonut slices={slices} />
           </section>
