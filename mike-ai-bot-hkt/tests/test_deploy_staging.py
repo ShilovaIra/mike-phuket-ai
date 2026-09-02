@@ -77,6 +77,14 @@ def test_deploy_script_skips_image_build_when_ci_loaded_images():
     assert "SKIP_IMAGE_BUILD" in script
 
 
+def test_deploy_script_sets_partner_offer_base_from_droplet_ip():
+    script = (ROOT / "scripts" / "deploy_staging.sh").read_text()
+    assert "169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address" in script
+    assert "PARTNER_OFFER_BASE_URL=" in script
+    assert "/r/missing-token" in script
+    assert "force-recreate bot" in script
+
+
 def test_web_services_have_named_images_for_docker_save():
     compose = (ROOT / "docker-compose.yml").read_text()
     assert "image: mike-phuket-admin-web:local" in compose

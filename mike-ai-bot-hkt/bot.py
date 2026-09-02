@@ -32,7 +32,7 @@ from telegram.error import Forbidden, TelegramError
 
 from db.store import SessionStore
 from db.url import resolve_database_url
-from partner_dashboard.offers import wrap_partners_for_user
+from partner_dashboard.offers import wrap_partners_for_channel_user
 from partners import (
     PartnerType,
     build_partner_cards,
@@ -277,14 +277,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_partner_topic(update: Update, partner_type: PartnerType):
     partners = await store.list_active_partners(partner_type.slug)
-    ctx = await store.get_active_conversation(CHANNEL, telegram_id(update))
-    if ctx is not None:
-        partners = await wrap_partners_for_user(
-            store.pool,
-            partners,
-            ctx.user_id,
-            public_base=os.environ.get("PARTNER_OFFER_BASE_URL", ""),
-        )
+    partners = await wrap_partners_for_channel_user(
+        store,
+        partners,
+        CHANNEL,
+        telegram_id(update),
+        public_base=os.environ.get("PARTNER_OFFER_BASE_URL", ""),
+    )
     intro_or_fallback, cards = build_partner_cards(partners, partner_type)
 
     await update.message.reply_text(

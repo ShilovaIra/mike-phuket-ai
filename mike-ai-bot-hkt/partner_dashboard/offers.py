@@ -53,6 +53,28 @@ async def wrap_partners_for_user(
     return wrapped
 
 
+async def wrap_partners_for_channel_user(
+    store,
+    partners: Sequence[Partner],
+    channel: str,
+    external_id: str,
+    *,
+    public_base: str,
+) -> list[Partner]:
+    """Wrap even if the tourist never sent /start (menu tap only)."""
+    if _http_public_base(public_base) is None:
+        return list(partners)
+    ctx = await store.get_active_conversation(channel, external_id)
+    if ctx is None:
+        ctx = await store.start_conversation(channel, external_id)
+    return await wrap_partners_for_user(
+        store.pool,
+        partners,
+        ctx.user_id,
+        public_base=public_base,
+    )
+
+
 async def record_referral_click(pool: asyncpg.Pool, token: str) -> str | None:
     async with pool.acquire() as conn:
         async with conn.transaction():

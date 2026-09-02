@@ -47,6 +47,7 @@ DigitalOcean → **Networking** → **Firewalls** → Create:
 |---|---|---|---|
 | SSH | TCP | 22 | `0.0.0.0/0` (key-only auth; required for GitHub Actions deploy) |
 | Admin panel | TCP | 8080 | Your IP / office VPN (HTTP admin UI + `/api` proxy). Do **not** leave open to the world long-term without TLS. |
+| Partner wrap + dashboard | TCP | 8081 | `0.0.0.0/0` (Telegram must reach `GET /r/…` to count referral clicks; Partner Users also use this UI). |
 
 Attach the firewall to the droplet. Do **not** open **5432**. Port **80/443** are optional later (Caddy/nginx TLS in front of admin-web). The bot still uses outbound polling to Telegram.
 
@@ -255,7 +256,7 @@ Push or merge to the **`staging`** branch runs [`.github/workflows/deploy-stagin
 **First-time admin panel setup on the Droplet**
 
 1. Ensure `.env` includes `ADMIN_JWT_SECRET` (long random string) and optional `ADMIN_WEB_PORT=8080`.
-2. Open firewall TCP **8080** (preferably restricted to your IP).
+2. Open firewall TCP **8080** (preferably restricted to your IP) and TCP **8081** to the world (wrap URLs). `deploy_staging.sh` sets `PARTNER_OFFER_BASE_URL=http://DROPLET_IP:8081` when it is empty.
 3. After deploy, create an admin user once:
 
 ```bash
@@ -312,6 +313,7 @@ That script pulls `origin/staging` with `--ff-only` and rebuilds. It exits with 
 | Auto-deploy | Push/merge to `staging` (or Actions → Run workflow) |
 | Manual redeploy from `staging` | `./scripts/deploy_staging.sh` |
 | Admin UI | `http://DROPLET_IP:8080/` (nginx → SPA + `/api` proxy) |
+| Partner UI / wrap | `http://DROPLET_IP:8081/` (`/r/…` → 302; dashboard for Partner Users) |
 | View bot logs | `docker compose logs -f bot` |
 | View admin API logs | `docker compose logs -f admin-api` |
 | Restart bot | `docker compose restart bot` |

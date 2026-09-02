@@ -81,6 +81,35 @@ if ! grep -qE '^ADMIN_JWT_SECRET=.+' .env; then
   exit 1
 fi
 
+PARTNER_WEB_PORT="$(awk -F= '/^PARTNER_WEB_PORT=/{v=substr($0, index($0,$2))} END{print v}' .env)"
+PARTNER_WEB_PORT="${PARTNER_WEB_PORT:-8081}"
+PARTNER_OFFER_BASE_WRITTEN=0
+current_offer_base="$(awk -F= '/^PARTNER_OFFER_BASE_URL=/{v=substr($0, index($0,$2))} END{print v}' .env)"
+case "$current_offer_base" in
+  http://*|https://*)
+    echo "→ PARTNER_OFFER_BASE_URL is ${current_offer_base}"
+    ;;
+  *)
+    droplet_ip="$(curl -fsS --max-time 2 http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address 2>/dev/null || true)"
+    if [[ -z "$droplet_ip" ]]; then
+      echo "PARTNER_OFFER_BASE_URL is not http(s); Telegram wrap stays off."
+      echo "Set PARTNER_OFFER_BASE_URL=http://DROPLET_IP:${PARTNER_WEB_PORT} in .env"
+    else
+      offer_url="http://${droplet_ip}:${PARTNER_WEB_PORT}"
+      offer_tmp="$(mktemp)"
+      awk -v url="$offer_url" '
+        BEGIN { found=0 }
+        /^PARTNER_OFFER_BASE_URL=/ { print "PARTNER_OFFER_BASE_URL=" url; found=1; next }
+        { print }
+        END { if (!found) print "PARTNER_OFFER_BASE_URL=" url }
+      ' .env > "$offer_tmp"
+      mv "$offer_tmp" .env
+      PARTNER_OFFER_BASE_WRITTEN=1
+      echo "→ Set PARTNER_OFFER_BASE_URL=${offer_url} so Telegram cards can count clicks"
+    fi
+    ;;
+esac
+
 if [[ "${SKIP_IMAGE_BUILD:-}" != "1" ]]; then
   # One image at a time: pip + two npm builds in parallel OOMs a 1 GB Droplet
   # and takes down systemd-resolved ("Temporary failure in name resolution").
@@ -91,6 +120,9 @@ if [[ "${SKIP_IMAGE_BUILD:-}" != "1" ]]; then
 fi
 echo "→ Starting containers"
 docker compose up -d
+if [[ "${PARTNER_OFFER_BASE_WRITTEN}" == 1 ]]; then
+  docker compose up -d --force-recreate bot
+fi
 
 echo "→ Waiting for admin panel"
 stats_code=""
@@ -113,6 +145,19 @@ if [[ "$stats_code" != "401" ]]; then
   docker compose logs --tail=80 admin-api admin-web
   exit 1
 fi
+wrap_code=""
+for _ in $(seq 1 15); do
+  wrap_code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PARTNER_WEB_PORT}/r/missing-token" || true)"
+  if [[ "$wrap_code" == "404" ]]; then
+    break
+  fi
+  sleep 2
+done
+if [[ "$wrap_code" != "404" ]]; then
+  echo "Expected /r/missing-token → 404, got ${wrap_code}"
+  docker compose logs --tail=80 admin-api partner-web
+  exit 1
+fi
 
 if [[ "${SKIP_GIT_PULL:-}" != "1" ]]; then
   echo "→ Branch: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
@@ -124,4 +169,5 @@ echo "Done."
 echo "  Bot logs:        docker compose logs -f bot"
 echo "  Admin API logs:  docker compose logs -f admin-api"
 echo "  Admin UI:        http://<droplet-ip>:${ADMIN_WEB_PORT}/"
+echo "  Partner UI:      http://<droplet-ip>:${PARTNER_WEB_PORT}/"
 echo "  Create admin:    docker compose run --rm bot python scripts/create_admin_user.py --email you@example.com --password '…'"
