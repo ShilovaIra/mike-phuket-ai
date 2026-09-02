@@ -29,7 +29,7 @@ export function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
-      <img src={logo} alt="Mike Phuket AI" width={240} height={120} className="mb-6 h-auto w-[240px] self-center" />
+      <img src={logo} alt="Mike Phuket AI" width={480} height={240} className="mb-6 h-auto w-full" />
       <h1 className="mb-6 text-2xl font-semibold tracking-tight">Вход</h1>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1 text-sm">
