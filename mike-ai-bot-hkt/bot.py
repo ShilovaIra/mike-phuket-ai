@@ -265,13 +265,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     partner_type = partner_by_label.get(user_text)
     if partner_type is not None:
         topic = partner_type.slug
+    await store.record_inbound(CHANNEL, tid)
     if topic:
         await store.record_topic_event(CHANNEL, tid, topic=topic)
     if partner_type is not None:
         await store.schedule_partner_follow_up(CHANNEL, tid, partner_type.slug)
         await handle_partner_topic(update, partner_type)
         return
-    await store.record_inbound(CHANNEL, tid)
     await ask_openai(update, context, user_text)
 
 

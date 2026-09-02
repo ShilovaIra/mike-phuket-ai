@@ -643,12 +643,25 @@ class SessionStore:
             total_users = await conn.fetchval("SELECT count(*) FROM users")
             active_today = await conn.fetchval(
                 """
-                SELECT count(DISTINCT c.user_id)
-                FROM messages m
-                JOIN conversations c ON c.id = m.conversation_id
-                WHERE m.role = 'user'
-                  AND (m.created_at AT TIME ZONE $1)::date
-                      = (now() AT TIME ZONE $1)::date
+                SELECT count(*) FROM (
+                    SELECT c.user_id AS user_id
+                    FROM messages m
+                    JOIN conversations c ON c.id = m.conversation_id
+                    WHERE m.role = 'user'
+                      AND (m.created_at AT TIME ZONE $1)::date
+                          = (now() AT TIME ZONE $1)::date
+                    UNION
+                    SELECT id
+                    FROM users
+                    WHERE last_inbound_at IS NOT NULL
+                      AND (last_inbound_at AT TIME ZONE $1)::date
+                          = (now() AT TIME ZONE $1)::date
+                    UNION
+                    SELECT user_id
+                    FROM topic_events
+                    WHERE (created_at AT TIME ZONE $1)::date
+                          = (now() AT TIME ZONE $1)::date
+                ) active
                 """,
                 timezone,
             )
