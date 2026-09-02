@@ -13,13 +13,30 @@ _SOURCE_LABELS = {
     "unknown": "Неизвестно",
     "instagram": "Instagram",
     "facebook": "Facebook",
+    "tgtrack": "TgTrack",
 }
+
+_MAX_SOURCE_LINES = 20
 
 
 def _source_label(source: str) -> str:
     if source in _SOURCE_LABELS:
         return _SOURCE_LABELS[source]
     return source[:1].upper() + source[1:] if source else source
+
+
+def _canonical_source(source: str) -> str:
+    if source.lower().startswith("tgtrack"):
+        return "tgtrack"
+    return source
+
+
+def _collapse_sources(users_by_first_source: dict[str, int]) -> dict[str, int]:
+    collapsed: dict[str, int] = {}
+    for source, count in users_by_first_source.items():
+        key = _canonical_source(source)
+        collapsed[key] = collapsed.get(key, 0) + count
+    return collapsed
 
 
 def _leads_label(count: int) -> str:
@@ -76,11 +93,15 @@ def _format_topic_section(
 def _format_source_section(users_by_first_source: dict[str, int]) -> list[str]:
     lines = ["Источники:"]
     ranked = sorted(
-        users_by_first_source.items(),
+        _collapse_sources(users_by_first_source).items(),
         key=lambda item: (-item[1], item[0]),
     )
-    for source, count in ranked:
+    shown = ranked[:_MAX_SOURCE_LINES]
+    rest = ranked[_MAX_SOURCE_LINES:]
+    for source, count in shown:
         lines.append(f"  {_source_label(source)}: {count}")
+    if rest:
+        lines.append(f"  Другие: {sum(count for _, count in rest)}")
     if len(lines) == 1:
         lines.append("  —")
     return lines
