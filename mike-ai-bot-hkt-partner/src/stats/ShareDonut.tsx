@@ -40,7 +40,7 @@ export function ShareDonut({ slices }: ShareDonutProps) {
   }))
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+    <div className="flex flex-col items-center gap-4">
       <div className="h-44 w-44 shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>

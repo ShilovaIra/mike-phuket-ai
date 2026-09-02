@@ -19,7 +19,7 @@ test('partner user can log in and sees stats', async () => {
   expect(await screen.findByRole('heading', { name: /статистика/i })).toBeInTheDocument()
   expect(await screen.findByText('Показы (всё время)')).toBeInTheDocument()
   expect(screen.getByText('10')).toBeInTheDocument()
-  expect(screen.getByRole('heading', { name: /показы: переход или нет/i })).toBeInTheDocument()
+  expect(screen.getByRole('region', { name: /показы с переходом и без/i })).toBeInTheDocument()
   expect(screen.queryByLabelText(/^партнёр$/i)).not.toBeInTheDocument()
 })
 

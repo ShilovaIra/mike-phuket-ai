@@ -68,12 +68,12 @@ export function StatsPage() {
     ? buildDonutSlices([
         {
           key: 'opened',
-          label: 'Открытые показы',
+          label: 'Показы с переходом',
           value: stats.all_time.opened_views,
         },
         {
           key: 'not_opened',
-          label: 'Без перехода',
+          label: 'Показы без перехода',
           value: stats.all_time.views - stats.all_time.opened_views,
         },
       ])
@@ -104,40 +104,36 @@ export function StatsPage() {
       {!stats ? (
         <p>Загрузка…</p>
       ) : (
-        <>
-          <section aria-label="За всё время" className="grid gap-4 sm:grid-cols-3">
-            <article className="rounded border border-slate-200 bg-white p-4">
-              <p className="text-sm text-slate-600">Показы (всё время)</p>
-              <p className="text-2xl font-semibold">{stats.all_time.views}</p>
-            </article>
-            <article className="rounded border border-slate-200 bg-white p-4">
-              <p className="text-sm text-slate-600">Переходы (всё время)</p>
-              <p className="text-2xl font-semibold">{stats.all_time.referral_clicks}</p>
-            </article>
-            <article className="rounded border border-slate-200 bg-white p-4">
-              <p className="text-sm text-slate-600">Открытые показы (всё время)</p>
-              <p className="text-2xl font-semibold">{stats.all_time.opened_views}</p>
-            </article>
-          </section>
-          <section aria-label="За 30 дней" className="grid gap-4 sm:grid-cols-3">
-            <article className="rounded border border-slate-200 bg-white p-4">
-              <p className="text-sm text-slate-600">Показы (30 дней)</p>
-              <p className="text-2xl font-semibold">{stats.last_30_days.views}</p>
-            </article>
-            <article className="rounded border border-slate-200 bg-white p-4">
-              <p className="text-sm text-slate-600">Переходы (30 дней)</p>
-              <p className="text-2xl font-semibold">{stats.last_30_days.referral_clicks}</p>
-            </article>
-            <article className="rounded border border-slate-200 bg-white p-4">
-              <p className="text-sm text-slate-600">Открытые показы (30 дней)</p>
-              <p className="text-2xl font-semibold">{stats.last_30_days.opened_views}</p>
-            </article>
-          </section>
-          <section>
-            <h2 className="mb-3 text-lg font-semibold">Показы: переход или нет</h2>
+        <div className="flex flex-col gap-8 md:flex-row md:items-start">
+          <div className="min-w-0 flex-1 space-y-6">
+            <section aria-label="За всё время" className="grid gap-4 sm:grid-cols-2">
+              <article className="rounded border border-slate-200 bg-white p-4">
+                <p className="text-sm text-slate-600">Показы (всё время)</p>
+                <p className="text-2xl font-semibold">{stats.all_time.views}</p>
+              </article>
+              <article className="rounded border border-slate-200 bg-white p-4">
+                <p className="text-sm text-slate-600">Переходы (всё время)</p>
+                <p className="text-2xl font-semibold">{stats.all_time.referral_clicks}</p>
+              </article>
+            </section>
+            <section aria-label="За 30 дней" className="grid gap-4 sm:grid-cols-2">
+              <article className="rounded border border-slate-200 bg-white p-4">
+                <p className="text-sm text-slate-600">Показы (30 дней)</p>
+                <p className="text-2xl font-semibold">{stats.last_30_days.views}</p>
+              </article>
+              <article className="rounded border border-slate-200 bg-white p-4">
+                <p className="text-sm text-slate-600">Переходы (30 дней)</p>
+                <p className="text-2xl font-semibold">{stats.last_30_days.referral_clicks}</p>
+              </article>
+            </section>
+          </div>
+          <section
+            aria-label="Показы с переходом и без"
+            className="min-w-0 md:w-72 md:shrink-0"
+          >
             <ShareDonut slices={slices} />
           </section>
-        </>
+        </div>
       )}
     </main>
   )
