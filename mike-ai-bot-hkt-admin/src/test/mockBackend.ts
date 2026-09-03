@@ -59,6 +59,20 @@ const seedTypes: PartnerType[] = [
     caption_cta: '⬇️ Забронировать сейчас ⬇️',
     button_template: 'Забронировать с {name}',
   },
+  {
+    slug: 'esim',
+    is_menu_visible: true,
+    sort_order: 40,
+    button_label: '📱 \neSIM',
+    topic_label: '📱 eSIM',
+    intro:
+      'Чтобы в любой стране оставаться на связи, можно приобрести eSIM в этом боте:',
+    fallback:
+      'Пока нет доступного бота для покупки eSIM. Напишите Майку — подскажу, что можно сделать.',
+    caption_emoji: '📱',
+    caption_cta: '⬇️ Купить eSIM ⬇️',
+    button_template: 'Купить eSIM',
+  },
 ]
 
 const seedPartners: Partner[] = [

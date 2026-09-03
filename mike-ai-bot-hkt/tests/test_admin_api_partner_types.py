@@ -49,7 +49,7 @@ async def test_list_partner_types_includes_seeded_slugs(store):
         listed = await client.get("/api/partner-types")
     assert listed.status_code == 200
     slugs = {item["slug"] for item in listed.json()}
-    assert slugs >= {"money_exchange", "vehicle_rental", "excursions"}
+    assert slugs >= {"money_exchange", "vehicle_rental", "excursions", "esim"}
 
 
 @requires_db
@@ -60,7 +60,7 @@ async def test_list_partner_types_trailing_slash_returns_same_payload(store):
     assert listed.status_code == 200
     assert isinstance(listed.json(), list)
     slugs = {item["slug"] for item in listed.json()}
-    assert slugs >= {"money_exchange", "vehicle_rental", "excursions"}
+    assert slugs >= {"money_exchange", "vehicle_rental", "excursions", "esim"}
 
 
 @requires_db

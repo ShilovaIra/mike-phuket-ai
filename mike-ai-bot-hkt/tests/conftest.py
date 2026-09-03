@@ -49,7 +49,7 @@ RESTART IDENTITY CASCADE
 
 RESET_PARTNER_TYPES_SQL = """
 DELETE FROM partner_types
-WHERE slug NOT IN ('money_exchange', 'vehicle_rental', 'excursions')
+WHERE slug NOT IN ('money_exchange', 'vehicle_rental', 'excursions', 'esim')
 """
 
 

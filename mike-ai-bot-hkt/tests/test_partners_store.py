@@ -5,6 +5,7 @@ from uuid import uuid4
 import asyncpg
 import pytest
 
+from buttons import ASK_MIKE_BUTTON, REAL_ESTATE_BUTTON, build_reply_keyboard_rows
 from db.migrate import apply_schema
 from db.store import SessionStore
 from partners import PartnerType
@@ -57,14 +58,17 @@ async def test_list_partner_types_returns_seeded_in_sort_order():
             "money_exchange",
             "vehicle_rental",
             "excursions",
+            "esim",
         ]
         assert all(isinstance(t, PartnerType) for t in types)
         assert types[0].button_label == "💰 \nОбмен Рублей"
         assert types[1].button_label == "🛵 \nАренда транспорта"
         assert types[2].button_label == "🇹🇭 \nЭкскурсии"
+        assert types[3].button_label == "📱 \neSIM"
         assert types[0].is_menu_visible is True
         assert types[1].is_menu_visible is True
         assert types[2].is_menu_visible is True
+        assert types[3].is_menu_visible is True
         assert types[0].intro == "Вот партнёры для обмена рублей:"
         assert types[1].button_template == "Арендовать у {name}"
         assert types[2].caption_emoji == "🇹🇭"
@@ -90,6 +94,7 @@ async def test_list_partner_types_works_without_follow_up_text_column():
             "money_exchange",
             "vehicle_rental",
             "excursions",
+            "esim",
         }
         assert all(t.follow_up_text == "" for t in types)
     finally:
@@ -114,6 +119,72 @@ async def test_get_partner_type_returns_copy_for_slug():
         assert partner_type.slug == "excursions"
         assert partner_type.fallback.startswith("Пока нет доступных партнёров по экскурсиям")
         assert await store.get_partner_type("missing") is None
+    finally:
+        await pool.close()
+
+
+@requires_db
+async def test_schema_seed_includes_esim_partner_type():
+    url = database_url()
+    assert url is not None
+    pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
+    try:
+        async with pool.acquire() as conn:
+            await apply_schema(conn)
+            await conn.execute(
+                "TRUNCATE TABLE partners, partner_types RESTART IDENTITY CASCADE"
+            )
+            await apply_schema(conn)
+
+        store = SessionStore(pool)
+        types = await store.list_partner_types()
+        esim = await store.get_partner_type("esim")
+
+        assert [t.slug for t in types] == [
+            "money_exchange",
+            "vehicle_rental",
+            "excursions",
+            "esim",
+        ]
+        assert esim is not None
+        assert esim.is_menu_visible is True
+        assert esim.sort_order == 40
+        assert esim.button_label == "📱 \neSIM"
+        assert esim.topic_label == "📱 eSIM"
+        assert esim.intro == (
+            "Чтобы в любой стране оставаться на связи, "
+            "можно приобрести eSIM в этом боте:"
+        )
+        assert esim.fallback == (
+            "Пока нет доступного бота для покупки eSIM. "
+            "Напишите Майку — подскажу, что можно сделать."
+        )
+        assert esim.caption_emoji == "📱"
+        assert esim.caption_cta == "⬇️ Купить eSIM ⬇️"
+        assert esim.button_template == "Купить eSIM"
+        assert esim.follow_up_text == ""
+    finally:
+        await pool.close()
+
+
+@requires_db
+async def test_seeded_partner_types_place_esim_beside_real_estate():
+    url = database_url()
+    assert url is not None
+    pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
+    try:
+        async with pool.acquire() as conn:
+            await apply_schema(conn)
+            await conn.execute(
+                "TRUNCATE TABLE partners, partner_types RESTART IDENTITY CASCADE"
+            )
+            await apply_schema(conn)
+
+        store = SessionStore(pool)
+        rows = build_reply_keyboard_rows(await store.list_partner_types())
+
+        assert ["📱 \neSIM", REAL_ESTATE_BUTTON] in rows
+        assert rows[-1] == [ASK_MIKE_BUTTON]
     finally:
         await pool.close()
 
