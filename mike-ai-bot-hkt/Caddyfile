@@ -1,0 +1,9 @@
+# Staging hostnames (DigitalOcean A records → this Droplet).
+# Production later: partners.mikephuketai.com / admin.mikephuketai.com
+{$PARTNER_PUBLIC_HOST:partners-staging.mikephuketai.com} {
+	reverse_proxy partner-web:80
+}
+
+{$ADMIN_PUBLIC_HOST:admin-staging.mikephuketai.com} {
+	reverse_proxy admin-web:80
+}

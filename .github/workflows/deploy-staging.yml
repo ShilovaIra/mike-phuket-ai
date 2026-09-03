@@ -101,5 +101,5 @@ jobs:
             done
             test "$code" = "401"
             cd /opt/mike-phuket-ai/mike-ai-bot-hkt
-            docker compose ps
+            docker compose --profile tls ps
             echo "Admin panel healthy on :${ADMIN_WEB_PORT}"

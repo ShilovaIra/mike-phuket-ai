@@ -77,12 +77,27 @@ def test_deploy_script_skips_image_build_when_ci_loaded_images():
     assert "SKIP_IMAGE_BUILD" in script
 
 
-def test_deploy_script_sets_partner_offer_base_from_droplet_ip():
+def test_deploy_script_sets_partner_offer_base_to_staging_domain():
     script = (ROOT / "scripts" / "deploy_staging.sh").read_text()
-    assert "169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address" in script
+    assert "partners-staging.mikephuketai.com" in script
+    assert "PARTNER_PUBLIC_HOST" in script
     assert "PARTNER_OFFER_BASE_URL=" in script
     assert "/r/missing-token" in script
     assert "force-recreate bot" in script
+    assert "169.254.169.254" not in script
+
+
+def test_deploy_script_starts_caddy_tls_profile():
+    script = (ROOT / "scripts" / "deploy_staging.sh").read_text()
+    assert script.count("--profile tls") >= 3
+    compose = (ROOT / "docker-compose.yml").read_text()
+    assert "caddy:" in compose
+    assert 'profiles: ["tls"]' in compose
+    caddyfile = (ROOT / "Caddyfile").read_text()
+    assert "partners-staging.mikephuketai.com" in caddyfile
+    assert "admin-staging.mikephuketai.com" in caddyfile
+    assert "reverse_proxy partner-web:80" in caddyfile
+    assert "reverse_proxy admin-web:80" in caddyfile
 
 
 def test_web_services_have_named_images_for_docker_save():

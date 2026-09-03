@@ -83,5 +83,27 @@ services:
     ports:
       - "${PARTNER_WEB_PORT:-8081}:80"
 
+  # TLS only on staging (compose profile `tls`). HTTPS for
+  # partners-staging.mikephuketai.com and admin-staging.mikephuketai.com.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["tls"]
+    depends_on:
+      - partner-web
+      - admin-web
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PARTNER_PUBLIC_HOST: ${PARTNER_PUBLIC_HOST:-partners-staging.mikephuketai.com}
+      ADMIN_PUBLIC_HOST: ${ADMIN_PUBLIC_HOST:-admin-staging.mikephuketai.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
