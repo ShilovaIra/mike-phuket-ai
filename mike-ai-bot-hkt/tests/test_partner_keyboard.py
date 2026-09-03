@@ -50,6 +50,25 @@ def test_reply_keyboard_packs_two_up_with_ask_mike_alone():
     ]
 
 
+def test_reply_keyboard_places_esim_beside_real_estate():
+    types = [
+        _type("excursions", 30, "🇹🇭 \nЭкскурсии"),
+        _type("money_exchange", 10, "💰 \nОбмен Рублей"),
+        _type("vehicle_rental", 20, "🛵 \nАренда транспорта"),
+        _type("esim", 40, "📱 \neSIM"),
+    ]
+
+    rows = build_reply_keyboard_rows(types)
+
+    assert rows == [
+        [WHERE_TO_EAT_BUTTON, BEACHES_BUTTON],
+        [NEARBY_BUTTON, "💰 \nОбмен Рублей"],
+        ["🛵 \nАренда транспорта", "🇹🇭 \nЭкскурсии"],
+        ["📱 \neSIM", REAL_ESTATE_BUTTON],
+        [ASK_MIKE_BUTTON],
+    ]
+
+
 def test_reply_keyboard_omits_hidden_partner_types():
     types = [
         _type("money_exchange", 10, "💰 \nОбмен Рублей"),

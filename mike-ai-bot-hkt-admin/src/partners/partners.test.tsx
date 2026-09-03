@@ -21,6 +21,7 @@ test('authenticated admin sees seeded partners with human type labels', async ()
   expect(screen.getByText('Money Shop').closest('tr')).toHaveTextContent('💰 Обмен')
   expect(screen.getByText('Остров Сокровищ').closest('tr')).toHaveTextContent('🇹🇭 Экскурсии')
   expect(screen.getByText('Boomerang').closest('tr')).toHaveTextContent('🛵 Аренда транспорта')
+  expect(screen.getByText('Mike eSIM').closest('tr')).toHaveTextContent('📱 eSIM')
   expect(screen.queryByText('money_exchange')).not.toBeInTheDocument()
 })
 

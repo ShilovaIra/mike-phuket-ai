@@ -21,6 +21,7 @@ test('authenticated admin sees seeded partner types on the list', async () => {
   expect(await screen.findByText('money_exchange')).toBeInTheDocument()
   expect(screen.getByText('vehicle_rental')).toBeInTheDocument()
   expect(screen.getByText('excursions')).toBeInTheDocument()
+  expect(screen.getByText('esim')).toBeInTheDocument()
 })
 
 test('shows HTTP status when partner types fail to load', async () => {

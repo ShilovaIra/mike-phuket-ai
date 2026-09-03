@@ -59,6 +59,20 @@ const seedTypes: PartnerType[] = [
     caption_cta: '⬇️ Забронировать сейчас ⬇️',
     button_template: 'Забронировать с {name}',
   },
+  {
+    slug: 'esim',
+    is_menu_visible: true,
+    sort_order: 40,
+    button_label: '📱 \neSIM',
+    topic_label: '📱 eSIM',
+    intro:
+      'Чтобы в любой стране оставаться на связи, можно приобрести eSIM в этом боте:',
+    fallback:
+      'Пока нет доступного бота для покупки eSIM. Напишите Майку — подскажу, что можно сделать.',
+    caption_emoji: '📱',
+    caption_cta: '⬇️ Купить eSIM ⬇️',
+    button_template: 'Купить eSIM',
+  },
 ]
 
 const seedPartners: Partner[] = [
@@ -99,6 +113,16 @@ const seedPartners: Partner[] = [
     referral_url: 'https://boomerang.rent/catalog/?utm_source=MikePhuketAIBot',
     blurb: 'Boomerang - надежный сервис аренды автомобилей и мотобайков на Пхукете. Доставка по всему острову.',
     logo_path: 'media/partners/boomerang.jpeg',
+    is_active: true,
+    sort_order: 1,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000005',
+    name: 'Mike eSIM',
+    type: 'esim',
+    referral_url: 'https://t.me/Mike_esim_bot',
+    blurb: '',
+    logo_path: 'media/partners/esim.jpeg',
     is_active: true,
     sort_order: 1,
   },
