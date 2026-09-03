@@ -83,8 +83,8 @@ services:
     ports:
       - "${PARTNER_WEB_PORT:-8081}:80"
 
-  # TLS only on staging (compose profile `tls`). HTTPS for
-  # partners-staging.mikephuketai.com and admin-staging.mikephuketai.com.
+  # TLS (compose profile `tls`). Hostnames come from .env
+  # (staging: *-staging.mikephuketai.com; production: partners. / admin.).
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped

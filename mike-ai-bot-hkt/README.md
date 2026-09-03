@@ -59,4 +59,7 @@ cp .env.production.example .env   # fill in production tokens
 ./scripts/deploy_production.sh    # pulls main + rebuilds (refuses other branches)
 ```
 
-Full setup guide: **[docs/PRODUCTION.md](docs/PRODUCTION.md)**
+Full setup guide (including domain and firewall): **[docs/PRODUCTION.md](docs/PRODUCTION.md)**
+
+Partner Dashboard (production): `https://partners.mikephuketai.com/`
+Operator admin (production): `https://admin.mikephuketai.com/`

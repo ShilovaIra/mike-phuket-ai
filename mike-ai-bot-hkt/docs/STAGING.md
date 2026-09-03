@@ -62,7 +62,7 @@ DigitalOcean DNS for `mikephuketai.com` (after the registrar uses DigitalOcean n
 | **A** | `partners-staging` | staging Droplet (`152.42.221.33`) |
 | **A** | `admin-staging` | staging Droplet |
 
-Leave `@` and `www` empty until production (`partners.` / `admin.` on the production Droplet).
+Leave `@` and `www` empty. Production uses `partners` / `admin` on the production Droplet — see [PRODUCTION.md](PRODUCTION.md).
 
 At the registrar set nameservers to `ns1.digitalocean.com`, `ns2.digitalocean.com`, `ns3.digitalocean.com`. Check:
 
@@ -74,7 +74,7 @@ dig A admin-staging.mikephuketai.com +short
 
 Both A records must be the staging Droplet IP. Then Caddy can obtain certificates.
 
-Production later: `partners.mikephuketai.com` and `admin.mikephuketai.com`.
+Production hostnames (`partners.` / `admin.`) are documented in [PRODUCTION.md](PRODUCTION.md).
 
 Use **SSH key authentication only** (disable password login). Broad SSH source is needed so GitHub-hosted runners can reach the Droplet; do not reuse personal keys for CI — see [CI/CD auto-deploy](#cicd-auto-deploy) below.
 
