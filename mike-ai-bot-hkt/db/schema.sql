@@ -241,6 +241,16 @@ VALUES
     'media/partners/boomerang.jpeg',
     true,
     1
+),
+(
+    '00000000-0000-4000-8000-000000000005',
+    'Mike eSIM',
+    'esim',
+    'https://t.me/Mike_esim_bot',
+    '',
+    'media/partners/esim.jpeg',
+    true,
+    1
 )
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
@@ -250,6 +260,10 @@ ON CONFLICT (id) DO UPDATE SET
     logo_path = EXCLUDED.logo_path,
     is_active = EXCLUDED.is_active,
     sort_order = EXCLUDED.sort_order;
+
+UPDATE partners
+SET logo_path = 'media/partners/esim.jpeg'
+WHERE type = 'esim';
 
 CREATE TABLE IF NOT EXISTS admin_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

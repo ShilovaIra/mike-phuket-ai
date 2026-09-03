@@ -116,6 +116,16 @@ const seedPartners: Partner[] = [
     is_active: true,
     sort_order: 1,
   },
+  {
+    id: '00000000-0000-4000-8000-000000000005',
+    name: 'Mike eSIM',
+    type: 'esim',
+    referral_url: 'https://t.me/Mike_esim_bot',
+    blurb: '',
+    logo_path: 'media/partners/esim.jpeg',
+    is_active: true,
+    sort_order: 1,
+  },
 ]
 
 let types = structuredClone(seedTypes)
