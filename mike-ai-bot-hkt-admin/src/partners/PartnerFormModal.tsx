@@ -14,12 +14,13 @@ const emptyForm: PartnerInput = {
 type Props = {
   mode: 'create' | 'edit'
   partnerId?: string
+  types: PartnerType[]
   onClose: () => void
   onSaved: () => void
 }
 
-export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
-  const [typeOptions, setTypeOptions] = useState<PartnerType[]>([])
+export function PartnerFormModal({ mode, partnerId, types, onClose, onSaved }: Props) {
+  const [typeOptions, setTypeOptions] = useState<PartnerType[]>(types)
   const [form, setForm] = useState<PartnerInput>(emptyForm)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
@@ -27,9 +28,20 @@ export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const types = await partnerTypesApi.list()
+      let loaded = types
+      if (loaded.length === 0) {
+        try {
+          loaded = await partnerTypesApi.list()
+        } catch (err) {
+          if (!cancelled) {
+            setError(err instanceof Error ? err.message : 'Не удалось загрузить типы партнёров')
+            setReady(true)
+          }
+          return
+        }
+      }
       if (cancelled) return
-      setTypeOptions(types)
+      setTypeOptions(loaded)
 
       if (mode === 'edit' && partnerId) {
         const existing = await partnersApi.get(partnerId)
@@ -48,19 +60,14 @@ export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
           sort_order: existing.sort_order,
         })
       } else {
-        setForm({ ...emptyForm, type: types[0]?.slug ?? '' })
+        setForm({ ...emptyForm })
       }
       setReady(true)
-    })().catch((err: Error) => {
-      if (!cancelled) {
-        setError(err.message)
-        setReady(true)
-      }
-    })
+    })()
     return () => {
       cancelled = true
     }
-  }, [mode, partnerId])
+  }, [mode, partnerId, types])
 
   function setField<K extends keyof PartnerInput>(key: K, value: PartnerInput[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -112,18 +119,25 @@ export function PartnerFormModal({ mode, partnerId, onClose, onSaved }: Props) {
             </label>
             <label className="flex flex-col gap-1 text-sm">
               Тип
-              <select
-                value={form.type}
-                onChange={(e) => setField('type', e.target.value)}
-                className="rounded border border-slate-300 bg-white px-3 py-2"
-                required
-              >
-                {typeOptions.map((type) => (
-                  <option key={type.slug} value={type.slug}>
-                    {type.topic_label}
+              {typeOptions.length === 0 ? (
+                <p role="alert">{error ?? 'Нет типов партнёров. Откройте «Типы партнёров» или обновите страницу.'}</p>
+              ) : (
+                <select
+                  value={form.type}
+                  onChange={(e) => setField('type', e.target.value)}
+                  className="rounded border border-slate-300 bg-white px-3 py-2"
+                  required
+                >
+                  <option value="" disabled>
+                    Выберите тип
                   </option>
-                ))}
-              </select>
+                  {typeOptions.map((type) => (
+                    <option key={type.slug} value={type.slug}>
+                      {type.topic_label}
+                    </option>
+                  ))}
+                </select>
+              )}
             </label>
             <label className="flex flex-col gap-1 text-sm">
               Referral URL

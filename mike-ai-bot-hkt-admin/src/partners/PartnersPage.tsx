@@ -80,6 +80,7 @@ export function PartnersPage() {
         <PartnerFormModal
           mode={modal.mode}
           partnerId={modal.partnerId}
+          types={types}
           onClose={() => setModal(null)}
           onSaved={async () => {
             setModal(null)

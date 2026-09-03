@@ -106,6 +106,8 @@ const seedPartners: Partner[] = [
 
 let types = structuredClone(seedTypes)
 let partners = structuredClone(seedPartners)
+let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
+let partnerTypesListFailure: { status: number; detail: string } | null = null
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -117,6 +119,12 @@ function json(data: unknown, status = 200): Response {
 export function resetMockBackend(): void {
   types = structuredClone(seedTypes)
   partners = structuredClone(seedPartners)
+  partnerUsers = []
+  partnerTypesListFailure = null
+}
+
+export function failPartnerTypesList(status: number, detail: string): void {
+  partnerTypesListFailure = { status, detail }
 }
 
 export function installFetchMock(): void {
@@ -135,8 +143,9 @@ export function installFetchMock(): void {
     }
 
     const auth = new Headers(init?.headers).get('Authorization')
-    if (path !== '/api/auth/login' && auth !== 'Bearer test-token') {
-      // allow login-less checks to 401 for protected routes when no session token path
+    if (path === '/api/auth/me' && method === 'GET') {
+      if (auth !== 'Bearer test-token') return json({ detail: 'Invalid token' }, 401)
+      return json({ email: 'admin@example.com' })
     }
 
     if (path === '/api/stats' && method === 'GET') {
@@ -162,6 +171,9 @@ export function installFetchMock(): void {
     }
 
     if (path === '/api/partner-types' && method === 'GET') {
+      if (partnerTypesListFailure) {
+        return json({ detail: partnerTypesListFailure.detail }, partnerTypesListFailure.status)
+      }
       return json([...types].sort((a, b) => a.sort_order - b.sort_order))
     }
 
@@ -203,6 +215,28 @@ export function installFetchMock(): void {
       if (index < 0) return json({ detail: 'not found' }, 404)
       partners[index] = { ...partners[index], ...body, logo_path: '' }
       return json(partners[index])
+    }
+
+    if (path === '/api/partner-users' && method === 'GET') {
+      return json([...partnerUsers])
+    }
+
+    if (path === '/api/partner-users' && method === 'POST') {
+      const selected = partners.filter((p) => (body.partner_ids as string[]).includes(p.id))
+      const row = {
+        id: crypto.randomUUID(),
+        email: body.email as string,
+        partners: selected.map((p) => ({ id: p.id, name: p.name })),
+      }
+      partnerUsers.push(row)
+      return json(row, 201)
+    }
+
+    const partnerUserMatch = path.match(/^\/api\/partner-users\/([^/]+)$/)
+    if (partnerUserMatch && method === 'DELETE') {
+      const id = decodeURIComponent(partnerUserMatch[1])
+      partnerUsers = partnerUsers.filter((u) => u.id !== id)
+      return new Response(null, { status: 204 })
     }
 
     return json({ detail: `unmocked ${method} ${path}` }, 404)

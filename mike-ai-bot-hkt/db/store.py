@@ -81,6 +81,8 @@ class DueFollowUpJob:
 
 
 def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
+    names = set(row.keys())
+    follow = row["follow_up_text"] if "follow_up_text" in names else ""
     return PartnerType(
         slug=row["slug"],
         is_menu_visible=row["is_menu_visible"],
@@ -92,7 +94,7 @@ def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
         caption_emoji=row["caption_emoji"],
         caption_cta=row["caption_cta"],
         button_template=row["button_template"],
-        follow_up_text=row["follow_up_text"] or "",
+        follow_up_text=follow or "",
     )
 
 
@@ -108,6 +110,10 @@ class SessionStore:
 
     async def close(self) -> None:
         await self._pool.close()
+
+    @property
+    def pool(self) -> asyncpg.Pool:
+        return self._pool
 
     async def create_admin_user(self, *, email: str, password: str) -> AdminUser:
         from admin_api.passwords import hash_password
@@ -637,12 +643,25 @@ class SessionStore:
             total_users = await conn.fetchval("SELECT count(*) FROM users")
             active_today = await conn.fetchval(
                 """
-                SELECT count(DISTINCT c.user_id)
-                FROM messages m
-                JOIN conversations c ON c.id = m.conversation_id
-                WHERE m.role = 'user'
-                  AND (m.created_at AT TIME ZONE $1)::date
-                      = (now() AT TIME ZONE $1)::date
+                SELECT count(*) FROM (
+                    SELECT c.user_id AS user_id
+                    FROM messages m
+                    JOIN conversations c ON c.id = m.conversation_id
+                    WHERE m.role = 'user'
+                      AND (m.created_at AT TIME ZONE $1)::date
+                          = (now() AT TIME ZONE $1)::date
+                    UNION
+                    SELECT id
+                    FROM users
+                    WHERE last_inbound_at IS NOT NULL
+                      AND (last_inbound_at AT TIME ZONE $1)::date
+                          = (now() AT TIME ZONE $1)::date
+                    UNION
+                    SELECT user_id
+                    FROM topic_events
+                    WHERE (created_at AT TIME ZONE $1)::date
+                          = (now() AT TIME ZONE $1)::date
+                ) active
                 """,
                 timezone,
             )
@@ -709,9 +728,7 @@ class SessionStore:
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(
                 """
-                SELECT slug, is_menu_visible, sort_order, button_label, topic_label,
-                       intro, fallback, caption_emoji, caption_cta, button_template,
-                       follow_up_text
+                SELECT *
                 FROM partner_types
                 ORDER BY sort_order ASC, slug ASC
                 """
@@ -721,13 +738,7 @@ class SessionStore:
     async def get_partner_type(self, slug: str) -> PartnerType | None:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
-                """
-                SELECT slug, is_menu_visible, sort_order, button_label, topic_label,
-                       intro, fallback, caption_emoji, caption_cta, button_template,
-                       follow_up_text
-                FROM partner_types
-                WHERE slug = $1
-                """,
+                "SELECT * FROM partner_types WHERE slug = $1",
                 slug,
             )
             if row is None:

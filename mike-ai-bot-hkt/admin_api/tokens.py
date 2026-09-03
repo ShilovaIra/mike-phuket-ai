@@ -21,6 +21,7 @@ def create_access_token(*, admin_id: UUID, email: str, ttl_hours: int = DEFAULT_
     payload = {
         "sub": str(admin_id),
         "email": email,
+        "role": "operator",
         "iat": now,
         "exp": now + timedelta(hours=ttl_hours),
     }
@@ -28,4 +29,4 @@ def create_access_token(*, admin_id: UUID, email: str, ttl_hours: int = DEFAULT_
 
 
 def decode_access_token(token: str) -> dict:
-    return jwt.decode(token, jwt_secret(), algorithms=["HS256"])
+    return jwt.decode(token, jwt_secret(), algorithms=["HS256"], leeway=60)

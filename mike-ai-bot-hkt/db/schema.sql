@@ -275,3 +275,30 @@ CREATE UNIQUE INDEX IF NOT EXISTS one_pending_win_back_per_user
 CREATE INDEX IF NOT EXISTS follow_up_jobs_due
     ON follow_up_jobs (status, scheduled_at)
     WHERE status = 'pending';
+
+CREATE TABLE IF NOT EXISTS partner_users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS partner_access (
+    partner_user_id UUID NOT NULL REFERENCES partner_users (id) ON DELETE CASCADE,
+    partner_id UUID NOT NULL REFERENCES partners (id) ON DELETE CASCADE,
+    PRIMARY KEY (partner_user_id, partner_id)
+);
+
+CREATE TABLE IF NOT EXISTS partner_views (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    partner_id UUID NOT NULL REFERENCES partners (id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    token TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS partner_referral_clicks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    view_id UUID NOT NULL REFERENCES partner_views (id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

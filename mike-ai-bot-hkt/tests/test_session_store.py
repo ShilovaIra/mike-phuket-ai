@@ -119,3 +119,40 @@ async def test_get_user_stats_counts_total_and_active_today(store):
 
     assert stats.total_users >= 2
     assert stats.active_today >= 1
+
+
+@requires_db
+async def test_start_and_inbound_counts_as_active_today(store):
+    before = (await store.get_user_stats()).active_today
+    await store.start_conversation("telegram", "8001")
+    await store.record_inbound("telegram", "8001")
+    after = (await store.get_user_stats()).active_today
+    assert after == before + 1
+
+
+@requires_db
+async def test_partner_type_tap_counts_as_active_today(store):
+    types = await store.list_partner_types()
+    partner_type = next(t for t in types if t.is_menu_visible)
+    before = (await store.get_user_stats()).active_today
+    await store.record_topic_event("telegram", "8002", topic=partner_type.slug)
+    after = (await store.get_user_stats()).active_today
+    assert after == before + 1
+
+
+@requires_db
+async def test_free_text_user_message_increments_active_today(store):
+    before = (await store.get_user_stats()).active_today
+    await store.append_message("telegram", "8003", role="user", content="где поесть вечером")
+    after = (await store.get_user_stats()).active_today
+    assert after == before + 1
+
+
+@requires_db
+async def test_same_user_start_and_message_count_once_as_active_today(store):
+    before = (await store.get_user_stats()).active_today
+    await store.start_conversation("telegram", "8004")
+    await store.record_inbound("telegram", "8004")
+    await store.append_message("telegram", "8004", role="user", content="привет")
+    after = (await store.get_user_stats()).active_today
+    assert after == before + 1

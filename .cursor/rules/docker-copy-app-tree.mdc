@@ -1,0 +1,14 @@
+---
+description: Bot Docker image copies the app tree; never list Python files in Dockerfile.
+globs: mike-ai-bot-hkt/{Dockerfile,.dockerignore,bot.py,*.py}
+alwaysApply: true
+---
+
+# Docker image source
+
+The bot/admin image uses `COPY . .` after installing requirements. `.dockerignore` excludes `.env`, tests, and docs.
+
+- Adding a new runtime module does **not** require a Dockerfile edit.
+- Do not replace `COPY . .` with an explicit file list. That is how `tgtrack.py` was omitted and the staging bot crash-looped.
+- Do not put runtime code under `tests/` — it is dockerignored.
+- If you change `Dockerfile` or `.dockerignore`, run `tests/test_dockerfile.py`.

@@ -3,24 +3,21 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 from dataclasses import asdict
-from typing import Optional
 from uuid import UUID
 
 import asyncpg
-import jwt
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr
 
+from admin_api.deps import require_admin
 from admin_api.passwords import verify_password
-from admin_api.tokens import create_access_token, decode_access_token
+from admin_api.tokens import create_access_token
 from db.store import AdminUser, SessionStore
 from db.url import resolve_database_url
+from partner_dashboard.router import router as partner_dashboard_router
 from partners import Partner, PartnerType
 from topic_labels import labeled_topic_rows
-
-bearer_scheme = HTTPBearer(auto_error=False)
 
 
 class LoginRequest(BaseModel):
@@ -54,25 +51,6 @@ class PartnerIn(BaseModel):
     blurb: str = ""
     is_active: bool = True
     sort_order: int = 0
-
-
-async def require_admin(
-    request: Request,
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
-) -> AdminUser:
-    if credentials is None or credentials.scheme.lower() != "bearer":
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    try:
-        payload = decode_access_token(credentials.credentials)
-        email = str(payload["email"])
-    except (jwt.PyJWTError, KeyError, TypeError):
-        raise HTTPException(status_code=401, detail="Invalid token") from None
-
-    store: SessionStore = request.app.state.store
-    admin = await store.get_admin_by_email(email)
-    if admin is None:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return admin
 
 
 def _partner_type_payload(partner_type: PartnerType) -> dict:
@@ -131,6 +109,10 @@ def create_app(*, store: SessionStore | None = None) -> FastAPI:
         token = create_access_token(admin_id=admin.id, email=admin.email)
         return LoginResponse(access_token=token)
 
+    @app.get("/api/auth/me")
+    async def me(admin: AdminUser = Depends(require_admin)) -> dict:
+        return {"email": admin.email}
+
     @app.get("/api/stats")
     async def stats(
         request: Request,
@@ -148,12 +130,19 @@ def create_app(*, store: SessionStore | None = None) -> FastAPI:
         return payload
 
     @app.get("/api/partner-types")
+    @app.get("/api/partner-types/", include_in_schema=False)
     async def list_partner_types(
         request: Request,
         admin: AdminUser = Depends(require_admin),
     ) -> list[dict]:
         _ = admin
-        return [_partner_type_payload(item) for item in await _store(request).list_partner_types()]
+        try:
+            items = await _store(request).list_partner_types()
+            return [_partner_type_payload(item) for item in items]
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     @app.post("/api/partner-types", status_code=201)
     async def create_partner_type(
@@ -231,4 +220,5 @@ def create_app(*, store: SessionStore | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Партнёр не найден") from None
         return _partner_payload(updated)
 
+    app.include_router(partner_dashboard_router)
     return app

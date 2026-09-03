@@ -17,6 +17,7 @@ services:
 
   bot:
     build: .
+    image: mike-phuket-app:local
     restart: unless-stopped
     depends_on:
       db:
@@ -28,6 +29,7 @@ services:
 
   admin-api:
     build: .
+    image: mike-phuket-app:local
     restart: unless-stopped
     command: ["python", "-m", "admin_api"]
     depends_on:
@@ -59,6 +61,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ""
+    image: mike-phuket-admin-web:local
     restart: unless-stopped
     depends_on:
       admin-api:
@@ -66,5 +69,41 @@ services:
     ports:
       - "${ADMIN_WEB_PORT:-8080}:80"
 
+  partner-web:
+    build:
+      context: ../mike-ai-bot-hkt-partner
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+    image: mike-phuket-partner-web:local
+    restart: unless-stopped
+    depends_on:
+      admin-api:
+        condition: service_healthy
+    ports:
+      - "${PARTNER_WEB_PORT:-8081}:80"
+
+  # TLS (compose profile `tls`). Hostnames come from .env
+  # (staging: *-staging.mikephuketai.com; production: partners. / admin.).
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["tls"]
+    depends_on:
+      - partner-web
+      - admin-web
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      PARTNER_PUBLIC_HOST: ${PARTNER_PUBLIC_HOST:-partners-staging.mikephuketai.com}
+      ADMIN_PUBLIC_HOST: ${ADMIN_PUBLIC_HOST:-admin-staging.mikephuketai.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:

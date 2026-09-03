@@ -9,6 +9,10 @@ SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
 async def apply_schema(conn: asyncpg.Connection) -> None:
     await conn.execute(SCHEMA_PATH.read_text(encoding="utf-8"))
+    await conn.execute(
+        "ALTER TABLE IF EXISTS partner_types "
+        "ADD COLUMN IF NOT EXISTS follow_up_text TEXT NOT NULL DEFAULT ''"
+    )
 
 
 async def apply_schema_pool(pool: asyncpg.Pool) -> None:

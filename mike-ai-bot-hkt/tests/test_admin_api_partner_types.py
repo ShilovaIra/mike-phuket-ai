@@ -44,6 +44,39 @@ async def authed_client(store):
 
 @requires_db
 @pytest.mark.asyncio
+async def test_list_partner_types_includes_seeded_slugs(store):
+    async with authed_client(store) as client:
+        listed = await client.get("/api/partner-types")
+    assert listed.status_code == 200
+    slugs = {item["slug"] for item in listed.json()}
+    assert slugs >= {"money_exchange", "vehicle_rental", "excursions"}
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_list_partner_types_trailing_slash_returns_same_payload(store):
+    async with authed_client(store) as client:
+        listed = await client.get("/api/partner-types/")
+    assert listed.status_code == 200
+    assert isinstance(listed.json(), list)
+    slugs = {item["slug"] for item in listed.json()}
+    assert slugs >= {"money_exchange", "vehicle_rental", "excursions"}
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_list_partner_types_requires_admin(store):
+    from admin_api.app import create_app
+
+    app = create_app(store=store)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        listed = await client.get("/api/partner-types")
+    assert listed.status_code == 401
+
+
+@requires_db
+@pytest.mark.asyncio
 async def test_create_partner_type_appears_in_list(store):
     async with authed_client(store) as client:
         created = await client.post("/api/partner-types", json=DIVING)

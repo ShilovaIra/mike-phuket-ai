@@ -45,7 +45,10 @@ cp .env.staging.example .env   # fill in staging tokens
 ./scripts/deploy_staging.sh    # pulls staging + rebuilds (refuses other branches)
 ```
 
-Full setup guide (including CI secrets/firewall): **[docs/STAGING.md](docs/STAGING.md)**
+Full setup guide (including domain, CI secrets, firewall): **[docs/STAGING.md](docs/STAGING.md)**
+
+Partner Dashboard (staging): `https://partners-staging.mikephuketai.com/`
+Operator admin (staging): `https://admin-staging.mikephuketai.com/`
 
 ## Production (Docker + DigitalOcean)
 
@@ -56,4 +59,7 @@ cp .env.production.example .env   # fill in production tokens
 ./scripts/deploy_production.sh    # pulls main + rebuilds (refuses other branches)
 ```
 
-Full setup guide: **[docs/PRODUCTION.md](docs/PRODUCTION.md)**
+Full setup guide (including domain and firewall): **[docs/PRODUCTION.md](docs/PRODUCTION.md)**
+
+Partner Dashboard (production): `https://partners.mikephuketai.com/`
+Operator admin (production): `https://admin.mikephuketai.com/`
