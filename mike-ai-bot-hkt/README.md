@@ -17,6 +17,25 @@ cp .env.example .env   # fill in tokens and DATABASE_URL
 python bot.py
 ```
 
+## Place search
+
+Mike looks restaurants, cafes and beaches up in the Google Places API instead of
+naming them from model memory, and quotes back the map link Google returns for
+that place. Set `GOOGLE_PLACES_API_KEY` to a Google Cloud key with **Places API
+(New)** enabled and billing on.
+
+Leaving it empty is supported but degraded: Mike answers from model memory, so he
+may name a place that does not exist. The link is still built in a format that
+opens (`maps/search/?api=1&query=…`); Mike never sends shortened links, because
+those are guessed and `goo.gl` has been retired.
+
+To check the live behaviour after touching `MIKE_PROMPT`, `places.py` or
+`maps_links.py` (this spends OpenAI and Places quota):
+
+```bash
+python scripts/diag_maps_links.py --runs 4
+```
+
 ## Database
 
 See **[docs/DATABASE.md](docs/DATABASE.md)** for schema, cutover from RAM export, and tests.
