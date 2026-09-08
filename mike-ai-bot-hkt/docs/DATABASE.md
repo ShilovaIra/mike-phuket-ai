@@ -60,7 +60,12 @@ DATABASE_URL=postgresql://user:pass@host:5432/mike
 TEST_DATABASE_URL=postgresql://user:pass@host:5432/mike_test   # optional, for pytest
 ```
 
-Also required for the bot: `TELEGRAM_BOT_TOKEN`, `OPENAI_API_KEY`, `ADMIN_CHAT_ID` (optional).
+Also required for the bot: `TELEGRAM_BOT_TOKEN`, `OPENAI_API_KEY`, `GOOGLE_PLACES_API_KEY`,
+`ADMIN_CHAT_ID` (optional).
+
+Without `GOOGLE_PLACES_API_KEY` the bot still runs, but Mike answers about places
+from model memory instead of looking them up, so he can name a place that does not
+exist. See "Place search" in the [README](../README.md).
 
 ## Running tests
 
