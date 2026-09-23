@@ -44,6 +44,8 @@ from buttons import (
     NEARBY_BUTTON,
     build_reply_keyboard_rows,
 )
+import lead_contact
+from lead_contact import public_telegram_username
 from maps_links import sanitize_map_links
 from places import PlacesClient
 from stats_report import format_bot_stats
@@ -331,6 +333,14 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if is_admin(update) and await lead_contact.relay_operator_reply(
+        context.bot, update.message
+    ):
+        return
+    if await lead_contact.relay_tourist_reply(context.bot, ADMIN_IDS, update.message):
+        await store.record_inbound(CHANNEL, telegram_id(update))
+        return
+
     user_text = update.message.text
     partner_types = await store.list_partner_types()
     partner_by_label = {t.button_label: t for t in partner_types}
@@ -348,6 +358,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_partner_topic(update, partner_type)
         return
     await ask_openai(update, context, user_text)
+
+
+async def handle_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    tid = telegram_id(update)
+    contact = update.message.contact
+    await store.record_inbound(CHANNEL, tid)
+    await store.append_message(
+        CHANNEL,
+        tid,
+        role="user",
+        content=f"Поделился контактом: {contact.phone_number}",
+        metadata={"message_type": "contact", "phone_number": contact.phone_number},
+    )
+    await lead_contact.send_contact_to_admins(context.bot, ADMIN_IDS, update.message)
+    await context.bot.send_message(
+        chat_id=update.message.chat_id,
+        text="Спасибо! Передал контакт менеджеру, он скоро напишет 👌",
+        reply_markup=await build_reply_markup(),
+    )
 
 
 async def handle_partner_topic(update: Update, partner_type: PartnerType):
@@ -471,6 +500,7 @@ async def ask_openai(
 
     await update.message.reply_text("Думаю как местный 😎")
 
+    new_lead = False
     try:
         answer = await run_model(messages)
 
@@ -486,23 +516,25 @@ async def ask_openai(
                 snapshot=await build_lead_snapshot(update),
             )
             if lead and lead.created:
+                new_lead = True
                 await send_lead_to_admin(update, context, lead.source)
 
     except Exception as e:
         answer = f"Ошибка OpenAI:\n{e}"
 
     await update.message.reply_text(answer, reply_markup=await build_reply_markup())
+    if new_lead:
+        await lead_contact.ask_for_contact_if_unreachable(context.bot, update.effective_user)
 
 
 async def build_lead_snapshot(update: Update) -> dict:
     tid = telegram_id(update)
     user = update.effective_user
     history = await store.get_ai_context(CHANNEL, tid, limit=16)
-    username = f"@{user.username}" if user.username else None
 
     return {
         "telegram_id": tid,
-        "telegram_username": username,
+        "telegram_username": public_telegram_username(user),
         "telegram_first_name": user.first_name,
         "dialogue": history,
     }
@@ -521,14 +553,11 @@ async def send_lead_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE,
         role = "Клиент" if message["role"] == "user" else "Майк"
         dialogue += f"{role}: {message['content']}\n\n"
 
-    username = f"@{user.username}" if user.username else "не указан"
-
     lead_text = (
         "🏠 Новая заявка на недвижимость\n\n"
         f"Источник: {source}\n\n"
-        f"Имя в Telegram: {user.first_name or 'не указано'}\n"
-        f"Username: {username}\n"
-        f"Telegram ID: {tid}\n\n"
+        f"{lead_contact.tourist_identity_lines(user)}\n\n"
+        f"{lead_contact.OPERATOR_REPLY_HINT}\n\n"
         "Диалог:\n"
         f"{dialogue}"
     )
@@ -538,6 +567,7 @@ async def send_lead_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE,
             chat_id=admin_id,
             text=lead_text
         )
+    await lead_contact.forward_to_admins(context.bot, ADMIN_IDS, update.message)
 
 
 async def process_due_follow_ups(bot) -> None:
@@ -592,6 +622,7 @@ async def main():
         ChatMemberHandler(on_my_chat_member, ChatMemberHandler.MY_CHAT_MEMBER)
     )
     app.add_handler(MessageHandler(filters.LOCATION, handle_location))
+    app.add_handler(MessageHandler(filters.CONTACT, handle_contact))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("Mike Phuket AI запущен...")
