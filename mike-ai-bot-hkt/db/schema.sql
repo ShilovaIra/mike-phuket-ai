@@ -252,14 +252,9 @@ VALUES
     true,
     1
 )
+-- Operators own every other column after the first insert; logos change only by deploy.
 ON CONFLICT (id) DO UPDATE SET
-    name = EXCLUDED.name,
-    type = EXCLUDED.type,
-    referral_url = EXCLUDED.referral_url,
-    blurb = EXCLUDED.blurb,
-    logo_path = EXCLUDED.logo_path,
-    is_active = EXCLUDED.is_active,
-    sort_order = EXCLUDED.sort_order;
+    logo_path = EXCLUDED.logo_path;
 
 UPDATE partners
 SET logo_path = 'media/partners/esim.jpeg'

@@ -237,7 +237,7 @@ export function installFetchMock(): void {
       const id = decodeURIComponent(partnerMatch[1])
       const index = partners.findIndex((p) => p.id === id)
       if (index < 0) return json({ detail: 'not found' }, 404)
-      partners[index] = { ...partners[index], ...body, logo_path: '' }
+      partners[index] = { ...partners[index], ...body, logo_path: partners[index].logo_path }
       return json(partners[index])
     }
 

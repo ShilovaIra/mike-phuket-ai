@@ -327,44 +327,38 @@ async def test_schema_seed_includes_esim_partner():
 
 
 @requires_db
-async def test_schema_seed_upsert_replaces_test_exchange_placeholder():
-    url = database_url()
-    assert url is not None
-    pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
-    try:
-        async with pool.acquire() as conn:
-            await apply_schema(conn)
-            await conn.execute(
-                "TRUNCATE TABLE partners, partner_types RESTART IDENTITY CASCADE"
-            )
-            await apply_schema(conn)
-            await conn.execute(
-                """
-                INSERT INTO partners (id, name, type, referral_url, blurb, is_active, sort_order)
-                VALUES (
-                    '00000000-0000-4000-8000-000000000001',
-                    'Test Exchange',
-                    'money_exchange',
-                    'https://t.me/example_exchange_bot?start=test_ref',
-                    'Тестовый партнёр',
-                    true,
-                    1
-                )
-                ON CONFLICT (id) DO UPDATE SET
-                    name = EXCLUDED.name,
-                    referral_url = EXCLUDED.referral_url,
-                    blurb = EXCLUDED.blurb
-                """
-            )
-            await apply_schema(conn)
+async def test_schema_apply_keeps_operator_edits_to_seeded_partner(store):
+    async with store._pool.acquire() as conn:
+        await apply_schema(conn)
+    money_shop, ex24 = await store.list_active_partners("money_exchange")
 
-        store = SessionStore(pool)
-        partners = await store.list_active_partners("money_exchange")
-        names = [p.name for p in partners]
-        assert "Test Exchange" not in names
-        assert names[0] == "Money Shop"
-    finally:
-        await pool.close()
+    await store.update_partner(
+        money_shop.id,
+        name="Money Shop Phuket",
+        type="money_exchange",
+        referral_url="https://moneyshopphuket.online/links/new",
+        blurb="Обновлено оператором",
+        sort_order=3,
+    )
+    await store.update_partner(
+        ex24.id,
+        name=ex24.name,
+        type=ex24.type,
+        referral_url=ex24.referral_url,
+        blurb=ex24.blurb or "",
+        is_active=False,
+        sort_order=ex24.sort_order,
+    )
+    async with store._pool.acquire() as conn:
+        await apply_schema(conn)
+
+    partners = await store.list_active_partners("money_exchange")
+    assert [p.name for p in partners] == ["Money Shop Phuket"]
+    edited = partners[0]
+    assert edited.referral_url == "https://moneyshopphuket.online/links/new"
+    assert edited.blurb == "Обновлено оператором"
+    assert edited.sort_order == 3
+    assert edited.logo_path == "media/partners/moneyshop.jpeg"
 
 
 @requires_db

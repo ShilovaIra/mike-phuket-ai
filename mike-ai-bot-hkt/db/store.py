@@ -947,7 +947,6 @@ class SessionStore:
                     type = $3,
                     referral_url = $4,
                     blurb = $5,
-                    logo_path = '',
                     is_active = $6,
                     sort_order = $7
                 WHERE id = $1
