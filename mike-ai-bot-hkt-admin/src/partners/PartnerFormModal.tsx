@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { partnerTypesApi, type PartnerType } from '../partner-types/partnerTypesApi'
 import { partnersApi, type PartnerInput } from './partnersApi'
 
@@ -52,6 +52,8 @@ export function PartnerFormModal({
   const [savedLogoUrl, setSavedLogoUrl] = useState('')
   const [createdId, setCreatedId] = useState<string | undefined>(undefined)
   const [fileInputKey, setFileInputKey] = useState(0)
+  const [fileName, setFileName] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
 
@@ -134,6 +136,7 @@ export function PartnerFormModal({
       await partnersApi.removeLogo(id)
       setSavedLogoUrl('')
       setLogo(emptyLogo)
+      setFileName('')
       onChanged()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось удалить логотип')
@@ -142,6 +145,7 @@ export function PartnerFormModal({
 
   function dropPickedLogo() {
     setLogo({ ...emptyLogo, previewUrl: savedLogoUrl })
+    setFileName('')
     setFileInputKey((key) => key + 1)
   }
 
@@ -266,15 +270,40 @@ export function PartnerFormModal({
                     alt="Предпросмотр логотипа"
                     className="h-16 w-16 rounded border border-slate-200 object-contain"
                   />
-                ) : null}
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded border border-dashed border-slate-300 text-center text-xs text-slate-400">
+                    Нет логотипа
+                  </div>
+                )}
                 <input
                   key={fileInputKey}
+                  ref={fileInputRef}
                   id="partner-logo"
                   type="file"
                   accept="image/png,image/jpeg"
-                  onChange={(e) => onLogoPicked(e.target.files?.[0])}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    setFileName(file?.name ?? '')
+                    void onLogoPicked(file)
+                  }}
                   disabled={logo.uploading}
+                  className="sr-only"
                 />
+                <div className="flex min-w-0 flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={logo.uploading}
+                    className="self-start rounded border border-slate-300 bg-white px-4 py-2 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {logo.uploading
+                      ? 'Загружаем…'
+                      : logo.previewUrl
+                        ? 'Заменить файл'
+                        : 'Выбрать файл'}
+                  </button>
+                  {fileName ? <span className="truncate text-slate-500">{fileName}</span> : null}
+                </div>
                 {logo.uploadToken || logo.error ? (
                   <button
                     type="button"
@@ -294,7 +323,6 @@ export function PartnerFormModal({
                 ) : null}
               </div>
               <p className="text-slate-500">JPEG или PNG, до 5 МБ</p>
-              {logo.uploading ? <p role="status">Загружаем…</p> : null}
               {logo.error ? <p role="alert">{logo.error}</p> : null}
             </div>
             <label className="flex items-center gap-2 text-sm">
