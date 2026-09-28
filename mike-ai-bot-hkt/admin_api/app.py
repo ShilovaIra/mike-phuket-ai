@@ -11,12 +11,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 
 from admin_api.deps import require_admin
+from admin_api.partner_logos import router as partner_logos_router
 from admin_api.passwords import verify_password
+from admin_api.payloads import partner_payload
 from admin_api.tokens import create_access_token
 from db.store import AdminUser, SessionStore
 from db.url import resolve_database_url
 from partner_dashboard.router import router as partner_dashboard_router
-from partners import Partner, PartnerType
+from partners import PartnerType
+from storage import AssetStorage
 from topic_labels import labeled_topic_rows
 
 
@@ -57,15 +60,14 @@ def _partner_type_payload(partner_type: PartnerType) -> dict:
     return asdict(partner_type)
 
 
-def _partner_payload(partner: Partner) -> dict:
-    payload = asdict(partner)
-    payload["id"] = str(partner.id)
-    payload["logo_path"] = partner.logo_path or ""
-    payload["blurb"] = partner.blurb or ""
-    return payload
+_FROM_ENV = object()
 
 
-def create_app(*, store: SessionStore | None = None) -> FastAPI:
+def create_app(
+    *,
+    store: SessionStore | None = None,
+    storage: AssetStorage | None | object = _FROM_ENV,
+) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         owned = False
@@ -84,6 +86,7 @@ def create_app(*, store: SessionStore | None = None) -> FastAPI:
     app = FastAPI(title="Mike AI Admin API", lifespan=lifespan)
     if store is not None:
         app.state.store = store
+    app.state.storage = AssetStorage.from_env(os.environ) if storage is _FROM_ENV else storage
 
     origins = [
         origin.strip()
@@ -179,7 +182,8 @@ def create_app(*, store: SessionStore | None = None) -> FastAPI:
         admin: AdminUser = Depends(require_admin),
     ) -> list[dict]:
         _ = admin
-        return [_partner_payload(item) for item in await _store(request).list_partners()]
+        storage = request.app.state.storage
+        return [partner_payload(item, storage) for item in await _store(request).list_partners()]
 
     @app.post("/api/partners", status_code=201)
     async def create_partner(
@@ -196,7 +200,7 @@ def create_app(*, store: SessionStore | None = None) -> FastAPI:
             is_active=body.is_active,
             sort_order=body.sort_order,
         )
-        return _partner_payload(created)
+        return partner_payload(created, request.app.state.storage)
 
     @app.patch("/api/partners/{partner_id}")
     async def update_partner(
@@ -218,7 +222,8 @@ def create_app(*, store: SessionStore | None = None) -> FastAPI:
             )
         except KeyError:
             raise HTTPException(status_code=404, detail="Партнёр не найден") from None
-        return _partner_payload(updated)
+        return partner_payload(updated, request.app.state.storage)
 
+    app.include_router(partner_logos_router)
     app.include_router(partner_dashboard_router)
     return app

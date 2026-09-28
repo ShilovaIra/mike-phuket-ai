@@ -252,13 +252,15 @@ VALUES
     true,
     1
 )
--- Operators own every other column after the first insert; logos change only by deploy.
+-- Operators own every column after the first insert. Bundled logos only fill an
+-- empty logo_path, so uploads from the admin panel survive deploys.
 ON CONFLICT (id) DO UPDATE SET
-    logo_path = EXCLUDED.logo_path;
+    logo_path = EXCLUDED.logo_path
+WHERE COALESCE(partners.logo_path, '') = '';
 
 UPDATE partners
 SET logo_path = 'media/partners/esim.jpeg'
-WHERE type = 'esim';
+WHERE type = 'esim' AND COALESCE(logo_path, '') = '';
 
 CREATE TABLE IF NOT EXISTS admin_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

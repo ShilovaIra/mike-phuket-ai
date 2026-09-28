@@ -973,6 +973,39 @@ class SessionStore:
             is_active=row["is_active"],
         )
 
+    async def set_partner_logo(
+        self, partner_id: UUID, logo_path: str | None
+    ) -> tuple[str | None, Partner]:
+        """Replace a partner's logo; returns (previous logo_path, updated partner)."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                WITH old AS (
+                    SELECT logo_path FROM partners WHERE id = $1 FOR UPDATE
+                )
+                UPDATE partners SET logo_path = $2
+                FROM old
+                WHERE partners.id = $1
+                RETURNING partners.id, partners.name, partners.type, partners.referral_url,
+                    partners.blurb, partners.logo_path, partners.is_active,
+                    partners.sort_order, old.logo_path AS previous_logo_path
+                """,
+                partner_id,
+                logo_path,
+            )
+        if row is None:
+            raise KeyError(partner_id)
+        return row["previous_logo_path"], Partner(
+            id=row["id"],
+            name=row["name"],
+            type=row["type"],
+            referral_url=row["referral_url"],
+            blurb=row["blurb"],
+            sort_order=row["sort_order"],
+            logo_path=row["logo_path"],
+            is_active=row["is_active"],
+        )
+
     async def _fetch_topic_counts(
         self,
         conn: asyncpg.Connection,

@@ -94,6 +94,14 @@ docker compose run --rm bot python scripts/create_admin_user.py \
   --email you@example.com --password 'choose-a-strong-password'
 ```
 
+## Dynamic assets (Spaces)
+
+Same setup as [STAGING.md → Dynamic assets](STAGING.md), with a **separate** production bucket (e.g. `mike-phuket-prod-spaces`), CDN subdomain `cdn`, and a Limited Access key scoped to that bucket only. Fill the `S3_*` block in the production `.env`, then after the first deploy with logo uploads:
+
+```bash
+docker compose exec bot python scripts/migrate_partner_logos.py
+```
+
 ## Day-to-day redeploy
 
 After merging to `main` and pushing:
@@ -128,6 +136,7 @@ When you outgrow container Postgres on the Droplet, follow [STAGING.md §9](STAG
 - [ ] Production Telegram bot responds to `/start`
 - [ ] Messages survive `docker compose restart bot`
 - [ ] Staging bot token is **not** in production `.env`
+- [ ] `S3_*` point at the **production** bucket and key; `scripts/migrate_partner_logos.py` has run
 - [ ] Old in-memory bot process is stopped
 - [ ] Firewall: SSH from your IP only; TCP 80/443 from the world; 8080/8081 closed
 - [ ] `partners` and `admin` A records point at the **production** Droplet

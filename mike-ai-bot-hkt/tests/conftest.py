@@ -68,3 +68,41 @@ async def store() -> SessionStore:
     session_store = SessionStore(pool)
     yield session_store
     await session_store.close()
+
+
+S3_ENDPOINT = "https://sgp1.digitaloceanspaces.com"
+S3_BUCKET = "mike-phuket-test"
+S3_ENV = {
+    "S3_ENDPOINT_URL": S3_ENDPOINT,
+    "S3_REGION": "sgp1",
+    "S3_BUCKET": S3_BUCKET,
+    "S3_ACCESS_KEY_ID": "test-key",
+    "S3_SECRET_ACCESS_KEY": "test-secret",
+    "S3_PUBLIC_BASE_URL": "https://cdn-test.mikephuketai.com",
+}
+
+
+@pytest.fixture
+def s3(monkeypatch):
+    """In-memory S3 (moto) with an empty test bucket; yields a raw boto3 client."""
+    import boto3
+    from moto import mock_aws
+
+    monkeypatch.setenv("MOTO_S3_CUSTOM_ENDPOINTS", S3_ENDPOINT)
+    with mock_aws():
+        client = boto3.client(
+            "s3",
+            endpoint_url=S3_ENDPOINT,
+            region_name="us-east-1",
+            aws_access_key_id="test-key",
+            aws_secret_access_key="test-secret",
+        )
+        client.create_bucket(Bucket=S3_BUCKET)
+        yield client
+
+
+@pytest.fixture
+def asset_storage(s3):
+    from storage import AssetStorage
+
+    return AssetStorage.from_env(S3_ENV)

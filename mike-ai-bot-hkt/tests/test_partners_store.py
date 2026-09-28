@@ -370,3 +370,24 @@ async def test_schema_apply_restores_esim_partner_logo_path(store):
     partners = await store.list_active_partners("esim")
     assert [p.name for p in partners] == ["Mike eSIM"]
     assert partners[0].logo_path == "media/partners/esim.jpeg"
+
+
+@requires_db
+async def test_schema_apply_keeps_operator_uploaded_logos(store):
+    uploaded = {
+        "money_exchange": "partners/money/logo-aaa.png",
+        "esim": "partners/esim/logo-bbb.jpg",
+    }
+    async with store._pool.acquire() as conn:
+        await apply_schema(conn)
+        for partner_type, key in uploaded.items():
+            await conn.execute(
+                "UPDATE partners SET logo_path = $2 WHERE type = $1",
+                partner_type,
+                key,
+            )
+        await apply_schema(conn)
+
+    for partner_type, key in uploaded.items():
+        partners = await store.list_active_partners(partner_type)
+        assert {p.logo_path for p in partners} == {key}

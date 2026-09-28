@@ -45,6 +45,11 @@ class PartnerCard:
     logo_path: str | None
 
 
+def is_bundled_logo(logo_path: str) -> bool:
+    """Bundled logos ship in the image under media/; anything else is a storage key."""
+    return logo_path.startswith("media/")
+
+
 def resolve_logo_path(logo_path: str | None, *, root: Path = PACKAGE_ROOT) -> Path | None:
     if not logo_path:
         return None

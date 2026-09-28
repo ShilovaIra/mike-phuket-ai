@@ -30,3 +30,29 @@ def create_access_token(*, admin_id: UUID, email: str, ttl_hours: int = DEFAULT_
 
 def decode_access_token(token: str) -> dict:
     return jwt.decode(token, jwt_secret(), algorithms=["HS256"], leeway=60)
+
+
+LOGO_UPLOAD_TTL_HOURS = 1
+_LOGO_UPLOAD_PURPOSE = "logo_upload"
+
+
+def create_logo_upload_token(*, key: str) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "purpose": _LOGO_UPLOAD_PURPOSE,
+        "key": key,
+        "iat": now,
+        "exp": now + timedelta(hours=LOGO_UPLOAD_TTL_HOURS),
+    }
+    return jwt.encode(payload, jwt_secret(), algorithm="HS256")
+
+
+def decode_logo_upload_token(token: str) -> str:
+    """Return the staged tmp/ key, or raise jwt.PyJWTError."""
+    payload = jwt.decode(token, jwt_secret(), algorithms=["HS256"])
+    key = payload.get("key")
+    if payload.get("purpose") != _LOGO_UPLOAD_PURPOSE or not isinstance(key, str):
+        raise jwt.InvalidTokenError("not a logo upload token")
+    if not key.startswith("tmp/"):
+        raise jwt.InvalidTokenError("not a staged upload")
+    return key

@@ -159,6 +159,27 @@ Generate a strong Postgres password:
 openssl rand -base64 32
 ```
 
+### Dynamic assets (DigitalOcean Spaces)
+
+Partner logos uploaded in the admin panel live in a Spaces bucket, not in the image. Mike's own logos and interface pictures stay bundled in the repo.
+
+1. **Spaces Object Storage → Create Bucket** in `sgp1` (staging: `mike-phuket-staging-spaces`).
+2. Bucket **Settings → CDN**: enable, add custom subdomain `cdn-staging` (enter only the subdomain; DigitalOcean appends `.mikephuketai.com`).
+3. **Spaces Object Storage → Access Keys → Create Access Key**: *Limited Access*, this bucket only, Read/Write/Delete. Copy the secret now — it is shown once.
+4. Fill the `S3_*` block in `.env` on the Droplet. Never put the key in `.env.*.example` files (they are committed).
+
+Check from your laptop (uses your local `.env`):
+
+```bash
+python scripts/s3_smoke_test.py      # upload → fetch via CDN → delete
+```
+
+After the first deploy with logo uploads, move the bundled partner logos into the bucket and set the `tmp/` cleanup rule (safe to re-run):
+
+```bash
+docker compose exec bot python scripts/migrate_partner_logos.py
+```
+
 ---
 
 ## 5. Start staging

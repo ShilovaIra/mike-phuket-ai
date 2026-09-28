@@ -18,6 +18,7 @@ type Partner = {
   referral_url: string
   blurb: string
   logo_path: string
+  logo_url: string
   is_active: boolean
   sort_order: number
 }
@@ -83,6 +84,7 @@ const seedPartners: Partner[] = [
     referral_url: 'https://moneyshopphuket.online/links/pp413',
     blurb: 'Money Shop',
     logo_path: '',
+    logo_url: '',
     is_active: true,
     sort_order: 1,
   },
@@ -93,6 +95,7 @@ const seedPartners: Partner[] = [
     referral_url: 'https://ex24qr.com/epihelgnld',
     blurb: 'Ex24',
     logo_path: '',
+    logo_url: '',
     is_active: true,
     sort_order: 2,
   },
@@ -103,6 +106,7 @@ const seedPartners: Partner[] = [
     referral_url: 'https://tisland.link/excurs?ref=72s5z3yp3jb79r7',
     blurb: 'Экскурсии',
     logo_path: '',
+    logo_url: '',
     is_active: true,
     sort_order: 1,
   },
@@ -113,6 +117,7 @@ const seedPartners: Partner[] = [
     referral_url: 'https://boomerang.rent/catalog/?utm_source=MikePhuketAIBot',
     blurb: 'Boomerang - надежный сервис аренды автомобилей и мотобайков на Пхукете. Доставка по всему острову.',
     logo_path: 'media/partners/boomerang.jpeg',
+    logo_url: '',
     is_active: true,
     sort_order: 1,
   },
@@ -123,6 +128,7 @@ const seedPartners: Partner[] = [
     referral_url: 'https://t.me/Mike_esim_bot',
     blurb: '',
     logo_path: 'media/partners/esim.jpeg',
+    logo_url: '',
     is_active: true,
     sort_order: 1,
   },
@@ -132,6 +138,13 @@ let types = structuredClone(seedTypes)
 let partners = structuredClone(seedPartners)
 let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
 let partnerTypesListFailure: { status: number; detail: string } | null = null
+let logoUploads = new Map<string, string>()
+let logoStorageDown = false
+let logoLinkDown = false
+
+export const MOCK_CDN = 'https://cdn-test.mikephuketai.com'
+const STORAGE_DOWN = 'Хранилище недоступно, попробуйте позже'
+const MAX_LOGO_BYTES = 5 * 1024 * 1024
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -145,6 +158,32 @@ export function resetMockBackend(): void {
   partners = structuredClone(seedPartners)
   partnerUsers = []
   partnerTypesListFailure = null
+  logoUploads = new Map()
+  logoStorageDown = false
+  logoLinkDown = false
+}
+
+export function failLogoStorage(): void {
+  logoStorageDown = true
+}
+
+export function failLogoLink(): void {
+  logoLinkDown = true
+}
+
+export function restoreLogoLink(): void {
+  logoLinkDown = false
+}
+
+export function mockPartnerByName(name: string): Partner | undefined {
+  return partners.find((p) => p.name === name)
+}
+
+async function sniffLogo(file: File): Promise<string | null> {
+  const head = new Uint8Array(await file.slice(0, 8).arrayBuffer())
+  if (head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47) return 'png'
+  if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return 'jpg'
+  return null
 }
 
 export function failPartnerTypesList(status: number, detail: string): void {
@@ -157,7 +196,8 @@ export function installFetchMock(): void {
     const url = new URL(String(input), 'http://localhost:8000')
     const path = url.pathname
     const method = (init?.method ?? 'GET').toUpperCase()
-    const body = init?.body ? JSON.parse(String(init.body)) : null
+    const body =
+      init?.body && !(init.body instanceof FormData) ? JSON.parse(String(init.body)) : null
 
     if (path === '/api/auth/login' && method === 'POST') {
       if (body?.email === 'admin@example.com' && body?.password === 'admin123') {
@@ -227,6 +267,7 @@ export function installFetchMock(): void {
         id: crypto.randomUUID(),
         ...body,
         logo_path: '',
+        logo_url: '',
       }
       partners.push(partner)
       return json(partner, 201)
@@ -237,7 +278,41 @@ export function installFetchMock(): void {
       const id = decodeURIComponent(partnerMatch[1])
       const index = partners.findIndex((p) => p.id === id)
       if (index < 0) return json({ detail: 'not found' }, 404)
-      partners[index] = { ...partners[index], ...body, logo_path: partners[index].logo_path }
+      partners[index] = {
+        ...partners[index],
+        ...body,
+        logo_path: partners[index].logo_path,
+        logo_url: partners[index].logo_url,
+      }
+      return json(partners[index])
+    }
+
+    if (path === '/api/partner-logos/uploads' && method === 'POST') {
+      const file = (init!.body as FormData).get('file') as File
+      if (file.size > MAX_LOGO_BYTES) return json({ detail: 'Файл больше 5 МБ' }, 400)
+      const extension = await sniffLogo(file)
+      if (!extension) return json({ detail: 'Только JPEG или PNG' }, 400)
+      if (logoStorageDown) return json({ detail: STORAGE_DOWN }, 503)
+      const token = `upload-${crypto.randomUUID()}`
+      const previewUrl = `${MOCK_CDN}/tmp/${token}.${extension}`
+      logoUploads.set(token, extension)
+      return json({ upload_token: token, preview_url: previewUrl }, 201)
+    }
+
+    const logoMatch = path.match(/^\/api\/partners\/([^/]+)\/logo$/)
+    if (logoMatch && (method === 'PUT' || method === 'DELETE')) {
+      const id = decodeURIComponent(logoMatch[1])
+      const index = partners.findIndex((p) => p.id === id)
+      if (index < 0) return json({ detail: 'Партнёр не найден' }, 404)
+      if (method === 'DELETE') {
+        partners[index] = { ...partners[index], logo_path: '', logo_url: '' }
+        return json(partners[index])
+      }
+      if (logoLinkDown) return json({ detail: STORAGE_DOWN }, 503)
+      const extension = logoUploads.get(body.upload_token)
+      if (!extension) return json({ detail: 'Загрузка устарела, выберите файл заново' }, 400)
+      const key = `partners/${id}/logo-${body.upload_token.slice(-12)}.${extension}`
+      partners[index] = { ...partners[index], logo_path: key, logo_url: `${MOCK_CDN}/${key}` }
       return json(partners[index])
     }
 
