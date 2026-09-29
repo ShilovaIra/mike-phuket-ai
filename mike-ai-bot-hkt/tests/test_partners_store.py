@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import asyncpg
 import pytest
@@ -25,8 +25,12 @@ async def _insert_partner(
     async with store._pool.acquire() as conn:
         await conn.execute(
             """
-            INSERT INTO partners (id, name, type, referral_url, blurb, is_active, sort_order)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO partners (
+                id, name, partner_type_id, referral_url, blurb, is_active, sort_order
+            )
+            VALUES (
+                $1, $2, (SELECT id FROM partner_types WHERE slug = $3), $4, $5, $6, $7
+            )
             """,
             uuid4(),
             name,
@@ -36,6 +40,24 @@ async def _insert_partner(
             is_active,
             sort_order,
         )
+
+
+@requires_db
+async def test_seeded_partner_type_has_id_and_created_partner_keeps_slug(store):
+    types = await store.list_partner_types()
+    money = next(t for t in types if t.slug == "money_exchange")
+    assert isinstance(money.id, UUID)
+
+    created = await store.create_partner(
+        name="Desk Exchange",
+        type=money.slug,
+        referral_url="https://example.test/desk",
+    )
+    assert created.type == "money_exchange"
+
+    listed = await store.list_partners()
+    match = next(p for p in listed if p.id == created.id)
+    assert match.type == "money_exchange"
 
 
 @requires_db
@@ -191,7 +213,7 @@ async def test_seeded_partner_types_place_esim_beside_real_estate():
 
 @requires_db
 async def test_insert_partner_rejects_unknown_type(store):
-    with pytest.raises(asyncpg.ForeignKeyViolationError):
+    with pytest.raises(asyncpg.NotNullViolationError):
         await _insert_partner(store, name="Orphan", partner_type="not_a_real_type")
 
 
@@ -364,7 +386,12 @@ async def test_schema_apply_keeps_operator_edits_to_seeded_partner(store):
 @requires_db
 async def test_schema_apply_restores_esim_partner_logo_path(store):
     async with store._pool.acquire() as conn:
-        await conn.execute("UPDATE partners SET logo_path = '' WHERE type = 'esim'")
+        await conn.execute(
+            """
+            UPDATE partners SET logo_path = ''
+            WHERE partner_type_id = (SELECT id FROM partner_types WHERE slug = 'esim')
+            """
+        )
         await apply_schema(conn)
 
     partners = await store.list_active_partners("esim")
@@ -382,7 +409,10 @@ async def test_schema_apply_keeps_operator_uploaded_logos(store):
         await apply_schema(conn)
         for partner_type, key in uploaded.items():
             await conn.execute(
-                "UPDATE partners SET logo_path = $2 WHERE type = $1",
+                """
+                UPDATE partners SET logo_path = $2
+                WHERE partner_type_id = (SELECT id FROM partner_types WHERE slug = $1)
+                """,
                 partner_type,
                 key,
             )
