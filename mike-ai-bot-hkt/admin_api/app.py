@@ -13,7 +13,11 @@ from pydantic import BaseModel, EmailStr, field_validator
 
 from admin_api.deps import require_admin
 from admin_api.partner_logos import router as partner_logos_router
-from admin_api.place_photos import attach_place_photos
+from admin_api.place_photos import (
+    attach_place_photos,
+    clear_place_photos,
+    replace_place_photos,
+)
 from admin_api.place_photos import router as place_photos_router
 from admin_api.passwords import verify_password
 from admin_api.payloads import partner_payload
@@ -86,7 +90,7 @@ class PlaceIn(BaseModel):
     blurb: str = ""
     partner_id: Optional[UUID] = None
     is_active: bool = True
-    photos: List[PlacePhotoIn] = []
+    photos: Optional[List[PlacePhotoIn]] = None
 
 
 class PartnerIn(BaseModel):
@@ -109,9 +113,17 @@ def _place_category_payload(category: PlaceCategory) -> dict:
 
 
 def _place_payload(
-    place: Place, category_slug: str, assets: list[PlaceAsset] | None = None
+    place: Place,
+    category_slug: str,
+    assets: list[PlaceAsset] | None = None,
+    storage: AssetStorage | None = None,
 ) -> dict:
-    photos = [{"id": str(asset.id), "path": asset.path} for asset in assets or ()]
+    photos = []
+    for asset in assets or ():
+        photo = {"id": str(asset.id), "path": asset.path}
+        if storage is not None:
+            photo["url"] = storage.public_url(asset.path)
+        photos.append(photo)
     return {
         "id": str(place.id),
         "name": place.name,
@@ -309,7 +321,12 @@ def create_app(
         for place in await store.list_places():
             assets = await store.list_place_assets(place.id)
             payloads.append(
-                _place_payload(place, categories[place.category_id], assets)
+                _place_payload(
+                    place,
+                    categories[place.category_id],
+                    assets,
+                    request.app.state.storage,
+                )
             )
         return payloads
 
@@ -349,8 +366,8 @@ def create_app(
             )
         except asyncpg.UniqueViolationError:
             raise HTTPException(status_code=409, detail="Это место уже есть") from None
-        assets = await attach_place_photos(request, created.id, body.photos)
-        return _place_payload(created, category.slug, assets)
+        assets = await attach_place_photos(request, created.id, body.photos or [])
+        return _place_payload(created, category.slug, assets, request.app.state.storage)
 
     @app.patch("/api/places/{place_id}")
     async def update_place(
@@ -392,8 +409,13 @@ def create_app(
             raise HTTPException(status_code=404, detail="Место не найдено") from None
         except asyncpg.UniqueViolationError:
             raise HTTPException(status_code=409, detail="Это место уже есть") from None
-        assets = await store.list_place_assets(place_id)
-        return _place_payload(updated, category.slug, assets)
+        if body.photos is None:
+            assets = await store.list_place_assets(place_id)
+        elif body.photos:
+            assets = await replace_place_photos(request, place_id, body.photos)
+        else:
+            assets = await clear_place_photos(request, place_id)
+        return _place_payload(updated, category.slug, assets, request.app.state.storage)
 
     @app.get("/api/partners")
     async def list_partners(

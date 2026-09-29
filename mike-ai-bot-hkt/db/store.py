@@ -967,6 +967,15 @@ class SessionStore:
             )
         return [_place_asset_from_row(row) for row in rows]
 
+    async def delete_place_assets(self, asset_ids: list[UUID]) -> None:
+        if not asset_ids:
+            return
+        async with self._pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM place_assets WHERE id = ANY($1::uuid[])",
+                asset_ids,
+            )
+
     async def list_partner_types(self) -> list[PartnerType]:
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(

@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from tests.conftest import requires_db
+from tests.conftest import S3_BUCKET, S3_ENV, requires_db
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
 JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 64
@@ -210,6 +210,157 @@ async def test_chosen_photo_is_stored_as_the_cover(store, asset_storage, s3):
         match = next(item for item in listed.json() if item["name"] == "Мыс Промтеп")
         assert match["cover"] == photos[0]["path"]
         assert [photo["path"] for photo in match["photos"]] == [photo["path"] for photo in photos]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_saved_place_photo_has_a_public_url(store, asset_storage, s3):
+    async with authed_client(store, asset_storage) as client:
+        uploaded = await client.post(
+            "/api/place-photos/uploads",
+            files={"file": ("front.jpg", JPEG, "image/jpeg")},
+        )
+        assert uploaded.status_code == 201
+
+        created = await client.post(
+            "/api/places",
+            json={
+                "name": "Мыс Промтеп",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS,
+                "photos": [{"upload_token": uploaded.json()["upload_token"]}],
+            },
+        )
+        assert created.status_code == 201
+        photo = created.json()["photos"][0]
+        assert photo["url"] == f"{S3_ENV['S3_PUBLIC_BASE_URL']}/{photo['path']}"
+
+        listed = await client.get("/api/places")
+        match = next(item for item in listed.json() if item["name"] == "Мыс Промтеп")
+        assert match["photos"][0]["url"] == photo["url"]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_text_update_keeps_the_place_photo(store, asset_storage, s3):
+    async with authed_client(store, asset_storage) as client:
+        uploaded = await client.post(
+            "/api/place-photos/uploads",
+            files={"file": ("front.jpg", JPEG, "image/jpeg")},
+        )
+        created = await client.post(
+            "/api/places",
+            json={
+                "name": "Мыс Промтеп",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS,
+                "photos": [{"upload_token": uploaded.json()["upload_token"]}],
+            },
+        )
+        assert created.status_code == 201
+        photo_url = created.json()["photos"][0]["url"]
+
+        updated = await client.patch(
+            f"/api/places/{created.json()['id']}",
+            json={
+                "name": "Мыс Промтеп",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS,
+                "blurb": "Закат",
+            },
+        )
+        assert updated.status_code == 200
+        assert updated.json()["blurb"] == "Закат"
+        assert updated.json()["photos"][0]["url"] == photo_url
+
+
+def _bucket_keys(s3) -> list[str]:
+    return sorted(item["Key"] for item in s3.list_objects_v2(Bucket=S3_BUCKET).get("Contents", []))
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_photo_update_replaces_every_stored_photo(store, asset_storage, s3):
+    async with authed_client(store, asset_storage) as client:
+        png = await client.post(
+            "/api/place-photos/uploads",
+            files={"file": ("front.png", PNG, "image/png")},
+        )
+        jpeg = await client.post(
+            "/api/place-photos/uploads",
+            files={"file": ("cover.jpg", JPEG, "image/jpeg")},
+        )
+        created = await client.post(
+            "/api/places",
+            json={
+                "name": "Мыс Промтеп",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS,
+                "photos": [
+                    {"upload_token": png.json()["upload_token"], "is_cover": False},
+                    {"upload_token": jpeg.json()["upload_token"], "is_cover": True},
+                ],
+            },
+        )
+        assert created.status_code == 201
+        assert len(created.json()["photos"]) == 2
+
+        replacement = await client.post(
+            "/api/place-photos/uploads",
+            files={"file": ("new.jpg", JPEG, "image/jpeg")},
+        )
+        updated = await client.patch(
+            f"/api/places/{created.json()['id']}",
+            json={
+                "name": "Мыс Промтеп",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS,
+                "photos": [{"upload_token": replacement.json()["upload_token"]}],
+            },
+        )
+        assert updated.status_code == 200
+        photos = updated.json()["photos"]
+        assert len(photos) == 1
+        assert photos[0]["url"] == f"{S3_ENV['S3_PUBLIC_BASE_URL']}/{photos[0]['path']}"
+        assert _bucket_keys(s3) == [photos[0]["path"]]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_empty_photo_list_removes_the_place_photo(store, asset_storage, s3):
+    async with authed_client(store, asset_storage) as client:
+        uploaded = await client.post(
+            "/api/place-photos/uploads",
+            files={"file": ("front.jpg", JPEG, "image/jpeg")},
+        )
+        created = await client.post(
+            "/api/places",
+            json={
+                "name": "Мыс Промтеп",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS,
+                "photos": [{"upload_token": uploaded.json()["upload_token"]}],
+            },
+        )
+        assert created.status_code == 201
+        assert created.json()["photos"]
+
+        updated = await client.patch(
+            f"/api/places/{created.json()['id']}",
+            json={
+                "name": "Мыс Промтеп",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS,
+                "photos": [],
+            },
+        )
+        assert updated.status_code == 200
+        assert updated.json()["photos"] == []
+        assert _bucket_keys(s3) == []
+
+        listed = await client.get("/api/places")
+        match = next(item for item in listed.json() if item["name"] == "Мыс Промтеп")
+        assert match["photos"] == []
 
 
 @requires_db

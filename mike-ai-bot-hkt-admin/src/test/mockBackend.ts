@@ -166,13 +166,15 @@ let places: {
   is_active: boolean
   latitude: number
   longitude: number
-  photos: { id: string; path: string }[]
+  photos: { id: string; path: string; url: string }[]
   cover: string
 }[] = []
 let partners = structuredClone(seedPartners)
 let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
 let partnerTypesListFailure: { status: number; detail: string } | null = null
 let logoUploads = new Map<string, string>()
+let photoUploads = new Map<string, string>()
+let placePhotoSaveDown = false
 let logoStorageDown = false
 let logoLinkDown = false
 
@@ -195,6 +197,8 @@ export function resetMockBackend(): void {
   partnerUsers = []
   partnerTypesListFailure = null
   logoUploads = new Map()
+  photoUploads = new Map()
+  placePhotoSaveDown = false
   logoStorageDown = false
   logoLinkDown = false
 }
@@ -209,6 +213,14 @@ export function failLogoLink(): void {
 
 export function restoreLogoLink(): void {
   logoLinkDown = false
+}
+
+export function failPlacePhotoSave(): void {
+  placePhotoSaveDown = true
+}
+
+export function restorePlacePhotoSave(): void {
+  placePhotoSaveDown = false
 }
 
 export function mockPartnerByName(name: string): Partner | undefined {
@@ -345,6 +357,52 @@ export function installFetchMock(): void {
       }
       places.push(place)
       return json(place, 201)
+    }
+
+    if (path === '/api/place-photos/uploads' && method === 'POST') {
+      const file = (init!.body as FormData).get('file') as File
+      if (file.size > MAX_LOGO_BYTES) return json({ detail: 'Файл больше 5 МБ' }, 400)
+      const extension = await sniffLogo(file)
+      if (!extension) return json({ detail: 'Только JPEG или PNG' }, 400)
+      const token = `upload-${crypto.randomUUID()}`
+      const previewUrl = `${MOCK_CDN}/tmp/${token}.${extension}`
+      photoUploads.set(token, extension)
+      return json({ upload_token: token, preview_url: previewUrl }, 201)
+    }
+
+    const placeMatch = path.match(/^\/api\/places\/([^/]+)$/)
+    if (placeMatch && method === 'PATCH') {
+      const id = decodeURIComponent(placeMatch[1])
+      const index = places.findIndex((place) => place.id === id)
+      if (index < 0) return json({ detail: 'Место не найдено' }, 404)
+      const current = places[index]
+      let photos = current.photos
+      if (Array.isArray(body.photos)) {
+        if (body.photos.length > 0 && placePhotoSaveDown) {
+          return json({ detail: 'Хранилище недоступно, попробуйте позже' }, 503)
+        }
+        if (body.photos.length === 0) {
+          photos = []
+        } else {
+          const token = body.photos[0].upload_token as string
+          const extension = photoUploads.get(token)
+          if (!extension) return json({ detail: 'Загрузка устарела, выберите файл заново' }, 400)
+          const key = `places/${id}/${token.slice(-12)}.${extension}`
+          photos = [{ id: crypto.randomUUID(), path: key, url: `${MOCK_CDN}/${key}` }]
+        }
+      }
+      places[index] = {
+        ...current,
+        name: body.name ?? current.name,
+        category: body.category ?? current.category,
+        blurb: body.blurb ?? current.blurb,
+        maps_url: body.maps_url ?? current.maps_url,
+        partner_id: body.partner_id === undefined ? current.partner_id : body.partner_id,
+        is_active: body.is_active ?? current.is_active,
+        photos,
+        cover: photos[0]?.path ?? 'media/places/placeholder.jpg',
+      }
+      return json(places[index])
     }
 
     if (path === '/api/partners' && method === 'GET') {

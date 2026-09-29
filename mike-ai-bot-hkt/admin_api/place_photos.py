@@ -46,6 +46,13 @@ def _store(request: Request) -> SessionStore:
     return request.app.state.store
 
 
+async def _delete_quietly(storage: AssetStorage, key: str) -> None:
+    try:
+        await run_in_threadpool(storage.delete, key)
+    except StorageError:
+        logger.warning("Could not delete %s from storage", key, exc_info=True)
+
+
 @router.post("/api/place-photos/uploads", status_code=201)
 async def upload_place_photo(
     request: Request,
@@ -90,8 +97,31 @@ async def attach_place_photos(request: Request, place_id: UUID, photos: list) ->
             logger.exception("Linking staged place photo %s failed", staged_key)
             raise HTTPException(status_code=503, detail=STORAGE_DOWN) from None
         await store.add_place_asset(place_id, key, sort_order)
-        try:
-            await run_in_threadpool(storage.delete, staged_key)
-        except StorageError:
-            logger.warning("Could not delete %s from storage", staged_key, exc_info=True)
+        await _delete_quietly(storage, staged_key)
+    return await store.list_place_assets(place_id)
+
+
+async def _drop_place_assets(request: Request, assets: list[PlaceAsset]) -> None:
+    if not assets:
+        return
+    await _store(request).delete_place_assets([asset.id for asset in assets])
+    storage: AssetStorage | None = request.app.state.storage
+    if storage is None:
+        return
+    for asset in assets:
+        await _delete_quietly(storage, asset.path)
+
+
+async def clear_place_photos(request: Request, place_id: UUID) -> list[PlaceAsset]:
+    previous = await _store(request).list_place_assets(place_id)
+    await _drop_place_assets(request, previous)
+    return []
+
+
+async def replace_place_photos(request: Request, place_id: UUID, photos: list) -> list[PlaceAsset]:
+    _require_storage(request)
+    store = _store(request)
+    previous = await store.list_place_assets(place_id)
+    await attach_place_photos(request, place_id, photos)
+    await _drop_place_assets(request, previous)
     return await store.list_place_assets(place_id)
