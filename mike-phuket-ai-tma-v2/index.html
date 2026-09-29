@@ -57,41 +57,6 @@
               </button>
             </div>
 
-            <div class="map-card" aria-label="Карта Пхукета">
-              <svg class="island" viewBox="0 0 360 210" role="img" aria-label="Пхукет">
-                <defs>
-                  <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stop-color="#d5ecf8" />
-                    <stop offset="1" stop-color="#b7dcef" />
-                  </linearGradient>
-                  <linearGradient id="land" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="#c5ddb4" />
-                    <stop offset="1" stop-color="#8fbf86" />
-                  </linearGradient>
-                </defs>
-                <rect width="360" height="210" fill="url(#sea)" />
-                <path fill="url(#land)" d="M168 18c18 2 28 14 34 28 8 4 22 8 28 20 6 12 2 24-6 32 8 6 16 18 12 30-4 14-20 18-28 28-6 8-4 20 2 28-10 10-28 8-40 14-14 6-18 20-32 22-16 2-28-10-42-8-12 2-22 12-34 8-14-4-16-20-28-26-10-6-24-4-30-16-6-12 2-24 8-34 4-8 2-18-4-26-8-10-6-26 4-34 10-8 24-6 32-14 6-8 8-20 18-24 12-6 28-2 40-8 10-4 18-14 30-16 8-2 18 0 26 2Z" />
-                <path fill="#a9c998" d="M150 70c20 8 36 6 48 18-8 10-24 8-36 14-14 6-20-4-28-8 2-10 6-18 16-24Z" />
-                <text x="188" y="104" text-anchor="middle" fill="#1d4e38" font-size="13" font-weight="700" font-family="Golos Text, sans-serif">ПХУКЕТ</text>
-              </svg>
-              <button class="pin stub" type="button" style="left: 22%; top: 16%">
-                <span class="pin-dot"></span>
-                <span class="pin-label"><b>Пляж Сурин</b><small>4.9 · 8 мин</small></span>
-              </button>
-              <button class="pin pin-right stub" type="button" style="right: 4%; top: 18%">
-                <span class="pin-label"><b>Старый город</b><small>4.8 · 12 мин</small></span>
-                <span class="pin-dot"></span>
-              </button>
-              <button class="pin stub" type="button" style="left: 8%; top: 62%">
-                <span class="pin-dot"></span>
-                <span class="pin-label"><b>Большой Будда</b><small>4.9 · 18 мин</small></span>
-              </button>
-              <button class="pin pin-right stub" type="button" style="right: 6%; top: 68%">
-                <span class="pin-label"><b>Мыс Промтеп</b><small>4.8 · 25 мин</small></span>
-                <span class="pin-dot"></span>
-              </button>
-            </div>
-
             <div class="row-head">
               <h2>Рекомендации для вас</h2>
               <button class="text-link stub" type="button">Смотреть все</button>
@@ -126,10 +91,13 @@
                 <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>
                 Главная
               </a>
-              <a class="tab" href="#map">
-                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>
+              <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро">
+                <span class="tab-mark">
+                  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>
+                  <span class="soon">скоро</span>
+                </span>
                 Карта
-              </a>
+              </span>
               <a class="tab" href="#chat">
                 <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
                 Чат
@@ -327,7 +295,7 @@
           </div>
           <nav class="tabs tabs-bar" aria-label="Разделы">
             <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
-            <a class="tab is-on" href="#map" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="currentColor" /></svg>Карта</a>
+            <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро"><span class="tab-mark"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg><span class="soon">скоро</span></span>Карта</span>
             <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
             <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
             <a class="tab" href="#profile"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>Профиль</a>
@@ -359,7 +327,7 @@
           </form>
           <nav class="tabs tabs-bar" aria-label="Разделы">
             <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
-            <a class="tab" href="#map"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>Карта</a>
+            <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро"><span class="tab-mark"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg><span class="soon">скоро</span></span>Карта</span>
             <a class="tab is-on" href="#chat" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="currentColor" /></svg>Чат</a>
             <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
             <a class="tab" href="#profile"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>Профиль</a>
@@ -386,7 +354,7 @@
           </div>
           <nav class="tabs tabs-bar" aria-label="Разделы">
             <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
-            <a class="tab" href="#map"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>Карта</a>
+            <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро"><span class="tab-mark"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg><span class="soon">скоро</span></span>Карта</span>
             <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
             <a class="tab is-on" href="#saved" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="currentColor" /></svg>Избранное</a>
             <a class="tab" href="#profile"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>Профиль</a>
@@ -407,7 +375,7 @@
           </div>
           <nav class="tabs tabs-bar" aria-label="Разделы">
             <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
-            <a class="tab" href="#map"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>Карта</a>
+            <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро"><span class="tab-mark"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg><span class="soon">скоро</span></span>Карта</span>
             <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
             <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
             <a class="tab is-on" href="#profile" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="currentColor" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="currentColor" /></svg>Профиль</a>
@@ -418,7 +386,7 @@
       <aside class="studio-spec">
         <p class="kicker">v2 · шаг 2 презентации</p>
         <h2>Экраны приложения</h2>
-        <p>Нижние вкладки открывают карту, чат, избранное и профиль. Остальные кнопки на экране ничего не делают.</p>
+        <p>Нижние вкладки открывают чат, избранное и профиль. Карта отмечена «скоро» и не открывается. Остальные кнопки на экране ничего не делают.</p>
         <nav class="rail" aria-label="Экраны макета">
           <a href="#home">Главная</a>
           <a href="#map">Карта</a>

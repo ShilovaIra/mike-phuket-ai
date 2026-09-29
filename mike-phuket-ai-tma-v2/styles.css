@@ -302,15 +302,6 @@ button {
   background: #eef3f9;
 }
 
-.map-card {
-  position: relative;
-  height: 210px;
-  margin: 12px 16px 0;
-  border-radius: 18px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-}
-
 .island {
   width: 100%;
   height: 100%;
@@ -521,6 +512,37 @@ button {
 
 .tab:hover {
   color: var(--ink);
+}
+
+.tab.is-soon,
+.tab.is-soon:hover {
+  color: #8aa0b8;
+  cursor: default;
+  pointer-events: none;
+}
+
+.tab-mark {
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+
+.soon {
+  position: absolute;
+  z-index: 1;
+  top: -7px;
+  left: 8px;
+  padding: 2px 4px 3px;
+  border-radius: 4px;
+  background: #fdcb1a;
+  color: #042048;
+  font-size: 0.5rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  transform: rotate(8deg);
+  box-shadow: 0 1px 0 rgba(4, 32, 72, 0.16);
 }
 
 .screen-voice {
