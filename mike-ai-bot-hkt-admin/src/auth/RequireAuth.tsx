@@ -46,6 +46,18 @@ export function RequireAuth() {
             Типы партнёров
           </Link>
           <Link
+            to="/places"
+            className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+          >
+            Места
+          </Link>
+          <Link
+            to="/place-categories"
+            className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+          >
+            Категории мест
+          </Link>
+          <Link
             to="/partner-users"
             className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
           >

@@ -124,13 +124,23 @@ def _place_from_row(row: asyncpg.Record) -> Place:
         longitude=row["longitude"],
         blurb=row["blurb"],
         is_active=row["is_active"],
+        maps_url=row["maps_url"],
     )
 
 
 _PLACE_COLUMNS = """
     id, name, category_id, partner_id, google_place_id,
-    latitude, longitude, blurb, is_active
+    latitude, longitude, blurb, is_active, maps_url
 """
+
+
+def _place_category_from_row(row: asyncpg.Record) -> PlaceCategory:
+    return PlaceCategory(
+        id=row["id"],
+        slug=row["slug"],
+        label=row["label"],
+        sort_order=row["sort_order"],
+    )
 
 
 def _place_asset_from_row(row: asyncpg.Record) -> PlaceAsset:
@@ -777,36 +787,69 @@ class SessionStore:
                 ORDER BY sort_order ASC, slug ASC
                 """
             )
-            return [
-                PlaceCategory(
-                    id=row["id"],
-                    slug=row["slug"],
-                    label=row["label"],
-                    sort_order=row["sort_order"],
-                )
-                for row in rows
-            ]
+            return [_place_category_from_row(row) for row in rows]
+
+    async def create_place_category(
+        self, *, slug: str, label: str, sort_order: int
+    ) -> PlaceCategory:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                INSERT INTO place_categories (slug, label, sort_order)
+                VALUES ($1, $2, $3)
+                RETURNING id, slug, label, sort_order
+                """,
+                slug,
+                label,
+                sort_order,
+            )
+        return _place_category_from_row(row)
+
+    async def update_place_category(
+        self, slug: str, *, label: str, sort_order: int
+    ) -> PlaceCategory:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE place_categories
+                SET label = $2, sort_order = $3
+                WHERE slug = $1
+                RETURNING id, slug, label, sort_order
+                """,
+                slug,
+                label,
+                sort_order,
+            )
+        return _place_category_from_row(row)
+
+    async def delete_place_category(self, slug: str) -> None:
+        async with self._pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM place_categories WHERE slug = $1",
+                slug,
+            )
 
     async def create_place(
         self,
         *,
         name: str,
         category_id: UUID,
-        google_place_id: str,
+        google_place_id: str | None,
         latitude: float,
         longitude: float,
         partner_id: UUID | None = None,
         blurb: str | None = None,
         is_active: bool = True,
+        maps_url: str | None = None,
     ) -> Place:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
                 f"""
                 INSERT INTO places (
                     name, category_id, partner_id, google_place_id,
-                    latitude, longitude, blurb, is_active
+                    latitude, longitude, blurb, is_active, maps_url
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 RETURNING {_PLACE_COLUMNS}
                 """,
                 name,
@@ -817,7 +860,53 @@ class SessionStore:
                 longitude,
                 blurb,
                 is_active,
+                maps_url,
             )
+        return _place_from_row(row)
+
+    async def update_place(
+        self,
+        place_id: UUID,
+        *,
+        name: str,
+        category_id: UUID,
+        google_place_id: str | None,
+        latitude: float,
+        longitude: float,
+        partner_id: UUID | None = None,
+        blurb: str | None = None,
+        is_active: bool = True,
+        maps_url: str | None = None,
+    ) -> Place:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                UPDATE places SET
+                    name = $2,
+                    category_id = $3,
+                    partner_id = $4,
+                    google_place_id = $5,
+                    latitude = $6,
+                    longitude = $7,
+                    blurb = $8,
+                    is_active = $9,
+                    maps_url = $10
+                WHERE id = $1
+                RETURNING {_PLACE_COLUMNS}
+                """,
+                place_id,
+                name,
+                category_id,
+                partner_id,
+                google_place_id,
+                latitude,
+                longitude,
+                blurb,
+                is_active,
+                maps_url,
+            )
+        if row is None:
+            raise KeyError(place_id)
         return _place_from_row(row)
 
     async def list_visible_places(self) -> list[Place]:
@@ -826,12 +915,23 @@ class SessionStore:
                 """
                 SELECT place.id, place.name, place.category_id, place.partner_id,
                        place.google_place_id, place.latitude, place.longitude,
-                       place.blurb, place.is_active
+                       place.blurb, place.is_active, place.maps_url
                 FROM places AS place
                 LEFT JOIN partners AS partner ON partner.id = place.partner_id
                 WHERE place.is_active
                   AND (place.partner_id IS NULL OR partner.is_active)
                 ORDER BY place.name ASC
+                """
+            )
+        return [_place_from_row(row) for row in rows]
+
+    async def list_places(self) -> list[Place]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                f"""
+                SELECT {_PLACE_COLUMNS}
+                FROM places
+                ORDER BY name ASC
                 """
             )
         return [_place_from_row(row) for row in rows]

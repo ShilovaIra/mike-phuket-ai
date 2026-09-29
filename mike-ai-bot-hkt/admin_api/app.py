@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 from dataclasses import asdict
+from typing import List, Optional
 from uuid import UUID
 
 import asyncpg
@@ -12,13 +13,19 @@ from pydantic import BaseModel, EmailStr
 
 from admin_api.deps import require_admin
 from admin_api.partner_logos import router as partner_logos_router
+from admin_api.place_photos import attach_place_photos
+from admin_api.place_photos import router as place_photos_router
 from admin_api.passwords import verify_password
 from admin_api.payloads import partner_payload
 from admin_api.tokens import create_access_token
 from db.store import AdminUser, SessionStore
 from db.url import resolve_database_url
 from partner_dashboard.router import router as partner_dashboard_router
+from maps_pin import follow_maps_redirect, resolve_maps_link
 from partners import PartnerType
+from place_catalog import Place, PlaceAsset, PlaceCategory
+
+PLACEHOLDER_COVER = "media/places/placeholder.jpg"
 from storage import AssetStorage
 from topic_labels import labeled_topic_rows
 
@@ -47,6 +54,32 @@ class PartnerTypeIn(BaseModel):
     follow_up_text: str = ""
 
 
+class PlaceCategoryIn(BaseModel):
+    slug: str
+    label: str
+    sort_order: int
+
+
+class PlaceCategoryUpdate(BaseModel):
+    label: str
+    sort_order: int
+
+
+class PlacePhotoIn(BaseModel):
+    upload_token: str
+    is_cover: bool = False
+
+
+class PlaceIn(BaseModel):
+    name: str
+    category: str
+    maps_url: str
+    blurb: str = ""
+    partner_id: Optional[UUID] = None
+    is_active: bool = True
+    photos: List[PlacePhotoIn] = []
+
+
 class PartnerIn(BaseModel):
     name: str
     type: str
@@ -60,6 +93,31 @@ def _partner_type_payload(partner_type: PartnerType) -> dict:
     return asdict(partner_type)
 
 
+def _place_category_payload(category: PlaceCategory) -> dict:
+    payload = asdict(category)
+    payload["id"] = str(category.id)
+    return payload
+
+
+def _place_payload(
+    place: Place, category_slug: str, assets: list[PlaceAsset] | None = None
+) -> dict:
+    photos = [{"id": str(asset.id), "path": asset.path} for asset in assets or ()]
+    return {
+        "id": str(place.id),
+        "name": place.name,
+        "category": category_slug,
+        "maps_url": place.maps_url or "",
+        "blurb": place.blurb or "",
+        "latitude": place.latitude,
+        "longitude": place.longitude,
+        "partner_id": None if place.partner_id is None else str(place.partner_id),
+        "is_active": place.is_active,
+        "photos": photos,
+        "cover": photos[0]["path"] if photos else PLACEHOLDER_COVER,
+    }
+
+
 _FROM_ENV = object()
 
 
@@ -67,6 +125,7 @@ def create_app(
     *,
     store: SessionStore | None = None,
     storage: AssetStorage | None | object = _FROM_ENV,
+    maps_fetch=None,
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -87,6 +146,7 @@ def create_app(
     if store is not None:
         app.state.store = store
     app.state.storage = AssetStorage.from_env(os.environ) if storage is _FROM_ENV else storage
+    app.state.maps_fetch = maps_fetch or follow_maps_redirect
 
     origins = [
         origin.strip()
@@ -176,6 +236,156 @@ def create_app(
             raise HTTPException(status_code=409, detail="Тип с таким slug уже существует") from None
         return _partner_type_payload(updated)
 
+    @app.get("/api/place-categories")
+    async def list_place_categories(
+        request: Request,
+        admin: AdminUser = Depends(require_admin),
+    ) -> list[dict]:
+        _ = admin
+        items = await _store(request).list_place_categories()
+        return [_place_category_payload(item) for item in items]
+
+    @app.post("/api/place-categories", status_code=201)
+    async def create_place_category(
+        request: Request,
+        body: PlaceCategoryIn,
+        admin: AdminUser = Depends(require_admin),
+    ) -> dict:
+        _ = admin
+        created = await _store(request).create_place_category(
+            slug=body.slug,
+            label=body.label,
+            sort_order=body.sort_order,
+        )
+        return _place_category_payload(created)
+
+    @app.patch("/api/place-categories/{slug}")
+    async def update_place_category(
+        request: Request,
+        slug: str,
+        body: PlaceCategoryUpdate,
+        admin: AdminUser = Depends(require_admin),
+    ) -> dict:
+        _ = admin
+        updated = await _store(request).update_place_category(
+            slug,
+            label=body.label,
+            sort_order=body.sort_order,
+        )
+        return _place_category_payload(updated)
+
+    @app.delete("/api/place-categories/{slug}", status_code=204)
+    async def delete_place_category(
+        request: Request,
+        slug: str,
+        admin: AdminUser = Depends(require_admin),
+    ) -> None:
+        _ = admin
+        try:
+            await _store(request).delete_place_category(slug)
+        except asyncpg.ForeignKeyViolationError:
+            raise HTTPException(
+                status_code=409, detail="Категорию используют места"
+            ) from None
+
+    @app.get("/api/places")
+    async def list_places(
+        request: Request,
+        admin: AdminUser = Depends(require_admin),
+    ) -> list[dict]:
+        _ = admin
+        store = _store(request)
+        categories = {item.id: item.slug for item in await store.list_place_categories()}
+        payloads = []
+        for place in await store.list_places():
+            assets = await store.list_place_assets(place.id)
+            payloads.append(
+                _place_payload(place, categories[place.category_id], assets)
+            )
+        return payloads
+
+    @app.post("/api/places", status_code=201)
+    async def create_place(
+        request: Request,
+        body: PlaceIn,
+        admin: AdminUser = Depends(require_admin),
+    ) -> dict:
+        _ = admin
+        store = _store(request)
+        category = next(
+            (
+                item
+                for item in await store.list_place_categories()
+                if item.slug == body.category
+            ),
+            None,
+        )
+        if category is None:
+            raise HTTPException(status_code=404, detail="Категория не найдена")
+        resolved = resolve_maps_link(body.maps_url, request.app.state.maps_fetch)
+        if resolved is None:
+            raise HTTPException(status_code=400, detail="В ссылке нет координат")
+        maps_url, latitude, longitude = resolved
+        try:
+            created = await store.create_place(
+                name=body.name,
+                category_id=category.id,
+                google_place_id=None,
+                latitude=latitude,
+                longitude=longitude,
+                maps_url=maps_url,
+                partner_id=body.partner_id,
+                is_active=body.is_active,
+                blurb=body.blurb or None,
+            )
+        except asyncpg.UniqueViolationError:
+            raise HTTPException(status_code=409, detail="Это место уже есть") from None
+        assets = await attach_place_photos(request, created.id, body.photos)
+        return _place_payload(created, category.slug, assets)
+
+    @app.patch("/api/places/{place_id}")
+    async def update_place(
+        request: Request,
+        place_id: UUID,
+        body: PlaceIn,
+        admin: AdminUser = Depends(require_admin),
+    ) -> dict:
+        _ = admin
+        store = _store(request)
+        category = next(
+            (
+                item
+                for item in await store.list_place_categories()
+                if item.slug == body.category
+            ),
+            None,
+        )
+        if category is None:
+            raise HTTPException(status_code=404, detail="Категория не найдена")
+        resolved = resolve_maps_link(body.maps_url, request.app.state.maps_fetch)
+        if resolved is None:
+            raise HTTPException(status_code=400, detail="В ссылке нет координат")
+        maps_url, latitude, longitude = resolved
+        try:
+            updated = await store.update_place(
+                place_id,
+                name=body.name,
+                category_id=category.id,
+                google_place_id=None,
+                latitude=latitude,
+                longitude=longitude,
+                maps_url=maps_url,
+                partner_id=body.partner_id,
+                is_active=body.is_active,
+                blurb=body.blurb or None,
+            )
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Место не найдено") from None
+        except asyncpg.UniqueViolationError:
+            raise HTTPException(status_code=409, detail="Это место уже есть") from None
+        assets = await store.list_place_assets(place_id)
+        return _place_payload(updated, category.slug, assets)
+
     @app.get("/api/partners")
     async def list_partners(
         request: Request,
@@ -225,5 +435,6 @@ def create_app(
         return partner_payload(updated, request.app.state.storage)
 
     app.include_router(partner_logos_router)
+    app.include_router(place_photos_router)
     app.include_router(partner_dashboard_router)
     return app

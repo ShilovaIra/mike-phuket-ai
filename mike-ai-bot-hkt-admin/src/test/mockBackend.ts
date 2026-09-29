@@ -76,6 +76,21 @@ const seedTypes: PartnerType[] = [
   },
 ]
 
+type PlaceCategory = {
+  id: string
+  slug: string
+  label: string
+  sort_order: number
+}
+
+const seedPlaceCategories: PlaceCategory[] = [
+  { id: 'cat-cafe', slug: 'cafe', label: 'Кафе', sort_order: 10 },
+  { id: 'cat-restaurant', slug: 'restaurant', label: 'Ресторан', sort_order: 20 },
+  { id: 'cat-bar', slug: 'bar', label: 'Бар', sort_order: 30 },
+  { id: 'cat-beach', slug: 'beach', label: 'Пляж', sort_order: 40 },
+  { id: 'cat-shop', slug: 'shop', label: 'Магазин', sort_order: 50 },
+]
+
 const seedPartners: Partner[] = [
   {
     id: '00000000-0000-4000-8000-000000000001',
@@ -135,6 +150,20 @@ const seedPartners: Partner[] = [
 ]
 
 let types = structuredClone(seedTypes)
+let placeCategories = structuredClone(seedPlaceCategories)
+let places: {
+  id: string
+  name: string
+  category: string
+  blurb: string
+  maps_url: string
+  partner_id: string | null
+  is_active: boolean
+  latitude: number
+  longitude: number
+  photos: { id: string; path: string }[]
+  cover: string
+}[] = []
 let partners = structuredClone(seedPartners)
 let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
 let partnerTypesListFailure: { status: number; detail: string } | null = null
@@ -155,6 +184,8 @@ function json(data: unknown, status = 200): Response {
 
 export function resetMockBackend(): void {
   types = structuredClone(seedTypes)
+  placeCategories = structuredClone(seedPlaceCategories)
+  places = []
   partners = structuredClone(seedPartners)
   partnerUsers = []
   partnerTypesListFailure = null
@@ -256,6 +287,59 @@ export function installFetchMock(): void {
       }
       types[index] = body
       return json(body)
+    }
+
+    if (path === '/api/place-categories' && method === 'GET') {
+      return json([...placeCategories].sort((a, b) => a.sort_order - b.sort_order))
+    }
+
+    if (path === '/api/place-categories' && method === 'POST') {
+      const category = { id: crypto.randomUUID(), ...body }
+      placeCategories.push(category)
+      return json(category, 201)
+    }
+
+    const placeCategoryMatch = path.match(/^\/api\/place-categories\/([^/]+)$/)
+    if (placeCategoryMatch && method === 'PATCH') {
+      const slug = decodeURIComponent(placeCategoryMatch[1])
+      const index = placeCategories.findIndex((category) => category.slug === slug)
+      if (index < 0) return json({ detail: 'not found' }, 404)
+      placeCategories[index] = {
+        ...placeCategories[index],
+        label: body.label,
+        sort_order: body.sort_order,
+      }
+      return json(placeCategories[index])
+    }
+
+    if (placeCategoryMatch && method === 'DELETE') {
+      const slug = decodeURIComponent(placeCategoryMatch[1])
+      const used = places.some((place) => place.category === slug)
+      if (used) return json({ detail: 'Категорию используют места' }, 409)
+      placeCategories = placeCategories.filter((category) => category.slug !== slug)
+      return new Response(null, { status: 204 })
+    }
+
+    if (path === '/api/places' && method === 'GET') {
+      return json([...places])
+    }
+
+    if (path === '/api/places' && method === 'POST') {
+      const place = {
+        id: crypto.randomUUID(),
+        name: body.name as string,
+        category: body.category as string,
+        blurb: (body.blurb as string) ?? '',
+        maps_url: body.maps_url as string,
+        partner_id: (body.partner_id as string | null) ?? null,
+        is_active: body.is_active !== false,
+        latitude: 7.76,
+        longitude: 98.3,
+        photos: [],
+        cover: 'media/places/placeholder.jpg',
+      }
+      places.push(place)
+      return json(place, 201)
     }
 
     if (path === '/api/partners' && method === 'GET') {

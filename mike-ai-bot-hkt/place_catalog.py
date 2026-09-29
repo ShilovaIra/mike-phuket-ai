@@ -18,11 +18,12 @@ class Place:
     name: str
     category_id: UUID
     partner_id: UUID | None
-    google_place_id: str
+    google_place_id: str | None
     latitude: float
     longitude: float
     blurb: str | None
     is_active: bool
+    maps_url: str | None = None
 
 
 @dataclass(frozen=True)

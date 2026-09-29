@@ -401,28 +401,34 @@ CREATE TABLE IF NOT EXISTS place_categories (
 );
 
 INSERT INTO place_categories (slug, label, sort_order)
-VALUES
-    ('cafe', 'Кафе', 10),
-    ('restaurant', 'Ресторан', 20),
-    ('bar', 'Бар', 30),
-    ('beach', 'Пляж', 40),
-    ('shop', 'Магазин', 50)
-ON CONFLICT (slug) DO UPDATE SET
-    label = EXCLUDED.label,
-    sort_order = EXCLUDED.sort_order;
+SELECT seed.slug, seed.label, seed.sort_order
+FROM (
+    VALUES
+        ('cafe', 'Кафе', 10),
+        ('restaurant', 'Ресторан', 20),
+        ('bar', 'Бар', 30),
+        ('beach', 'Пляж', 40),
+        ('shop', 'Магазин', 50)
+) AS seed(slug, label, sort_order)
+WHERE NOT EXISTS (SELECT 1 FROM place_categories);
 
 CREATE TABLE IF NOT EXISTS places (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     category_id UUID NOT NULL REFERENCES place_categories (id) ON DELETE RESTRICT,
     partner_id UUID REFERENCES partners (id) ON DELETE RESTRICT,
-    google_place_id TEXT NOT NULL UNIQUE,
+    google_place_id TEXT UNIQUE,
     latitude DOUBLE PRECISION NOT NULL,
     longitude DOUBLE PRECISION NOT NULL,
+    maps_url TEXT,
     blurb TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE places ADD COLUMN IF NOT EXISTS maps_url TEXT;
+ALTER TABLE places ALTER COLUMN google_place_id DROP NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS places_maps_url_key ON places (maps_url);
 
 CREATE TABLE IF NOT EXISTS place_assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

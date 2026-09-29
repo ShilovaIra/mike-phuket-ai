@@ -52,6 +52,24 @@ DELETE FROM partner_types
 WHERE slug NOT IN ('money_exchange', 'vehicle_rental', 'excursions', 'esim')
 """
 
+RESET_PLACE_CATEGORIES_SQL = """
+DELETE FROM place_categories
+WHERE slug NOT IN ('cafe', 'restaurant', 'bar', 'beach', 'shop')
+"""
+
+RESEED_PLACE_CATEGORIES_SQL = """
+INSERT INTO place_categories (slug, label, sort_order)
+VALUES
+    ('cafe', 'Кафе', 10),
+    ('restaurant', 'Ресторан', 20),
+    ('bar', 'Бар', 30),
+    ('beach', 'Пляж', 40),
+    ('shop', 'Магазин', 50)
+ON CONFLICT (slug) DO UPDATE SET
+    label = EXCLUDED.label,
+    sort_order = EXCLUDED.sort_order
+"""
+
 
 @pytest_asyncio.fixture
 async def store() -> SessionStore:
@@ -59,11 +77,25 @@ async def store() -> SessionStore:
     assert url is not None
     pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
     async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            DO $$
+            BEGIN
+                IF to_regclass('public.places') IS NOT NULL THEN
+                    DELETE FROM place_assets;
+                    DELETE FROM places;
+                END IF;
+            END $$;
+            """
+        )
         await apply_schema(conn)
         await conn.execute(TRUNCATE_SQL)
         await conn.execute(RESET_PARTNER_TYPES_SQL)
+        await conn.execute(RESET_PLACE_CATEGORIES_SQL)
         await apply_schema(conn)
         await conn.execute(TRUNCATE_SQL)
+        await conn.execute(RESET_PLACE_CATEGORIES_SQL)
+        await conn.execute(RESEED_PLACE_CATEGORIES_SQL)
 
     session_store = SessionStore(pool)
     yield session_store
