@@ -6,7 +6,7 @@ product
 
 ## Users
 
-**Tourists (primary, Telegram):** Russian-speaking visitors and newcomers on Phuket who need quick, local answers: where to eat, beaches, what's nearby, currency exchange, and optional help with property. Context is mobile, often on the go, chatting in Telegram.
+**Tourists (primary, Telegram + Mini App):** Russian-speaking visitors and newcomers on Phuket who need quick, local answers: where to eat, beaches, what's nearby, currency exchange, and optional help with property. Context is mobile, often on the go, in Telegram chat or in the upcoming Mini App.
 
 **Operators (secondary, upcoming admin):** Phuket ProMax staff and partners who review leads, manage partner replies, and operate the bot. Context is desk or laptop; they want speed and clarity, not personality theater.
 
@@ -14,9 +14,9 @@ Job to be done for tourists: get a useful local answer fast, and when interested
 
 ## Product Purpose
 
-Mike Phuket AI is a Telegram guide for Phuket and a soft assistant for Phuket ProMax. It answers practical travel questions, surfaces partner offers (e.g. money exchange), and qualifies real-estate interest through short, sequential questions. Success is helpful chats that convert genuine interest into actionable leads, plus (soon) an admin surface that lets operators run that pipeline efficiently.
+Mike Phuket AI is a Telegram guide for Phuket and a soft assistant for Phuket ProMax. It answers practical travel questions, surfaces partner offers (e.g. money exchange), and qualifies real-estate interest through short, sequential questions. Tourists meet Mike in chat and, next, in a Telegram Mini App that reuses the same topics as the bot keyboard. Success is helpful chats that convert genuine interest into actionable leads, plus an admin surface that lets operators run that pipeline efficiently.
 
-Near-term focus: improve the Telegram reply keyboard (button labels and structure). Next: admin panel for operators.
+Near-term focus: lock the tourist visual system (Mini App home + bot keyboard). Operators keep a quiet admin; it does not wear Mike's character.
 
 ## Brand Personality
 

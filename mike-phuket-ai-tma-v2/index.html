@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#F4F7FB" />
+    <title>Mike Phuket AI · v2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#home">К экранам</a>
+    <div class="studio">
+      <div class="device">
+        <section class="screen screen-home" id="home" aria-label="Главный экран">
+          <div class="home-scroll">
+            <header class="hero">
+              <div class="hero-scene" aria-hidden="true">
+                <div class="sky"></div>
+                <div class="cliff cliff-l"></div>
+                <div class="cliff cliff-r"></div>
+                <div class="water"></div>
+                <div class="boat"></div>
+              </div>
+              <div class="hero-copy">
+                <img
+                  class="hero-face"
+                  src="./assets/mike-portrait.jpg"
+                  srcset="./assets/mike-portrait.jpg 328w, ./assets/mike-portrait@2x.jpg 656w"
+                  sizes="92px"
+                  alt=""
+                  width="92"
+                  height="92"
+                />
+                <div>
+                  <h1>Майк</h1>
+                  <p>Ваш AI-гид по Пхукету</p>
+                </div>
+              </div>
+              <p class="bubble">Привет! Я Майк. Спрашивай что угодно о Пхукете.</p>
+            </header>
+
+            <div class="sheet">
+              <label class="search">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M16 16.5 20 20.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <input type="search" placeholder="Куда вы хотите пойти?" readonly tabindex="-1" />
+              </label>
+              <button class="filters stub" type="button">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                Фильтры
+              </button>
+            </div>
+
+            <div class="map-card" aria-label="Карта Пхукета">
+              <svg class="island" viewBox="0 0 360 210" role="img" aria-label="Пхукет">
+                <defs>
+                  <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#d5ecf8" />
+                    <stop offset="1" stop-color="#b7dcef" />
+                  </linearGradient>
+                  <linearGradient id="land" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#c5ddb4" />
+                    <stop offset="1" stop-color="#8fbf86" />
+                  </linearGradient>
+                </defs>
+                <rect width="360" height="210" fill="url(#sea)" />
+                <path fill="url(#land)" d="M168 18c18 2 28 14 34 28 8 4 22 8 28 20 6 12 2 24-6 32 8 6 16 18 12 30-4 14-20 18-28 28-6 8-4 20 2 28-10 10-28 8-40 14-14 6-18 20-32 22-16 2-28-10-42-8-12 2-22 12-34 8-14-4-16-20-28-26-10-6-24-4-30-16-6-12 2-24 8-34 4-8 2-18-4-26-8-10-6-26 4-34 10-8 24-6 32-14 6-8 8-20 18-24 12-6 28-2 40-8 10-4 18-14 30-16 8-2 18 0 26 2Z" />
+                <path fill="#a9c998" d="M150 70c20 8 36 6 48 18-8 10-24 8-36 14-14 6-20-4-28-8 2-10 6-18 16-24Z" />
+                <text x="188" y="104" text-anchor="middle" fill="#1d4e38" font-size="13" font-weight="700" font-family="Golos Text, sans-serif">ПХУКЕТ</text>
+              </svg>
+              <button class="pin stub" type="button" style="left: 22%; top: 16%">
+                <span class="pin-dot"></span>
+                <span class="pin-label"><b>Пляж Сурин</b><small>4.9 · 8 мин</small></span>
+              </button>
+              <button class="pin pin-right stub" type="button" style="right: 4%; top: 18%">
+                <span class="pin-label"><b>Старый город</b><small>4.8 · 12 мин</small></span>
+                <span class="pin-dot"></span>
+              </button>
+              <button class="pin stub" type="button" style="left: 8%; top: 62%">
+                <span class="pin-dot"></span>
+                <span class="pin-label"><b>Большой Будда</b><small>4.9 · 18 мин</small></span>
+              </button>
+              <button class="pin pin-right stub" type="button" style="right: 6%; top: 68%">
+                <span class="pin-label"><b>Мыс Промтеп</b><small>4.8 · 25 мин</small></span>
+                <span class="pin-dot"></span>
+              </button>
+            </div>
+
+            <div class="row-head">
+              <h2>Рекомендации для вас</h2>
+              <button class="text-link stub" type="button">Смотреть все</button>
+            </div>
+            <div class="recs" tabindex="0">
+              <button class="rec stub" type="button">
+                <span class="thumb thumb-food" aria-hidden="true"></span>
+                <span class="rec-title">Где поесть том ям</span>
+                <span class="rec-meta"><span class="star">★ 4.8</span> · 350 ฿</span>
+              </button>
+              <button class="rec stub" type="button">
+                <span class="thumb thumb-sunset" aria-hidden="true"></span>
+                <span class="rec-title">Где встретить закат</span>
+                <span class="rec-meta"><span class="star">★ 4.9</span> · 15 мин</span>
+              </button>
+              <button class="rec stub" type="button">
+                <span class="thumb thumb-tour" aria-hidden="true"></span>
+                <span class="rec-title">Экскурсии и туры</span>
+                <span class="rec-meta"><span class="star">★ 4.7</span> · Популярные туры</span>
+              </button>
+              <button class="rec stub" type="button">
+                <span class="thumb thumb-beach" aria-hidden="true"></span>
+                <span class="rec-title">Пляжи и отдых</span>
+                <span class="rec-meta"><span class="star">★ 4.8</span> · Лучшие пляжи</span>
+              </button>
+            </div>
+          </div>
+          <div class="dock">
+            <button class="ask stub" type="button">Спросите Майка о Пхукете</button>
+            <nav class="tabs" aria-label="Разделы">
+              <a class="tab is-on" href="#home" aria-current="page">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>
+                Главная
+              </a>
+              <a class="tab" href="#map">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>
+                Карта
+              </a>
+              <a class="tab" href="#chat">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
+                Чат
+              </a>
+              <a class="tab" href="#saved">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
+                Избранное
+              </a>
+              <a class="tab" href="#profile">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+                Профиль
+              </a>
+            </nav>
+          </div>
+        </section>
+
+        <section class="screen screen-voice" id="voice" aria-label="Голосовой разговор">
+          <button class="close stub" type="button" aria-label="Закрыть">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+          </button>
+          <div class="voice-body">
+            <div class="voice-portrait">
+              <img
+                src="./assets/mike-portrait.jpg"
+                alt="Майк слушает"
+                width="168"
+                height="168"
+              />
+            </div>
+            <p class="listen">Майк слушает...</p>
+            <div class="wave" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <p class="voice-hint">Скажите, что вас интересует</p>
+          </div>
+          <div class="voice-actions">
+            <button class="mic-lg stub" type="button" aria-label="Микрофон">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M6.5 11a5.5 5.5 0 0 0 11 0M12 16.5V20M9 20h6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+            </button>
+            <button class="cancel stub" type="button">Отмена</button>
+          </div>
+        </section>
+
+        <section class="screen screen-place" id="place" aria-label="Рекомендация ресторана">
+          <article class="place">
+            <header class="cover cover-food">
+              <div class="cover-tools">
+                <button class="icon-btn stub" type="button" aria-label="Назад">
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+                <button class="icon-btn stub" type="button" aria-label="В избранное">
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
+                </button>
+              </div>
+              <span class="badge">★ 4.8</span>
+            </header>
+            <div class="place-body">
+              <h1>Tom Yam Goong Restaurant</h1>
+              <p class="sub">Тайская кухня · Ката</p>
+              <dl class="stats">
+                <div><dt>Оценка</dt><dd>4.8</dd><small>512 отзывов</small></div>
+                <div><dt>Чек</dt><dd>250 ฿</dd><small>средний чек</small></div>
+                <div><dt>Далеко</dt><dd>700 м</dd><small>от вас</small></div>
+              </dl>
+              <p class="open"><span class="dot"></span> Открыто · 09:00 – 22:00</p>
+              <p class="prose">Настоящий том ям с креветками. Популярное место среди местных жителей и туристов.</p>
+              <button class="cta stub" type="button">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                Построить маршрут
+              </button>
+              <div class="mini-map">
+                <svg viewBox="0 0 340 120" aria-hidden="true">
+                  <rect width="340" height="120" fill="#d7eef6" />
+                  <path d="M0 78c40-18 70 10 110-6 36-14 50 16 90 4 30-8 48 12 80-6 20-12 40 4 60-8v58H0Z" fill="#c5ddb4" />
+                  <path d="M40 40h70M150 28h90M30 96h120" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity="0.7" />
+                  <circle cx="196" cy="62" r="8" fill="#2f7cf6" />
+                  <path d="M196 54c4 0 8 3.2 8 8.2 0 6-8 12.8-8 12.8s-8-6.8-8-12.8c0-5 4-8.2 8-8.2Z" fill="#2f7cf6" />
+                </svg>
+                <p>700 м · 8 мин на байке</p>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="screen screen-sight" id="sight" aria-label="Достопримечательность">
+          <article class="place">
+            <header class="cover cover-cape">
+              <div class="cover-tools">
+                <button class="icon-btn stub" type="button" aria-label="Назад">
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+                <button class="icon-btn stub" type="button" aria-label="В избранное">
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
+                </button>
+              </div>
+              <span class="badge">★ 4.8</span>
+            </header>
+            <div class="place-body">
+              <h1>Мыс Промтеп</h1>
+              <p class="sub">Смотровая площадка</p>
+              <p class="open"><span class="dot"></span> Открыто круглосуточно</p>
+              <p class="prose">Лучшая точка для встречи заката на Пхукете. Потрясающие виды круглый год.</p>
+              <dl class="stats">
+                <div><dt>Оценка</dt><dd>4.8</dd><small>1324 отзыва</small></div>
+                <div><dt>Дорога</dt><dd>15 мин</dd><small>от Ката</small></div>
+                <div><dt>Вход</dt><dd>Бесплатно</dd><small>вход</small></div>
+              </dl>
+              <p class="best">Лучшее время <strong>17:30 – 19:00</strong></p>
+              <div class="film" aria-hidden="true">
+                <span class="thumb thumb-sunset"></span>
+                <span class="thumb thumb-beach"></span>
+                <span class="thumb thumb-tour"></span>
+              </div>
+              <button class="cta stub" type="button">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                Построить маршрут
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <section class="screen screen-route" id="route" aria-label="Маршрут">
+          <header class="route-head">
+            <button class="icon-btn icon-ghost stub" type="button" aria-label="Назад">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+            <h1>Маршрут</h1>
+          </header>
+          <div class="stops">
+            <div class="stop">
+              <span class="stop-mark stop-from" aria-hidden="true"></span>
+              <span>Мое местоположение</span>
+            </div>
+            <div class="stop">
+              <span class="stop-mark stop-to" aria-hidden="true"></span>
+              <span>Tom Yam Goong Restaurant</span>
+            </div>
+          </div>
+          <div class="modes" role="group" aria-label="Способ">
+            <button class="mode stub" type="button">На авто</button>
+            <button class="mode is-on stub" type="button" aria-pressed="true">На байке</button>
+            <button class="mode stub" type="button">Пешком</button>
+          </div>
+          <div class="route-map" aria-hidden="true">
+            <svg viewBox="0 0 360 280">
+              <rect width="360" height="280" fill="#e7f3ea" />
+              <path d="M0 40h360M0 110h360M0 180h360M0 250h360M70 0v280M160 0v280M250 0v280M330 0v280" stroke="#ffffff" stroke-width="10" />
+              <path d="M0 70h360M90 0v280" stroke="#d5e4d4" stroke-width="4" />
+              <path d="M78 46 C120 46 130 90 168 120 C210 154 200 200 248 214 C280 224 300 250 328 236" fill="none" stroke="#2f7cf6" stroke-width="5" stroke-linecap="round" />
+              <circle cx="78" cy="46" r="8" fill="#2f7cf6" />
+              <path d="M328 214c6 0 11 5 11 12 0 9-11 20-11 20s-11-11-11-20c0-7 5-12 11-12Z" fill="#e23b3b" />
+            </svg>
+          </div>
+          <div class="route-card">
+            <p class="eta"><strong>8 мин</strong> <span>(2,6 км)</span></p>
+            <p class="eta-note">Самый быстрый маршрут</p>
+            <ul>
+              <li>Легкий трафик, дорога свободна</li>
+              <li>Парковка доступна</li>
+              <li>Опасных участков нет</li>
+            </ul>
+            <button class="cta stub" type="button">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              Поехали
+            </button>
+          </div>
+        </section>
+
+        <section class="screen screen-tab" id="map" aria-label="Карта">
+          <header class="tab-head">
+            <h1>Карта</h1>
+          </header>
+          <div class="map-fill">
+            <svg class="island" viewBox="0 0 360 520" role="img" aria-label="Пхукет">
+              <rect width="360" height="520" fill="#d5ecf8" />
+              <path fill="#9fc98e" d="M150 70c28 4 48 28 58 52 16 8 40 14 48 36 10 22 2 42-12 56 14 12 28 32 20 54-8 24-36 32-50 50-10 14-6 36 4 50-18 18-50 14-72 26-24 10-32 36-56 38-28 4-50-18-74-14-22 4-40 22-62 14-24-8-28-36-50-46-18-10-42-8-54-28-10-22 4-42 14-60 8-14 4-32-8-46-14-18-10-46 8-60 18-14 42-10 56-26 12-14 14-36 32-42 22-10 50-4 70-14 18-8 32-26 54-28 14-2 32 0 46 4Z" />
+              <text x="168" y="250" text-anchor="middle" fill="#1d4e38" font-size="14" font-weight="700" font-family="Golos Text, sans-serif">ПХУКЕТ</text>
+            </svg>
+            <button class="pin stub" type="button" style="left: 18%; top: 14%">
+              <span class="pin-dot"></span>
+              <span class="pin-label"><b>Пляж Сурин</b><small>4.9 · 8 мин</small></span>
+            </button>
+            <button class="pin pin-right stub" type="button" style="right: 8%; top: 22%">
+              <span class="pin-label"><b>Старый город</b><small>4.8 · 12 мин</small></span>
+              <span class="pin-dot"></span>
+            </button>
+            <button class="pin stub" type="button" style="left: 10%; top: 58%">
+              <span class="pin-dot"></span>
+              <span class="pin-label"><b>Большой Будда</b><small>4.9 · 18 мин</small></span>
+            </button>
+            <button class="pin pin-right stub" type="button" style="right: 10%; top: 70%">
+              <span class="pin-label"><b>Мыс Промтеп</b><small>4.8 · 25 мин</small></span>
+              <span class="pin-dot"></span>
+            </button>
+          </div>
+          <nav class="tabs tabs-bar" aria-label="Разделы">
+            <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
+            <a class="tab is-on" href="#map" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="currentColor" /></svg>Карта</a>
+            <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
+            <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
+            <a class="tab" href="#profile"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>Профиль</a>
+          </nav>
+        </section>
+
+        <section class="screen screen-tab" id="chat" aria-label="Чат">
+          <header class="tab-head chat-head">
+            <img class="chat-face" src="./assets/mike-portrait.jpg" alt="" width="40" height="40" />
+            <div>
+              <h1>Майк</h1>
+              <p>AI-гид по Пхукету</p>
+            </div>
+          </header>
+          <div class="thread">
+            <p class="msg msg-mike">Привет! Я Майк. Спрашивай что угодно о Пхукете.</p>
+            <p class="msg msg-user">Где лучший том ям рядом?</p>
+            <p class="msg msg-mike">В 700 метрах Tom Yam Goong на Кате. Средний чек около 250 бат. Показать маршрут?</p>
+            <div class="msg-actions">
+              <button class="chip stub" type="button">Построить маршрут</button>
+              <button class="chip chip-ghost stub" type="button">Другой вариант</button>
+            </div>
+          </div>
+          <form class="composer" action="#">
+            <input type="text" placeholder="Напишите Майку" readonly tabindex="-1" />
+            <button class="send stub" type="button" aria-label="Отправить">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          </form>
+          <nav class="tabs tabs-bar" aria-label="Разделы">
+            <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
+            <a class="tab" href="#map"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>Карта</a>
+            <a class="tab is-on" href="#chat" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="currentColor" /></svg>Чат</a>
+            <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
+            <a class="tab" href="#profile"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>Профиль</a>
+          </nav>
+        </section>
+
+        <section class="screen screen-tab" id="saved" aria-label="Избранное">
+          <header class="tab-head"><h1>Избранное</h1></header>
+          <div class="saved-list">
+            <a class="saved" href="#place">
+              <span class="thumb thumb-food" aria-hidden="true"></span>
+              <span>
+                <b>Tom Yam Goong Restaurant</b>
+                <small>Тайская кухня · Ката · 700 м</small>
+              </span>
+            </a>
+            <a class="saved" href="#sight">
+              <span class="thumb thumb-sunset" aria-hidden="true"></span>
+              <span>
+                <b>Мыс Промтеп</b>
+                <small>Смотровая · бесплатно · 15 мин</small>
+              </span>
+            </a>
+          </div>
+          <nav class="tabs tabs-bar" aria-label="Разделы">
+            <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
+            <a class="tab" href="#map"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>Карта</a>
+            <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
+            <a class="tab is-on" href="#saved" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="currentColor" /></svg>Избранное</a>
+            <a class="tab" href="#profile"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>Профиль</a>
+          </nav>
+        </section>
+
+        <section class="screen screen-tab" id="profile" aria-label="Профиль">
+          <header class="tab-head"><h1>Профиль</h1></header>
+          <div class="profile">
+            <img class="profile-face" src="./assets/mike-portrait.jpg" alt="" width="72" height="72" />
+            <p class="profile-name">Гость</p>
+            <p class="profile-meta">Пхукет · русский</p>
+            <ul class="profile-rows">
+              <li><button class="row stub" type="button">Язык <span>Русский</span></button></li>
+              <li><button class="row stub" type="button">Уведомления <span>Выкл.</span></button></li>
+              <li><button class="row stub" type="button">О приложении</button></li>
+            </ul>
+          </div>
+          <nav class="tabs tabs-bar" aria-label="Разделы">
+            <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
+            <a class="tab" href="#map"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>Карта</a>
+            <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
+            <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
+            <a class="tab is-on" href="#profile" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="currentColor" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="currentColor" /></svg>Профиль</a>
+          </nav>
+        </section>
+      </div>
+
+      <aside class="studio-spec">
+        <p class="kicker">v2 · шаг 2 презентации</p>
+        <h2>Экраны приложения</h2>
+        <p>Нижние вкладки открывают карту, чат, избранное и профиль. Остальные кнопки на экране ничего не делают.</p>
+        <nav class="rail" aria-label="Экраны макета">
+          <a href="#home">Главная</a>
+          <a href="#map">Карта</a>
+          <a href="#chat">Чат</a>
+          <a href="#saved">Избранное</a>
+          <a href="#profile">Профиль</a>
+          <a href="#voice">Голосовой разговор</a>
+          <a href="#place">Ресторан</a>
+          <a href="#sight">Мыс Промтеп</a>
+          <a href="#route">Маршрут</a>
+        </nav>
+        <ul>
+          <li>Вкладки внизу экрана переключают разделы.</li>
+          <li>Поиск, фильтры, маршрут и «Поехали» остаются заглушками.</li>
+        </ul>
+      </aside>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#F4F7FB" />
+    <title>Mike Phuket AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=greet3" />
+  </head>
+  <body>
+    <a class="skip" href="#topics">К темам</a>
+    <div class="studio">
+      <div class="device">
+        <div class="tma">
+          <header class="tma-header">
+            <img
+              class="wordmark"
+              src="./assets/wordmark.png"
+              alt="Mike Phuket AI"
+              width="114"
+              height="52"
+            />
+          </header>
+          <main class="tma-main">
+            <section class="hero" aria-label="Знакомство">
+              <div class="portrait">
+                <div class="portrait-clip">
+                  <img
+                    src="./assets/mike-portrait.jpg"
+                    srcset="./assets/mike-portrait.jpg 328w, ./assets/mike-portrait@2x.jpg 656w"
+                    sizes="168px"
+                    alt="Майк, гид по Пхукету"
+                    width="168"
+                    height="168"
+                  />
+                </div>
+              </div>
+              <h1>Майк</h1>
+              <p class="greeting">
+                Привет! Я местный гид по Пхукету.<br />
+                Выбери тему или просто напиши мне в&nbsp;чат&nbsp;😊
+              </p>
+            </section>
+            <section class="topics" id="topics" aria-label="Темы">
+              <a class="topic" href="./topic.html?id=eat" data-topic="eat">
+                <span class="topic-icon" aria-hidden="true">🍜</span>
+                <span class="topic-label">Где поесть</span>
+              </a>
+              <div class="topic is-soon" data-topic="beaches" aria-disabled="true" aria-label="Пляжи, скоро">
+                <span class="flag">Скоро</span>
+                <span class="topic-icon" aria-hidden="true">🏖</span>
+                <span class="topic-label">Пляжи</span>
+              </div>
+              <a class="topic" href="./topic.html?id=nearby" data-topic="nearby">
+                <span class="topic-icon" aria-hidden="true">📍</span>
+                <span class="topic-label">Что рядом</span>
+              </a>
+              <a class="topic" href="./topic.html?id=money" data-topic="money">
+                <span class="topic-icon" aria-hidden="true">💰</span>
+                <span class="topic-label">Обмен Рублей</span>
+              </a>
+              <a class="topic" href="./topic.html?id=vehicle" data-topic="vehicle">
+                <span class="topic-icon" aria-hidden="true">🛵</span>
+                <span class="topic-label">Аренда транспорта</span>
+              </a>
+              <a class="topic" href="./topic.html?id=tours" data-topic="tours">
+                <span class="topic-icon" aria-hidden="true">🇹🇭</span>
+                <span class="topic-label">Экскурсии</span>
+              </a>
+              <a class="topic" href="./topic.html?id=esim" data-topic="esim">
+                <span class="topic-icon" aria-hidden="true">📱</span>
+                <span class="topic-label">eSIM</span>
+              </a>
+              <a class="topic" href="./topic.html?id=home" data-topic="home">
+                <span class="topic-icon" aria-hidden="true">🏠</span>
+                <span class="topic-label">Недвижимость</span>
+              </a>
+            </section>
+          </main>
+          <footer class="tma-footer">
+            <a class="plate" href="./chat.html">Спросить Майка</a>
+          </footer>
+        </div>
+      </div>
+      <aside class="studio-spec">
+        <h2>The Island Concierge</h2>
+        <p>
+          Белый стол в дневном свете. Лицо Майка держит тепло. Жёлтая пластина, одна на экран, ведёт к разговору.
+        </p>
+        <div class="swatches" aria-label="Палитра">
+          <span class="swatch" style="background: #0c2e5f" title="Harbor Navy"></span>
+          <span class="swatch" style="background: #042048" title="Harbor Deep"></span>
+          <span class="swatch" style="background: #fdcb1a" title="Plate Yellow"></span>
+          <span class="swatch is-light" style="background: #f4f7fb" title="Canvas"></span>
+          <span class="swatch" style="background: #0a1b36" title="Ink"></span>
+        </div>
+        <ul>
+          <li>Темы совпадают с клавиатурой бота.</li>
+          <li>Фотография только в круге. Не фон.</li>
+          <li>Админка позже: тот же navy, почти без жёлтого.</li>
+        </ul>
+      </aside>
+    </div>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      const tg = window.Telegram && window.Telegram.WebApp;
+      if (tg) {
+        tg.ready();
+        tg.expand();
+        tg.setHeaderColor("#F4F7FB");
+        tg.setBackgroundColor("#F4F7FB");
+      }
+    </script>
+  </body>
+</html>

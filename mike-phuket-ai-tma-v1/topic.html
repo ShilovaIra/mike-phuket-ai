@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#F4F7FB" />
+    <title>Тема · Mike Phuket AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=flag2" />
+  </head>
+  <body>
+    <a class="skip" href="#partners">К партнёрам</a>
+    <div class="studio">
+      <div class="device">
+        <div class="tma is-topic">
+          <header class="chat-header">
+            <a class="back" href="./index.html" aria-label="На главную">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m15 6-6 6 6 6" />
+              </svg>
+            </a>
+            <div class="topic-person">
+              <span class="topic-icon topic-icon--header" id="topic-emoji" aria-hidden="true"></span>
+              <h1 id="topic-title">Тема</h1>
+            </div>
+          </header>
+          <main class="topic-body" id="partners">
+            <p class="topic-intro" id="topic-intro" hidden></p>
+            <ul class="partner-list" id="partner-list"></ul>
+            <div class="empty" id="topic-empty" hidden>
+              <div class="chat-face">
+                <img
+                  src="./assets/mike-portrait.jpg"
+                  srcset="./assets/mike-portrait.jpg 328w, ./assets/mike-portrait@2x.jpg 656w"
+                  sizes="32px"
+                  alt=""
+                  width="32"
+                  height="32"
+                />
+              </div>
+              <p id="topic-empty-copy"></p>
+            </div>
+          </main>
+          <footer class="tma-footer">
+            <a class="plate" href="./chat.html">Спросить Майка</a>
+          </footer>
+          <p class="toast" id="toast" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+      <aside class="studio-spec">
+        <h2>Партнёры темы</h2>
+        <p>
+          Та же карточка, что в боте: логотип, имя, короткое описание, кнопка. Ссылка пока заглушка.
+        </p>
+        <ul>
+          <li>Настоящие партнёры из бота, где они уже есть.</li>
+          <li>Жёлтая пластина остаётся «Спросить Майка».</li>
+        </ul>
+      </aside>
+    </div>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="./topic.js?v=flag2"></script>
+  </body>
+</html>
