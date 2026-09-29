@@ -460,9 +460,17 @@ button {
 
 .dock {
   flex: none;
-  padding: 8px 12px calc(10px + env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(180deg, rgba(244, 247, 251, 0), var(--canvas) 18%);
+  padding: 0;
+  background: var(--canvas);
   z-index: var(--z-sticky);
+}
+
+.dock .ask {
+  margin: 8px 12px;
+}
+
+.dock .tabs {
+  margin-top: 0;
 }
 
 .ask {
@@ -497,13 +505,20 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  min-height: 48px;
-  padding-top: 4px;
+  gap: 3px;
+  min-height: 56px;
+  padding-top: 6px;
   color: var(--muted);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 600;
+  line-height: 1.1;
   text-decoration: none;
+  white-space: nowrap;
+}
+
+.tab svg {
+  width: 26px;
+  height: 26px;
 }
 
 .tab.is-on {
@@ -523,20 +538,20 @@ button {
 
 .tab-mark {
   position: relative;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
 }
 
 .soon {
   position: absolute;
   z-index: 1;
-  top: -7px;
-  left: 8px;
-  padding: 2px 4px 3px;
+  top: -6px;
+  left: 12px;
+  padding: 2px 5px 3px;
   border-radius: 4px;
   background: #fdcb1a;
   color: #042048;
-  font-size: 0.5rem;
+  font-size: 0.625rem;
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0;
