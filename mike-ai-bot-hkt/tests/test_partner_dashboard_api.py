@@ -491,3 +491,110 @@ async def test_operator_can_reset_partner_user_password(store):
 
     assert old_login.status_code == 401
     assert new_login.status_code == 200
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_partner_stats_count_distinct_users_who_chose_that_category(store):
+    async with operator_client(store) as (client, partner):
+        await store.start_conversation("telegram", "9101", source="unknown")
+        await store.record_topic_event("telegram", "9101", topic="money_exchange")
+        async with store.pool.acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE topic_events
+                SET created_at = now() - interval '40 days'
+                WHERE topic = 'money_exchange'
+                """
+            )
+        await store.start_conversation("telegram", "9102", source="unknown")
+        await store.record_topic_event("telegram", "9102", topic="money_exchange")
+        await store.record_topic_event("telegram", "9102", topic="money_exchange")
+        await store.start_conversation("telegram", "9103", source="unknown")
+        await store.record_topic_event("telegram", "9103", topic="vehicle_rental")
+
+        token = await create_shop_user(client, partner.id)
+        stats = await client.get(
+            f"/api/partner/stats?partner_id={partner.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert stats.status_code == 200
+    assert stats.json()["category_users"] == {
+        "phrase": "обмен рублей",
+        "all_time": 2,
+        "last_30_days": 1,
+    }
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_partners_of_the_same_category_see_the_same_user_counts(store):
+    async with operator_client(store) as (client, first):
+        other = await store.create_partner(
+            name="Ex24",
+            type="money_exchange",
+            referral_url="https://example.com/ex24",
+        )
+        await store.start_conversation("telegram", "9201", source="unknown")
+        await store.record_topic_event("telegram", "9201", topic="money_exchange")
+        created = await client.post(
+            "/api/partner-users",
+            json={
+                "email": "shop@example.com",
+                "password": "shop-secret",
+                "partner_ids": [str(first.id), str(other.id)],
+            },
+        )
+        assert created.status_code == 201
+        login = await client.post(
+            "/api/partner/auth/login",
+            json={"email": "shop@example.com", "password": "shop-secret"},
+        )
+        token = login.json()["access_token"]
+        first_stats = await client.get(
+            f"/api/partner/stats?partner_id={first.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        other_stats = await client.get(
+            f"/api/partner/stats?partner_id={other.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert first_stats.json()["category_users"] == {
+        "phrase": "обмен рублей",
+        "all_time": 1,
+        "last_30_days": 1,
+    }
+    assert other_stats.json()["category_users"] == first_stats.json()["category_users"]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_updated_choice_phrase_shows_on_partner_stats(store):
+    async with operator_client(store) as (client, partner):
+        updated = await client.patch(
+            "/api/partner-types/money_exchange",
+            json={
+                "slug": "money_exchange",
+                "is_menu_visible": True,
+                "sort_order": 10,
+                "button_label": "Обмен",
+                "topic_label": "Обмен",
+                "intro": "intro",
+                "fallback": "fallback",
+                "caption_emoji": "💰",
+                "caption_cta": "cta",
+                "button_template": "кнопка {name}",
+                "choice_phrase": "обмен валюты",
+            },
+        )
+        assert updated.status_code == 200
+        token = await create_shop_user(client, partner.id)
+        stats = await client.get(
+            f"/api/partner/stats?partner_id={partner.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert stats.status_code == 200
+    assert stats.json()["category_users"]["phrase"] == "обмен валюты"

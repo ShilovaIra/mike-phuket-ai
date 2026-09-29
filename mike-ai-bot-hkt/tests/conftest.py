@@ -57,6 +57,18 @@ DELETE FROM place_categories
 WHERE slug NOT IN ('cafe', 'restaurant', 'bar', 'beach', 'shop')
 """
 
+RESEED_CHOICE_PHRASES_SQL = """
+UPDATE partner_types
+SET choice_phrase = CASE slug
+    WHEN 'money_exchange' THEN 'обмен рублей'
+    WHEN 'vehicle_rental' THEN 'аренду транспорта'
+    WHEN 'excursions' THEN 'экскурсии'
+    WHEN 'esim' THEN 'eSIM'
+    ELSE choice_phrase
+END
+WHERE slug IN ('money_exchange', 'vehicle_rental', 'excursions', 'esim')
+"""
+
 RESEED_PLACE_CATEGORIES_SQL = """
 INSERT INTO place_categories (slug, label, sort_order)
 VALUES
@@ -96,6 +108,7 @@ async def store() -> SessionStore:
         await conn.execute(TRUNCATE_SQL)
         await conn.execute(RESET_PLACE_CATEGORIES_SQL)
         await conn.execute(RESEED_PLACE_CATEGORIES_SQL)
+        await conn.execute(RESEED_CHOICE_PHRASES_SQL)
 
     session_store = SessionStore(pool)
     yield session_store

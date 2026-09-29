@@ -16,10 +16,17 @@ export type PeriodStats = {
   opened_views: number
 }
 
+export type CategoryUsers = {
+  phrase: string
+  all_time: number
+  last_30_days: number
+}
+
 export type PartnerStats = {
   partner_id: string
   all_time: PeriodStats
   last_30_days: PeriodStats
+  category_users: CategoryUsers
 }
 
 export const partnerApi = {

@@ -90,7 +90,8 @@ CREATE TABLE IF NOT EXISTS partner_types (
     caption_emoji TEXT NOT NULL,
     caption_cta TEXT NOT NULL,
     button_template TEXT NOT NULL,
-    follow_up_text TEXT NOT NULL DEFAULT ''
+    follow_up_text TEXT NOT NULL DEFAULT '',
+    choice_phrase TEXT NOT NULL DEFAULT ''
 );
 
 -- Existing databases used slug as the primary key. Give each row its own id
@@ -121,6 +122,9 @@ END $$;
 ALTER TABLE partner_types
     ADD COLUMN IF NOT EXISTS follow_up_text TEXT NOT NULL DEFAULT '';
 
+ALTER TABLE partner_types
+    ADD COLUMN IF NOT EXISTS choice_phrase TEXT NOT NULL DEFAULT '';
+
 INSERT INTO partner_types (
     slug,
     is_menu_visible,
@@ -132,7 +136,8 @@ INSERT INTO partner_types (
     caption_emoji,
     caption_cta,
     button_template,
-    follow_up_text
+    follow_up_text,
+    choice_phrase
 )
 VALUES
 (
@@ -146,7 +151,8 @@ VALUES
     '💰',
     '⬇️ Обменять сейчас ⬇️',
     'Обменять с {name}',
-    'Как прошел обмен? Нужна ли ещё помощь? 😊'
+    'Как прошел обмен? Нужна ли ещё помощь? 😊',
+    'обмен рублей'
 ),
 (
     'vehicle_rental',
@@ -159,7 +165,8 @@ VALUES
     '🛵',
     '⬇️ Арендовать сейчас ⬇️',
     'Арендовать у {name}',
-    ''
+    '',
+    'аренду транспорта'
 ),
 (
     'excursions',
@@ -172,7 +179,8 @@ VALUES
     '🇹🇭',
     '⬇️ Забронировать сейчас ⬇️',
     'Забронировать с {name}',
-    'Как все прошло? Получилось ли воспользоваться рекомендацией? 😊'
+    'Как все прошло? Получилось ли воспользоваться рекомендацией? 😊',
+    'экскурсии'
 ),
 (
     'esim',
@@ -185,7 +193,8 @@ VALUES
     '📱',
     '⬇️ Купить eSIM ⬇️',
     'Купить eSIM',
-    ''
+    '',
+    'eSIM'
 )
 ON CONFLICT (slug) DO UPDATE SET
     is_menu_visible = EXCLUDED.is_menu_visible,
@@ -197,7 +206,11 @@ ON CONFLICT (slug) DO UPDATE SET
     caption_emoji = EXCLUDED.caption_emoji,
     caption_cta = EXCLUDED.caption_cta,
     button_template = EXCLUDED.button_template,
-    follow_up_text = EXCLUDED.follow_up_text;
+    follow_up_text = EXCLUDED.follow_up_text,
+    choice_phrase = CASE
+        WHEN partner_types.choice_phrase = '' THEN EXCLUDED.choice_phrase
+        ELSE partner_types.choice_phrase
+    END;
 
 CREATE TABLE IF NOT EXISTS partners (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

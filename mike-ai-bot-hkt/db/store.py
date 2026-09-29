@@ -84,6 +84,7 @@ class DueFollowUpJob:
 def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
     names = set(row.keys())
     follow = row["follow_up_text"] if "follow_up_text" in names else ""
+    choice_phrase = row["choice_phrase"] if "choice_phrase" in names else ""
     return PartnerType(
         slug=row["slug"],
         is_menu_visible=row["is_menu_visible"],
@@ -96,6 +97,7 @@ def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
         caption_cta=row["caption_cta"],
         button_template=row["button_template"],
         follow_up_text=follow or "",
+        choice_phrase=choice_phrase or "",
         id=row["id"] if "id" in names else None,
     )
 
@@ -993,9 +995,9 @@ class SessionStore:
                 INSERT INTO partner_types (
                     slug, is_menu_visible, sort_order, button_label, topic_label,
                     intro, fallback, caption_emoji, caption_cta, button_template,
-                    follow_up_text
+                    follow_up_text, choice_phrase
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 """,
                 partner_type.slug,
                 partner_type.is_menu_visible,
@@ -1008,6 +1010,7 @@ class SessionStore:
                 partner_type.caption_cta,
                 partner_type.button_template,
                 partner_type.follow_up_text,
+                partner_type.choice_phrase,
             )
         return partner_type
 
@@ -1042,7 +1045,8 @@ class SessionStore:
                         caption_emoji = $9,
                         caption_cta = $10,
                         button_template = $11,
-                        follow_up_text = $12
+                        follow_up_text = $12,
+                        choice_phrase = $13
                     WHERE slug = $1
                     """,
                     slug,
@@ -1057,6 +1061,7 @@ class SessionStore:
                     partner_type.caption_cta,
                     partner_type.button_template,
                     partner_type.follow_up_text,
+                    partner_type.choice_phrase,
                 )
                 return partner_type
 

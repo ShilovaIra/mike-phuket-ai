@@ -9,6 +9,7 @@ type PartnerType = {
   caption_emoji: string
   caption_cta: string
   button_template: string
+  choice_phrase: string
 }
 
 type Partner = {
@@ -35,6 +36,7 @@ const seedTypes: PartnerType[] = [
     caption_emoji: '💰',
     caption_cta: '⬇️ Обменять сейчас ⬇️',
     button_template: 'Обменять с {name}',
+    choice_phrase: 'обмен рублей',
   },
   {
     slug: 'vehicle_rental',
@@ -47,6 +49,7 @@ const seedTypes: PartnerType[] = [
     caption_emoji: '🛵',
     caption_cta: '⬇️ Арендовать сейчас ⬇️',
     button_template: 'Арендовать у {name}',
+    choice_phrase: 'аренду транспорта',
   },
   {
     slug: 'excursions',
@@ -59,6 +62,7 @@ const seedTypes: PartnerType[] = [
     caption_emoji: '🇹🇭',
     caption_cta: '⬇️ Забронировать сейчас ⬇️',
     button_template: 'Забронировать с {name}',
+    choice_phrase: 'экскурсии',
   },
   {
     slug: 'esim',
@@ -73,6 +77,7 @@ const seedTypes: PartnerType[] = [
     caption_emoji: '📱',
     caption_cta: '⬇️ Купить eSIM ⬇️',
     button_template: 'Купить eSIM',
+    choice_phrase: 'eSIM',
   },
 ]
 

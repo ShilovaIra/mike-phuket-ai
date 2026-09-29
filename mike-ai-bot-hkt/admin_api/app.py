@@ -9,7 +9,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 from admin_api.deps import require_admin
 from admin_api.partner_logos import router as partner_logos_router
@@ -52,6 +52,15 @@ class PartnerTypeIn(BaseModel):
     caption_cta: str
     button_template: str
     follow_up_text: str = ""
+    choice_phrase: str
+
+    @field_validator("choice_phrase")
+    @classmethod
+    def choice_phrase_not_blank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("choice_phrase is required")
+        return stripped
 
 
 class PlaceCategoryIn(BaseModel):

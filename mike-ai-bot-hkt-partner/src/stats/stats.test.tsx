@@ -3,6 +3,23 @@ import { MemoryRouter } from 'react-router-dom'
 import App from '../App'
 import { authApi } from '../auth/authApi'
 
+test('stats page shows users who chose the partner category above views', async () => {
+  await authApi.login({ email: 'shop@example.com', password: 'shop-secret' })
+  render(
+    <MemoryRouter initialEntries={['/stats']}>
+      <App />
+    </MemoryRouter>,
+  )
+
+  const allTime = await screen.findByText('Пользователей, выбравших обмен рублей (всё время)')
+  const last30 = screen.getByText('Пользователей, выбравших обмен рублей (30 дней)')
+  const views = screen.getByText('Показы (всё время)')
+  expect(allTime.compareDocumentPosition(views) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(last30.compareDocumentPosition(views) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(screen.getByText('42')).toBeInTheDocument()
+  expect(screen.getByText('7')).toBeInTheDocument()
+})
+
 test('stats page shows all-time and last 30 days totals', async () => {
   await authApi.login({ email: 'shop@example.com', password: 'shop-secret' })
   render(

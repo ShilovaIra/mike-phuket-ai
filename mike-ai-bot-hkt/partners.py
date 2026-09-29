@@ -23,6 +23,7 @@ class PartnerType:
     caption_cta: str
     button_template: str
     follow_up_text: str = ""
+    choice_phrase: str = ""
     id: UUID | None = None
 
 
