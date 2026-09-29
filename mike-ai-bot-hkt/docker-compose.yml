@@ -83,8 +83,17 @@ services:
     ports:
       - "${PARTNER_WEB_PORT:-8081}:80"
 
+  tma-web:
+    build:
+      context: ../mike-phuket-ai-tma-v2
+      dockerfile: Dockerfile
+    image: mike-phuket-tma-web:local
+    restart: unless-stopped
+    ports:
+      - "${TMA_WEB_PORT:-8082}:80"
+
   # TLS (compose profile `tls`). Hostnames come from .env
-  # (staging: *-staging.mikephuketai.com; production: partners. / admin.).
+  # (staging: *-staging.mikephuketai.com; production: partners. / admin. / app.).
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
@@ -92,12 +101,14 @@ services:
     depends_on:
       - partner-web
       - admin-web
+      - tma-web
     ports:
       - "80:80"
       - "443:443"
     environment:
       PARTNER_PUBLIC_HOST: ${PARTNER_PUBLIC_HOST:-partners-staging.mikephuketai.com}
       ADMIN_PUBLIC_HOST: ${ADMIN_PUBLIC_HOST:-admin-staging.mikephuketai.com}
+      TMA_PUBLIC_HOST: ${TMA_PUBLIC_HOST:-app-staging.mikephuketai.com}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

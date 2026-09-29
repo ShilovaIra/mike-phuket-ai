@@ -28,11 +28,12 @@ jobs:
         env:
           POSTGRES_PASSWORD: unused
         run: |
-          docker compose build bot admin-web partner-web
+          docker compose build bot admin-web partner-web tma-web
           docker save \
             mike-phuket-app:local \
             mike-phuket-admin-web:local \
             mike-phuket-partner-web:local \
+            mike-phuket-tma-web:local \
             | gzip -1 > "$RUNNER_TEMP/mike-phuket-images.tgz"
           cp "$RUNNER_TEMP/mike-phuket-images.tgz" "$GITHUB_WORKSPACE/mike-phuket-images.tgz"
 

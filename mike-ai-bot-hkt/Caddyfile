@@ -1,9 +1,13 @@
-# Hostnames come from PARTNER_PUBLIC_HOST / ADMIN_PUBLIC_HOST in .env
-# (staging: partners-staging / admin-staging; production: partners / admin).
+# Hostnames come from .env
+# (staging: *-staging.mikephuketai.com; production: partners / admin / app).
 {$PARTNER_PUBLIC_HOST:partners-staging.mikephuketai.com} {
 	reverse_proxy partner-web:80
 }
 
 {$ADMIN_PUBLIC_HOST:admin-staging.mikephuketai.com} {
 	reverse_proxy admin-web:80
+}
+
+{$TMA_PUBLIC_HOST:app-staging.mikephuketai.com} {
+	reverse_proxy tma-web:80
 }
