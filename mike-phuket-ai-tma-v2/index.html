@@ -436,5 +436,21 @@
         </ul>
       </aside>
     </div>
+    <script>
+      (function () {
+        var root = document.documentElement;
+        function pin() {
+          var viewport = window.visualViewport;
+          var height = viewport ? viewport.height : window.innerHeight;
+          root.style.setProperty("--app-height", Math.round(height) + "px");
+        }
+        pin();
+        window.addEventListener("resize", pin);
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener("resize", pin);
+          window.visualViewport.addEventListener("scroll", pin);
+        }
+      })();
+    </script>
   </body>
 </html>
