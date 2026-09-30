@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { catalogView, placeView } from "./catalog.mjs";
+import { catalogView, EMPTY_PHOTO, placeView } from "./catalog.mjs";
 
 const recommended = {
   name: "Якорная",
@@ -27,6 +27,16 @@ test("home cards show the recommend badge only on a recommended place", () => {
   assert.equal(view.cards[1].badge, false);
   assert.equal(view.cards[0].name, "Якорная");
   assert.equal(view.cards[0].photoUrl, "https://cdn.example/promthep.jpg");
+});
+
+test("a place without a photo uses the admin placeholder", () => {
+  const fromCatalog = catalogView([
+    { ...plain, photo_url: "https://cdn.example/media/places/placeholder.jpg" },
+  ]);
+  assert.equal(fromCatalog.cards[0].photoUrl, EMPTY_PHOTO);
+
+  const fromPlace = placeView({ ...plain, photo_url: "" });
+  assert.equal(fromPlace.photoUrl, EMPTY_PHOTO);
 });
 
 test("an empty catalog is an empty state", () => {

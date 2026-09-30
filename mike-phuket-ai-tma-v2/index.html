@@ -349,9 +349,16 @@
       var recsEmpty = document.querySelector("[data-recs-empty]");
       var catalogPlaces = [];
 
+      var cover = document.querySelector("[data-place-photo]");
+      cover.addEventListener("error", function () {
+        if (!cover.src.endsWith("empty_picture_placeholder.jpg")) {
+          cover.src = "./assets/empty_picture_placeholder.jpg";
+        }
+      });
+
       function showPlace(index) {
         var place = placeView(catalogPlaces[index]);
-        document.querySelector("[data-place-photo]").src = place.photoUrl;
+        cover.src = place.photoUrl;
         document.querySelector("[data-place-name]").textContent = place.name;
         document.querySelector("[data-place-category]").textContent = place.category;
         document.querySelector("[data-place-blurb]").textContent = place.blurb;
@@ -378,6 +385,11 @@
           var photo = document.createElement("img");
           photo.className = "thumb-photo";
           photo.alt = "";
+          photo.addEventListener("error", function () {
+            if (!photo.src.endsWith("empty_picture_placeholder.jpg")) {
+              photo.src = "./assets/empty_picture_placeholder.jpg";
+            }
+          });
           photo.src = card.photoUrl;
           photoWrap.appendChild(photo);
           if (card.badge) {
