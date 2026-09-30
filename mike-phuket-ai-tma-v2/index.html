@@ -364,14 +364,42 @@
         <section class="screen screen-tab" id="profile" aria-label="Профиль">
           <header class="tab-head"><h1>Профиль</h1></header>
           <div class="profile">
-            <img class="profile-face" src="./assets/mike-portrait.jpg" alt="" width="72" height="72" />
+            <div class="profile-avatar" data-profile-avatar>
+              <img alt="" width="72" height="72" hidden />
+              <span class="profile-letter">Г</span>
+            </div>
             <p class="profile-name">Гость</p>
-            <p class="profile-meta">Пхукет · русский</p>
+            <p class="profile-meta">Пхукет</p>
             <ul class="profile-rows">
-              <li><button class="row stub" type="button">Язык <span>Русский</span></button></li>
-              <li><button class="row stub" type="button">Уведомления <span>Выкл.</span></button></li>
-              <li><button class="row stub" type="button">О приложении</button></li>
+              <li>
+                <div class="row is-soon" aria-disabled="true">
+                  Язык
+                  <span class="soon-label">скоро</span>
+                </div>
+              </li>
+              <li><a class="row" href="#about">О приложении</a></li>
             </ul>
+          </div>
+          <nav class="tabs tabs-bar" aria-label="Разделы">
+            <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
+            <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро"><span class="tab-mark"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg><span class="soon">скоро</span></span>Карта</span>
+            <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
+            <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
+            <a class="tab is-on" href="#profile" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="currentColor" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="currentColor" /></svg>Профиль</a>
+          </nav>
+        </section>
+
+        <section class="screen screen-tab" id="about" aria-label="О приложении">
+          <header class="tab-head about-head">
+            <a class="about-back" href="#profile" aria-label="Назад к профилю">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </a>
+            <h1>О приложении</h1>
+          </header>
+          <div class="about">
+            <img class="about-logo" src="./assets/mike-portrait.jpg" alt="" width="92" height="92" />
+            <h2>Майк</h2>
+            <p>Ваш AI-гид по Пхукету 🇹🇭 Спросите, где поесть 🍛, куда сходить и как провести день на острове 🏝️ — Майк подскажет места и ответит на вопросы о Пхукете. Помогаем с арендой байков 🛵 и обменом валюты 💸 на острове, поиском недвижимости, а также поиском экскурсий - только надежные партнеры!</p>
           </div>
           <nav class="tabs tabs-bar" aria-label="Разделы">
             <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
@@ -386,13 +414,14 @@
       <aside class="studio-spec">
         <p class="kicker">v2 · шаг 2 презентации</p>
         <h2>Экраны приложения</h2>
-        <p>Нижние вкладки открывают чат, избранное и профиль. Карта отмечена «скоро» и не открывается. Остальные кнопки на экране ничего не делают.</p>
+        <p>Нижние вкладки открывают чат, избранное и профиль. Карта и язык отмечены «скоро» и не открываются. «О приложении» открывает описание. Остальные кнопки на экране ничего не делают.</p>
         <nav class="rail" aria-label="Экраны макета">
           <a href="#home">Главная</a>
           <a href="#map">Карта</a>
           <a href="#chat">Чат</a>
           <a href="#saved">Избранное</a>
           <a href="#profile">Профиль</a>
+          <a href="#about">О приложении</a>
           <a href="#voice">Голосовой разговор</a>
           <a href="#place">Ресторан</a>
           <a href="#sight">Мыс Промтеп</a>
@@ -404,6 +433,36 @@
         </ul>
       </aside>
     </div>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script type="module">
+      import { profileView } from "./profile.mjs";
+
+      var telegram = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe;
+      var telegramUser = telegram && telegram.user && telegram.user.first_name ? telegram.user : undefined;
+      var view = profileView(telegramUser);
+      var profile = document.getElementById("profile");
+      var avatar = profile.querySelector("[data-profile-avatar]");
+      var photo = avatar.querySelector("img");
+      var letter = avatar.querySelector(".profile-letter");
+
+      profile.querySelector(".profile-name").textContent = view.name;
+
+      function showLetter() {
+        photo.hidden = true;
+        photo.removeAttribute("src");
+        letter.hidden = false;
+        letter.textContent = view.letter;
+      }
+
+      if (!view.photoUrl) {
+        showLetter();
+      } else {
+        letter.hidden = true;
+        photo.hidden = false;
+        photo.addEventListener("error", showLetter);
+        photo.src = view.photoUrl;
+      }
+    </script>
     <script>
       (function () {
         var root = document.documentElement;

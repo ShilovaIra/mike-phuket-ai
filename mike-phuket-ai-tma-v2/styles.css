@@ -1240,9 +1240,33 @@ button {
   overscroll-behavior: contain;
 }
 
-.profile-face {
+.profile-avatar {
+  display: grid;
   width: 72px;
   height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #d9e6f5;
+  color: var(--ink);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.profile-avatar img,
+.profile-letter {
+  grid-area: 1 / 1;
+  width: 72px;
+  height: 72px;
+}
+
+.profile-avatar img {
+  object-fit: cover;
+  object-position: center;
+}
+
+.profile-letter {
+  display: grid;
+  place-items: center;
 }
 
 .profile-name {
@@ -1282,6 +1306,76 @@ button {
 .row span {
   color: var(--muted);
   font-weight: 500;
+}
+
+a.row {
+  color: inherit;
+  text-decoration: none;
+}
+
+.row.is-soon,
+.row.is-soon:hover {
+  cursor: default;
+  background: transparent;
+}
+
+.row .soon-label {
+  padding: 2px 5px 3px;
+  border-radius: 4px;
+  background: #fdcb1a;
+  color: #042048;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.about-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.about-back {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-left: -8px;
+  border-radius: 50%;
+  color: inherit;
+}
+
+.about-back:hover {
+  background: #eef3f9;
+}
+
+.about {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 20px 24px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.about-logo {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: 32% 36%;
+}
+
+.about h2 {
+  margin: 12px 0 8px;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.about p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
 .profile-rows li + li {
