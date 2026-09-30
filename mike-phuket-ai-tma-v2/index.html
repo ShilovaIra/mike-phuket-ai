@@ -205,12 +205,12 @@
               <p>AI-гид по Пхукету</p>
             </div>
           </header>
-          <div class="thread">
+          <div class="thread" data-thread>
             <p class="msg msg-mike">Привет! Я Майк. Спрашивай что угодно о Пхукете.</p>
           </div>
           <form class="composer" action="#">
-            <input type="text" placeholder="Напишите Майку" readonly tabindex="-1" />
-            <button class="send stub" type="button" aria-label="Отправить">
+            <input type="text" placeholder="Напишите Майку" autocomplete="off" enterkeyhint="send" />
+            <button class="send" type="submit" aria-label="Отправить" disabled>
               <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </button>
           </form>
@@ -289,7 +289,7 @@
       <aside class="studio-spec">
         <p class="kicker">v2 · шаг 2 презентации</p>
         <h2>Экраны приложения</h2>
-        <p>Нижние вкладки открывают чат, избранное и профиль. Карта и язык отмечены «скоро» и не открываются. «О приложении» открывает описание. Остальные кнопки на экране ничего не делают.</p>
+        <p>Нижние вкладки открывают чат, избранное и профиль. Чат отвечает Майком. Карта и язык отмечены «скоро» и не открываются. «О приложении» открывает описание.</p>
         <nav class="rail" aria-label="Экраны макета">
           <a href="#home">Главная</a>
           <a href="#map">Карта</a>
@@ -310,6 +310,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script type="module">
       import { catalogView, placeView } from "./catalog.mjs";
+      import { canSend, failureView, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
       import { profileView } from "./profile.mjs";
 
       var telegram = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe;
@@ -420,6 +421,103 @@
           recsEmpty.hidden = false;
           recsEmpty.textContent = "Не удалось загрузить места";
         });
+
+      var initData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || "";
+      var thread = document.querySelector("[data-thread]");
+      var composer = document.querySelector("#chat .composer");
+      var field = composer.querySelector("input");
+      var sendButton = composer.querySelector(".send");
+      var busy = false;
+      var sent = false;
+
+      function createBubble(bubble) {
+        var el = document.createElement("p");
+        el.className = "msg " + (bubble.role === "user" ? "msg-user" : "msg-mike");
+        if (bubble.dots) {
+          el.classList.add("msg-thinking");
+          var dots = document.createElement("span");
+          dots.className = "dots";
+          dots.setAttribute("aria-hidden", "true");
+          dots.appendChild(document.createElement("span"));
+          dots.appendChild(document.createElement("span"));
+          dots.appendChild(document.createElement("span"));
+          el.appendChild(dots);
+          el.appendChild(document.createTextNode(bubble.text));
+          return el;
+        }
+        bubble.parts.forEach(function (part) {
+          if (part.type === "link") {
+            var link = document.createElement("a");
+            link.href = part.href;
+            link.textContent = part.href;
+            link.target = "_blank";
+            link.rel = "noopener";
+            link.addEventListener("click", function (event) {
+              var tg = window.Telegram && window.Telegram.WebApp;
+              if (tg && typeof tg.openLink === "function") {
+                event.preventDefault();
+                tg.openLink(part.href);
+              }
+            });
+            el.appendChild(link);
+          } else {
+            el.appendChild(document.createTextNode(part.value));
+          }
+        });
+        return el;
+      }
+
+      function showThread(messages) {
+        var view = threadView(messages);
+        thread.replaceChildren.apply(thread, view.bubbles.map(createBubble));
+        thread.scrollTop = thread.scrollHeight;
+      }
+
+      function syncComposer() {
+        var ready = canSend({ signedIn: Boolean(initData), busy: busy, text: field.value });
+        sendButton.disabled = !ready;
+        field.disabled = busy || !initData;
+      }
+
+      field.addEventListener("input", syncComposer);
+
+      composer.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var text = field.value.trim();
+        if (!canSend({ signedIn: Boolean(initData), busy: busy, text: text })) return;
+        busy = true;
+        sent = true;
+        field.value = "";
+        syncComposer();
+        thread.appendChild(createBubble(threadView([{ role: "user", content: text }]).bubbles[0]));
+        var waiting = createBubble(waitingView());
+        thread.appendChild(waiting);
+        thread.scrollTop = thread.scrollHeight;
+        postMessage({ text: text, initData: initData, fetch: window.fetch.bind(window) })
+          .then(function (reply) {
+            waiting.replaceWith(createBubble(threadView([{ role: "assistant", content: reply }]).bubbles[0]));
+          })
+          .catch(function () {
+            waiting.replaceWith(createBubble(failureView()));
+          })
+          .then(function () {
+            busy = false;
+            syncComposer();
+            field.focus();
+            thread.scrollTop = thread.scrollHeight;
+          });
+      });
+
+      if (initData) {
+        loadThread({ initData: initData, fetch: window.fetch.bind(window) })
+          .then(function (messages) {
+            if (!sent) showThread(messages);
+          })
+          .catch(function () {
+            if (!sent) showThread([]);
+          });
+      }
+      syncComposer();
     </script>
     <script>
       (function () {

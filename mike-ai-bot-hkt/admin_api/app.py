@@ -7,7 +7,7 @@ from typing import List, Optional
 from uuid import UUID
 
 import asyncpg
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, field_validator
 
@@ -27,6 +27,15 @@ from db.url import resolve_database_url
 from partner_dashboard.router import router as partner_dashboard_router
 from maps_pin import follow_maps_redirect, resolve_maps_link
 from partners import PartnerType
+from tma_chat import (
+    InvalidInitData,
+    MikeUnavailable,
+    ReplyInFlight,
+    default_mike_model,
+    history as tma_history,
+    notify_admins,
+    send as tma_send,
+)
 from place_catalog import Place, PlaceAsset, PlaceCategory
 
 PLACEHOLDER_COVER = "media/places/placeholder.jpg"
@@ -42,6 +51,10 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class TmaMessageIn(BaseModel):
+    text: str
 
 
 class PartnerTypeIn(BaseModel):
@@ -149,6 +162,8 @@ def create_app(
     store: SessionStore | None = None,
     storage: AssetStorage | None | object = _FROM_ENV,
     maps_fetch=None,
+    mike_model=None,
+    notify_lead=None,
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -170,6 +185,8 @@ def create_app(
         app.state.store = store
     app.state.storage = AssetStorage.from_env(os.environ) if storage is _FROM_ENV else storage
     app.state.maps_fetch = maps_fetch or follow_maps_redirect
+    app.state.mike_model = mike_model
+    app.state.notify_lead = notify_admins if notify_lead is None else notify_lead
 
     origins = [
         origin.strip()
@@ -490,6 +507,53 @@ def create_app(
         except KeyError:
             raise HTTPException(status_code=404, detail="Партнёр не найден") from None
         return partner_payload(updated, request.app.state.storage)
+
+    def _tma_init_data(authorization: Optional[str]) -> str:
+        if not authorization or not authorization.startswith("tma "):
+            raise HTTPException(status_code=401, detail="unauthorized")
+        return authorization[4:].strip()
+
+    def _bot_token() -> str:
+        return os.environ.get("TELEGRAM_BOT_TOKEN") or ""
+
+    @app.get("/api/tma/messages")
+    async def list_tma_messages(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ) -> dict:
+        try:
+            messages = await tma_history(
+                _store(request),
+                init_data=_tma_init_data(authorization),
+                bot_token=_bot_token(),
+            )
+        except InvalidInitData:
+            raise HTTPException(status_code=401, detail="unauthorized") from None
+        return {"messages": messages}
+
+    @app.post("/api/tma/messages")
+    async def create_tma_message(
+        request: Request,
+        body: TmaMessageIn,
+        authorization: Optional[str] = Header(default=None),
+    ) -> dict:
+        model = request.app.state.mike_model or default_mike_model
+        try:
+            reply = await tma_send(
+                _store(request),
+                model,
+                init_data=_tma_init_data(authorization),
+                bot_token=_bot_token(),
+                text=body.text,
+                notify=request.app.state.notify_lead,
+            )
+        except InvalidInitData:
+            raise HTTPException(status_code=401, detail="unauthorized") from None
+        except MikeUnavailable:
+            raise HTTPException(status_code=502, detail="mike unavailable") from None
+        except ReplyInFlight:
+            raise HTTPException(status_code=409, detail="reply in flight") from None
+        return {"reply": reply}
 
     app.include_router(partner_logos_router)
     app.include_router(place_photos_router)
