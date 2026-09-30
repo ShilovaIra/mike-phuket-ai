@@ -44,6 +44,10 @@ img {
   max-width: 100%;
 }
 
+img[hidden] {
+  display: none !important;
+}
+
 button,
 input {
   font: inherit;
