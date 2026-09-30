@@ -144,9 +144,13 @@ button {
   color: #fff;
 }
 
-.hero-scene {
+.hero-photo {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
 }
 
 .hero::after {
@@ -158,69 +162,9 @@ button {
   pointer-events: none;
 }
 
-.sky {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(120px 80px at 78% 28%, rgba(255, 214, 120, 0.85), transparent 70%),
-    linear-gradient(180deg, #7ec8e8 0%, #3aa0c8 42%, #1f7ea8 100%);
-}
-
-.cliff {
-  position: absolute;
-  bottom: 54px;
-  width: 46%;
-  height: 58%;
-  background: linear-gradient(160deg, #1f6b4a, #0d3d32 70%);
-  clip-path: polygon(0 40%, 18% 18%, 34% 32%, 52% 8%, 70% 28%, 100% 14%, 100% 100%, 0 100%);
-}
-
-.cliff-l {
-  left: -8%;
-}
-
-.cliff-r {
-  right: -10%;
-  transform: scaleX(-1);
-  opacity: 0.92;
-}
-
-.water {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 42%;
-  background: linear-gradient(180deg, #1aa0c4, #0b6e96 60%, #084e72);
-}
-
-.boat {
-  position: absolute;
-  left: 58%;
-  bottom: 18%;
-  width: 54px;
-  height: 16px;
-  border-radius: 0 0 10px 10px;
-  background: #f4f7fb;
-  box-shadow: 0 -8px 0 -2px #d7e2ea;
-}
-
-.hero-face {
-  width: 92px;
-  height: 92px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: 32% 38%;
-  border: 3px solid rgba(255, 255, 255, 0.85);
-  flex: none;
-}
-
 .hero-copy {
   position: relative;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 12px;
   padding: 20px 16px 0;
 }
 
@@ -241,7 +185,7 @@ button {
 .bubble {
   position: relative;
   z-index: 1;
-  margin: 14px 16px 18px;
+  margin: 72px 16px 18px;
   max-width: 28ch;
   padding: 10px 12px;
   border-radius: 14px 14px 14px 4px;
