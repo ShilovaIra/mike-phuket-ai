@@ -127,12 +127,13 @@ def _place_from_row(row: asyncpg.Record) -> Place:
         blurb=row["blurb"],
         is_active=row["is_active"],
         maps_url=row["maps_url"],
+        mike_recommends=row["mike_recommends"],
     )
 
 
 _PLACE_COLUMNS = """
     id, name, category_id, partner_id, google_place_id,
-    latitude, longitude, blurb, is_active, maps_url
+    latitude, longitude, blurb, is_active, maps_url, mike_recommends
 """
 
 
@@ -843,15 +844,16 @@ class SessionStore:
         blurb: str | None = None,
         is_active: bool = True,
         maps_url: str | None = None,
+        mike_recommends: bool = False,
     ) -> Place:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
                 f"""
                 INSERT INTO places (
                     name, category_id, partner_id, google_place_id,
-                    latitude, longitude, blurb, is_active, maps_url
+                    latitude, longitude, blurb, is_active, maps_url, mike_recommends
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                 RETURNING {_PLACE_COLUMNS}
                 """,
                 name,
@@ -863,6 +865,7 @@ class SessionStore:
                 blurb,
                 is_active,
                 maps_url,
+                mike_recommends,
             )
         return _place_from_row(row)
 
@@ -879,6 +882,7 @@ class SessionStore:
         blurb: str | None = None,
         is_active: bool = True,
         maps_url: str | None = None,
+        mike_recommends: bool = False,
     ) -> Place:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
@@ -892,7 +896,8 @@ class SessionStore:
                     longitude = $7,
                     blurb = $8,
                     is_active = $9,
-                    maps_url = $10
+                    maps_url = $10,
+                    mike_recommends = $11
                 WHERE id = $1
                 RETURNING {_PLACE_COLUMNS}
                 """,
@@ -906,6 +911,7 @@ class SessionStore:
                 blurb,
                 is_active,
                 maps_url,
+                mike_recommends,
             )
         if row is None:
             raise KeyError(place_id)
@@ -917,12 +923,13 @@ class SessionStore:
                 """
                 SELECT place.id, place.name, place.category_id, place.partner_id,
                        place.google_place_id, place.latitude, place.longitude,
-                       place.blurb, place.is_active, place.maps_url
+                       place.blurb, place.is_active, place.maps_url,
+                       place.mike_recommends
                 FROM places AS place
                 LEFT JOIN partners AS partner ON partner.id = place.partner_id
                 WHERE place.is_active
                   AND (place.partner_id IS NULL OR partner.is_active)
-                ORDER BY place.name ASC
+                ORDER BY place.mike_recommends DESC, place.name ASC
                 """
             )
         return [_place_from_row(row) for row in rows]

@@ -434,3 +434,117 @@ async def test_create_place_stores_optional_blurb(store):
         listed = await client.get("/api/places")
         match = next(item for item in listed.json() if item["name"] == "Мыс Промтеп")
         assert match["blurb"] == "Закат"
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_place_is_not_recommended_until_admin_sets_yes(store):
+    async with authed_client(store) as client:
+        created = await client.post(
+            "/api/places",
+            json={"name": "Мыс Промтеп", "category": "beach", "maps_url": PROMTEP_MAPS},
+        )
+        assert created.status_code == 201
+        assert created.json()["mike_recommends"] is False
+
+        catalog = await client.get("/api/catalog/places")
+        assert catalog.status_code == 200
+        match = next(item for item in catalog.json() if item["name"] == "Мыс Промтеп")
+        assert match["mike_recommends"] is False
+
+        updated = await client.patch(
+            f"/api/places/{created.json()['id']}",
+            json={
+                "name": "Мыс Промтеп",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS,
+                "mike_recommends": True,
+            },
+        )
+        assert updated.status_code == 200
+        assert updated.json()["mike_recommends"] is True
+
+        catalog = await client.get("/api/catalog/places")
+        match = next(item for item in catalog.json() if item["name"] == "Мыс Промтеп")
+        assert match["mike_recommends"] is True
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_public_catalog_is_open_and_lists_visible_places(store, asset_storage):
+    async with authed_client(store, asset_storage) as client:
+        partner = await client.post(
+            "/api/partners",
+            json={
+                "name": "Money Shop",
+                "type": "money_exchange",
+                "referral_url": "https://example.com/money",
+                "is_active": False,
+            },
+        )
+        assert partner.status_code == 201
+
+        recommended = await client.post(
+            "/api/places",
+            json={
+                "name": "Якорная",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS,
+                "blurb": "Закат",
+                "mike_recommends": True,
+            },
+        )
+        assert recommended.status_code == 201
+
+        plain = await client.post(
+            "/api/places",
+            json={
+                "name": "Анапа",
+                "category": "shop",
+                "maps_url": KATA_MAPS,
+            },
+        )
+        assert plain.status_code == 201
+
+        inactive = await client.post(
+            "/api/places",
+            json={
+                "name": "Скрытый",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS.replace("Promthep+Cape", "Hidden"),
+                "is_active": False,
+            },
+        )
+        assert inactive.status_code == 201
+
+        closed = await client.post(
+            "/api/places",
+            json={
+                "name": "Касса",
+                "category": "shop",
+                "maps_url": KATA_MAPS.replace("Kata", "Kassa"),
+                "partner_id": partner.json()["id"],
+            },
+        )
+        assert closed.status_code == 201
+
+    from admin_api.app import create_app
+
+    app = create_app(store=store, storage=asset_storage)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as public:
+        catalog = await public.get("/api/catalog/places")
+
+    assert catalog.status_code == 200
+    places = catalog.json()
+    assert [place["name"] for place in places] == ["Якорная", "Анапа"]
+    assert places[0]["mike_recommends"] is True
+    assert places[0]["category"] == "Пляж"
+    assert places[0]["blurb"] == "Закат"
+    assert places[0]["maps_url"] == PROMTEP_MAPS
+    assert places[0]["photo_url"] == (
+        "https://cdn-test.mikephuketai.com/media/places/placeholder.jpg"
+    )
+    assert places[1]["mike_recommends"] is False
+    assert places[1]["category"] == "Магазин"
+    assert all("partner_id" not in place for place in places)

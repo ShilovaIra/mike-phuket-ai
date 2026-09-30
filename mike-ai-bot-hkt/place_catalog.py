@@ -24,6 +24,7 @@ class Place:
     blurb: str | None
     is_active: bool
     maps_url: str | None = None
+    mike_recommends: bool = False
 
 
 @dataclass(frozen=True)

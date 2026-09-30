@@ -236,3 +236,30 @@ test('a failed photo replace keeps the new text and the previous photo', async (
     original,
   )
 })
+
+test('admin marks a place as recommended and the list shows yes', async () => {
+  const user = userEvent.setup()
+  await renderAuthed('/places')
+
+  await user.click(await screen.findByRole('button', { name: /добавить место/i }))
+  const dialog = await screen.findByRole('dialog')
+  await user.type(within(dialog).getByLabelText(/название/i), 'Мыс Промтеп')
+  await user.selectOptions(within(dialog).getByLabelText(/категория/i), 'beach')
+  await user.type(
+    within(dialog).getByLabelText(/ссылка/i),
+    'https://www.google.com/maps/place/Promthep/@7.76,98.30,17z',
+  )
+  await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
+
+  const row = () => screen.getByText('Мыс Промтеп').closest('tr')!
+  expect(row()).toHaveTextContent('нет')
+
+  await user.click(within(row()).getByRole('button', { name: /изменить/i }))
+  const edit = await screen.findByRole('dialog', { name: /изменить место/i })
+  await user.selectOptions(within(edit).getByLabelText(/майк рекомендует/i), 'да')
+  await user.click(within(edit).getByRole('button', { name: /сохранить/i }))
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(row()).not.toHaveTextContent('нет')
+  expect(row()).toHaveTextContent('да')
+})

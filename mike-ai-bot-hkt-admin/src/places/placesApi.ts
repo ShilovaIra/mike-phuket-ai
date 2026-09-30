@@ -8,6 +8,7 @@ export type Place = {
   maps_url: string
   partner_id: string | null
   is_active: boolean
+  mike_recommends: boolean
   latitude: number
   longitude: number
   photos: { id: string; path: string; url?: string }[]
@@ -30,6 +31,7 @@ export type PlaceInput = {
   maps_url: string
   partner_id: string | null
   is_active: boolean
+  mike_recommends: boolean
 }
 
 export const placesApi = {

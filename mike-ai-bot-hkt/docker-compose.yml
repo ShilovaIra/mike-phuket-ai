@@ -89,6 +89,9 @@ services:
       dockerfile: Dockerfile
     image: mike-phuket-tma-web:local
     restart: unless-stopped
+    depends_on:
+      admin-api:
+        condition: service_healthy
     ports:
       - "${TMA_WEB_PORT:-8082}:80"
 

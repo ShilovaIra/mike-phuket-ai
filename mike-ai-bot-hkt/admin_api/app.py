@@ -90,6 +90,7 @@ class PlaceIn(BaseModel):
     blurb: str = ""
     partner_id: Optional[UUID] = None
     is_active: bool = True
+    mike_recommends: bool = False
     photos: Optional[List[PlacePhotoIn]] = None
 
 
@@ -134,6 +135,7 @@ def _place_payload(
         "longitude": place.longitude,
         "partner_id": None if place.partner_id is None else str(place.partner_id),
         "is_active": place.is_active,
+        "mike_recommends": place.mike_recommends,
         "photos": photos,
         "cover": photos[0]["path"] if photos else PLACEHOLDER_COVER,
     }
@@ -330,6 +332,28 @@ def create_app(
             )
         return payloads
 
+    @app.get("/api/catalog/places")
+    async def list_catalog_places(request: Request) -> list[dict]:
+        store = _store(request)
+        categories = {item.id: item.label for item in await store.list_place_categories()}
+        storage = request.app.state.storage
+        payloads = []
+        for place in await store.list_visible_places():
+            assets = await store.list_place_assets(place.id)
+            cover = assets[0].path if assets else PLACEHOLDER_COVER
+            photo_url = storage.public_url(cover) if storage is not None else cover
+            payloads.append(
+                {
+                    "name": place.name,
+                    "category": categories[place.category_id],
+                    "blurb": place.blurb or "",
+                    "maps_url": place.maps_url or "",
+                    "photo_url": photo_url,
+                    "mike_recommends": place.mike_recommends,
+                }
+            )
+        return payloads
+
     @app.post("/api/places", status_code=201)
     async def create_place(
         request: Request,
@@ -363,6 +387,7 @@ def create_app(
                 partner_id=body.partner_id,
                 is_active=body.is_active,
                 blurb=body.blurb or None,
+                mike_recommends=body.mike_recommends,
             )
         except asyncpg.UniqueViolationError:
             raise HTTPException(status_code=409, detail="Это место уже есть") from None
@@ -404,6 +429,7 @@ def create_app(
                 partner_id=body.partner_id,
                 is_active=body.is_active,
                 blurb=body.blurb or None,
+                mike_recommends=body.mike_recommends,
             )
         except KeyError:
             raise HTTPException(status_code=404, detail="Место не найдено") from None

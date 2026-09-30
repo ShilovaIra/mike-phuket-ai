@@ -436,10 +436,12 @@ CREATE TABLE IF NOT EXISTS places (
     maps_url TEXT,
     blurb TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
+    mike_recommends BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE places ADD COLUMN IF NOT EXISTS maps_url TEXT;
+ALTER TABLE places ADD COLUMN IF NOT EXISTS mike_recommends BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE places ALTER COLUMN google_place_id DROP NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS places_maps_url_key ON places (maps_url);
 

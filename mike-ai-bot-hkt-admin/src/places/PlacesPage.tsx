@@ -53,6 +53,7 @@ export function PlacesPage() {
             <th className="py-2 pr-4 font-medium">Категория</th>
             <th className="py-2 pr-4 font-medium">Описание</th>
             <th className="py-2 pr-4 font-medium">Активно</th>
+            <th className="py-2 pr-4 font-medium">Майк рекомендует</th>
             <th className="py-2 font-medium">Действия</th>
           </tr>
         </thead>
@@ -70,6 +71,7 @@ export function PlacesPage() {
               <td className="py-2 pr-4">{labelFor(place.category)}</td>
               <td className="py-2 pr-4">{place.blurb}</td>
               <td className="py-2 pr-4">{place.is_active ? 'да' : 'нет'}</td>
+              <td className="py-2 pr-4">{place.mike_recommends ? 'да' : 'нет'}</td>
               <td className="py-2">
                 <button
                   type="button"

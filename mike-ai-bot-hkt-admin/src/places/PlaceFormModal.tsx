@@ -11,6 +11,7 @@ const emptyForm: PlaceInput = {
   maps_url: '',
   partner_id: null,
   is_active: true,
+  mike_recommends: false,
 }
 
 type Props = {
@@ -28,6 +29,7 @@ function inputFromPlace(place: Place): PlaceInput {
     maps_url: place.maps_url,
     partner_id: place.partner_id,
     is_active: place.is_active,
+    mike_recommends: place.mike_recommends,
   }
 }
 
@@ -272,6 +274,17 @@ export function PlaceFormModal({ place, onClose, onSaved, onChanged = () => {} }
                 onChange={(event) => setField('is_active', event.target.checked)}
               />
               Активно
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              Майк рекомендует
+              <select
+                value={form.mike_recommends ? 'да' : 'нет'}
+                onChange={(event) => setField('mike_recommends', event.target.value === 'да')}
+                className="rounded border border-slate-300 bg-white px-3 py-2"
+              >
+                <option value="да">да</option>
+                <option value="нет">нет</option>
+              </select>
             </label>
             {error ? <p role="alert">{error}</p> : null}
             <div className="flex justify-end gap-2">

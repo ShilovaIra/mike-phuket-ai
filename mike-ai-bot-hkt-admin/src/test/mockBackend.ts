@@ -164,6 +164,7 @@ let places: {
   maps_url: string
   partner_id: string | null
   is_active: boolean
+  mike_recommends: boolean
   latitude: number
   longitude: number
   photos: { id: string; path: string; url: string }[]
@@ -350,6 +351,7 @@ export function installFetchMock(): void {
         maps_url: body.maps_url as string,
         partner_id: (body.partner_id as string | null) ?? null,
         is_active: body.is_active !== false,
+        mike_recommends: body.mike_recommends === true,
         latitude: 7.76,
         longitude: 98.3,
         photos: [],
@@ -399,6 +401,7 @@ export function installFetchMock(): void {
         maps_url: body.maps_url ?? current.maps_url,
         partner_id: body.partner_id === undefined ? current.partner_id : body.partner_id,
         is_active: body.is_active ?? current.is_active,
+        mike_recommends: body.mike_recommends ?? current.mike_recommends,
         photos,
         cover: photos[0]?.path ?? 'media/places/placeholder.jpg',
       }
