@@ -390,10 +390,20 @@ button {
 .recommend-badge {
   position: absolute;
   z-index: 1;
-  left: 8px;
-  bottom: 8px;
-  width: calc(100% - 16px);
+  top: 4px;
+  right: 4px;
+  width: 58%;
   height: auto;
+  transform: rotate(18deg);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.cover .recommend-badge {
+  top: 18px;
+  right: 40px;
+  width: 42%;
+  transform: rotate(16deg);
 }
 
 .recs-empty,
