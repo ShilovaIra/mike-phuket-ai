@@ -1063,7 +1063,6 @@ button {
   font-size: 0.8125rem;
 }
 
-.chat-face,
 .profile-face {
   border-radius: 50%;
   object-fit: cover;
@@ -1071,8 +1070,23 @@ button {
 }
 
 .chat-face {
+  display: block;
+  position: relative;
   width: 40px;
   height: 40px;
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.chat-face img {
+  position: absolute;
+  width: 170%;
+  height: auto;
+  max-width: none;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -32%);
 }
 
 .map-fill {

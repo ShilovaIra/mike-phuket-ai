@@ -88,14 +88,6 @@
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
           </button>
           <div class="voice-body">
-            <div class="voice-portrait">
-              <img
-                src="./assets/mike-portrait.jpg"
-                alt="Майк слушает"
-                width="168"
-                height="168"
-              />
-            </div>
             <p class="listen">Майк слушает...</p>
             <div class="wave" aria-hidden="true">
               <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
@@ -114,7 +106,7 @@
           <article class="place">
             <header class="cover">
               <img class="cover-photo" data-place-photo alt="" />
-              <img class="recommend-badge" data-place-badge src="./assets/mike-recommends.jpg" alt="MIKE рекомендует" hidden />
+              <img class="recommend-badge" data-place-badge src="./assets/mike-recommends.png" alt="MIKE рекомендует" hidden />
               <div class="cover-tools">
                 <a class="icon-btn" href="#home" aria-label="Назад">
                   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
@@ -205,7 +197,9 @@
 
         <section class="screen screen-tab" id="chat" aria-label="Чат">
           <header class="tab-head chat-head">
-            <img class="chat-face" src="./assets/mike-portrait.jpg" alt="" width="40" height="40" />
+            <span class="chat-face">
+              <img src="./assets/hero-mike.jpg" alt="" width="923" height="1024" />
+            </span>
             <div>
               <h1>Майк</h1>
               <p>AI-гид по Пхукету</p>
@@ -279,7 +273,6 @@
             <h1>О приложении</h1>
           </header>
           <div class="about">
-            <img class="about-logo" src="./assets/mike-portrait.jpg" alt="" width="92" height="92" />
             <h2>Майк</h2>
             <p>Ваш AI-гид по Пхукету 🇹🇭 Спросите, где поесть 🍛, куда сходить и как провести день на острове 🏝️ — Майк подскажет места и ответит на вопросы о Пхукете. Помогаем с арендой байков 🛵 и обменом валюты 💸 на острове, поиском недвижимости, а также поиском экскурсий - только надежные партнеры!</p>
           </div>
@@ -395,7 +388,7 @@
           if (card.badge) {
             var badge = document.createElement("img");
             badge.className = "recommend-badge";
-            badge.src = "./assets/mike-recommends.jpg";
+            badge.src = "./assets/mike-recommends.png";
             badge.alt = "MIKE рекомендует";
             photoWrap.appendChild(badge);
           }

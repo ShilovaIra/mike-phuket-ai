@@ -3,10 +3,6 @@
   const form = document.getElementById("composer");
   const field = document.getElementById("message");
   const send = form.querySelector('button[type="submit"]');
-  const portraitSrc = "./assets/mike-portrait.jpg";
-  const portraitSrcSet =
-    "./assets/mike-portrait.jpg 328w, ./assets/mike-portrait@2x.jpg 656w";
-
   const replies = [
     "Ок. Важнее море, еда или вид сверху?",
     "Ты на байке или без?",
@@ -16,20 +12,6 @@
   let busy = false;
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  function face() {
-    const wrap = document.createElement("div");
-    wrap.className = "chat-face";
-    const img = document.createElement("img");
-    img.src = portraitSrc;
-    img.srcset = portraitSrcSet;
-    img.sizes = "32px";
-    img.alt = "";
-    img.width = 32;
-    img.height = 32;
-    wrap.append(img);
-    return wrap;
-  }
 
   function appendUser(text) {
     const row = document.createElement("div");
@@ -47,7 +29,7 @@
     const bubble = document.createElement("p");
     bubble.className = "bubble bubble--mike";
     bubble.textContent = text;
-    row.append(face(), bubble);
+    row.append(bubble);
     thread.append(row);
   }
 
@@ -62,7 +44,7 @@
     dots.className = "typing";
     dots.innerHTML = "<span></span><span></span><span></span>";
     bubble.append(dots);
-    row.append(face(), bubble);
+    row.append(bubble);
     thread.append(row);
     return row;
   }
