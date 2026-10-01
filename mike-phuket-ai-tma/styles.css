@@ -14,6 +14,7 @@
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --tma-width: 390px;
   --tma-height: 844px;
+  --chrome-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
   --z-sticky: 20;
   --z-device: 10;
 }
@@ -169,7 +170,7 @@ button {
 .hero-copy {
   position: relative;
   z-index: 1;
-  padding: 20px 16px 0;
+  padding: calc(20px + var(--chrome-top)) 16px 0;
 }
 
 .hero-copy h1 {
@@ -523,7 +524,7 @@ button {
   flex-direction: column;
   align-items: flex-start;
   gap: 16px;
-  padding: 16px 16px 0;
+  padding: calc(16px + var(--chrome-top)) 16px 0;
 }
 
 .partner-logo {
@@ -778,7 +779,7 @@ button {
 .close {
   position: absolute;
   z-index: 3;
-  top: 16px;
+  top: calc(16px + var(--chrome-top));
   left: 16px;
   width: 36px;
   height: 36px;
@@ -949,7 +950,7 @@ button {
 .cover-tools {
   position: absolute;
   z-index: 2;
-  top: 16px;
+  top: calc(16px + var(--chrome-top));
   left: 12px;
   right: 12px;
   display: flex;
@@ -1138,7 +1139,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 16px 12px 0;
+  padding: calc(16px + var(--chrome-top)) 12px 0;
 }
 
 .route-head h1 {
@@ -1271,7 +1272,7 @@ button {
 
 .tab-head {
   flex: none;
-  padding: 20px 16px 8px;
+  padding: calc(20px + var(--chrome-top)) 16px 8px;
 }
 
 .tab-head h1 {
