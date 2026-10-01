@@ -336,6 +336,78 @@ button {
 
 .recs {
   display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 0 0 8px;
+}
+
+.partner-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.partner-head {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: center;
+  margin: 0 16px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.partner-mark {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #d9e6f5;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.partner-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
+}
+
+.partner-copy h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.partner-copy p {
+  display: -webkit-box;
+  margin: 2px 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.places-head {
+  margin: 0 16px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.rec-row {
+  display: flex;
   gap: 10px;
   overflow-x: auto;
   padding: 0 0 8px;
@@ -763,6 +835,16 @@ button {
 
 .icon-btn:hover {
   background: rgba(16, 32, 51, 0.55);
+}
+
+.icon-btn.is-saved path {
+  fill: currentColor;
+}
+
+.place-save-error {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
 }
 
 .icon-ghost {
@@ -1277,15 +1359,29 @@ button {
   cursor: default;
 }
 
-.saved-list {
+.saved-grid {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-content: start;
+  padding: 8px 16px 16px;
   overflow: auto;
   overscroll-behavior: contain;
+}
+
+.saved-grid .rec,
+.saved-grid .rec:first-child,
+.saved-grid .rec:last-child {
+  flex: none;
+  margin: 0;
+  min-width: 0;
+}
+
+.saved-grid .saved-empty {
+  grid-column: 1 / -1;
+  margin: 8px 0 0;
 }
 
 .saved {

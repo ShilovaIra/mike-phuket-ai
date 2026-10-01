@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from uuid import UUID
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -548,3 +549,74 @@ async def test_public_catalog_is_open_and_lists_visible_places(store, asset_stor
     assert places[1]["mike_recommends"] is False
     assert places[1]["category"] == "Магазин"
     assert all("partner_id" not in place for place in places)
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_public_catalog_includes_the_place_id(store):
+    async with authed_client(store) as client:
+        created = await client.post(
+            "/api/places",
+            json={
+                "name": "Якорная",
+                "category": "beach",
+                "maps_url": PROMTEP_MAPS,
+            },
+        )
+        catalog = await client.get("/api/catalog/places")
+
+    assert created.status_code == 201
+    match = next(item for item in catalog.json() if item["name"] == "Якорная")
+    assert match["id"] == created.json()["id"]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_public_catalog_names_the_partner_on_a_bound_place(store, asset_storage):
+    async with authed_client(store, asset_storage) as client:
+        partner = await client.post(
+            "/api/partners",
+            json={
+                "name": "Money Shop",
+                "type": "money_exchange",
+                "referral_url": "https://example.com/money",
+                "blurb": "Обмен без комиссии",
+                "sort_order": 3,
+            },
+        )
+        assert partner.status_code == 201
+        partner_id = partner.json()["id"]
+        await store.set_partner_logo(UUID(partner_id), "partners/money/logo.png")
+
+        bound = await client.post(
+            "/api/places",
+            json={
+                "name": "Касса Ката",
+                "category": "shop",
+                "maps_url": KATA_MAPS,
+                "partner_id": partner_id,
+            },
+        )
+        assert bound.status_code == 201
+
+        unbound = await client.post(
+            "/api/places",
+            json={"name": "Якорная", "category": "beach", "maps_url": PROMTEP_MAPS},
+        )
+        assert unbound.status_code == 201
+
+        catalog = await client.get("/api/catalog/places")
+
+    assert catalog.status_code == 200
+    places = {item["name"]: item for item in catalog.json()}
+    assert places["Касса Ката"]["partner"] == {
+        "name": "Money Shop",
+        "blurb": "Обмен без комиссии",
+        "logo_url": "https://cdn-test.mikephuketai.com/partners/money/logo.png",
+        "sort_order": 3,
+    }
+    assert "partner_id" not in places["Касса Ката"]
+    assert "referral_url" not in places["Касса Ката"]
+    assert "referral_url" not in places["Касса Ката"]["partner"]
+    assert places["Якорная"]["partner"] is None
+    assert "partner_id" not in places["Якорная"]

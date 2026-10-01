@@ -451,3 +451,13 @@ CREATE TABLE IF NOT EXISTS place_assets (
     path TEXT NOT NULL,
     sort_order INT NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS place_favourites (
+    user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    place_id UUID NOT NULL REFERENCES places (id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, place_id)
+);
+
+CREATE INDEX IF NOT EXISTS place_favourites_user_created
+    ON place_favourites (user_id, created_at DESC);

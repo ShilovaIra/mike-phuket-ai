@@ -108,10 +108,10 @@
               <img class="cover-photo" data-place-photo alt="" />
               <img class="recommend-badge" data-place-badge src="./assets/mike-recommends.png" alt="MIKE рекомендует" hidden />
               <div class="cover-tools">
-                <a class="icon-btn" href="#home" aria-label="Назад">
+                <a class="icon-btn" href="#home" data-place-back aria-label="Назад">
                   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </a>
-                <button class="icon-btn stub" type="button" aria-label="В избранное">
+                <button class="icon-btn" type="button" data-place-save aria-pressed="false" aria-label="В избранное">
                   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
                 </button>
               </div>
@@ -120,6 +120,7 @@
               <h1 data-place-name></h1>
               <p class="sub" data-place-category></p>
               <p class="prose" data-place-blurb></p>
+              <p class="place-save-error" data-place-save-error hidden></p>
               <a class="cta" data-place-maps href="" target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 Открыть в картах
@@ -225,8 +226,8 @@
 
         <section class="screen screen-tab" id="saved" aria-label="Избранное">
           <header class="tab-head"><h1>Избранное</h1></header>
-          <div class="saved-list">
-            <p class="saved-empty">Пока ничего не сохранено</p>
+          <div class="saved-grid" data-saved>
+            <p class="saved-empty" data-saved-empty>Пока ничего не сохранено</p>
           </div>
           <nav class="tabs tabs-bar" aria-label="Разделы">
             <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
@@ -309,8 +310,9 @@
     </div>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script type="module">
-      import { catalogView, placeView } from "./catalog.mjs";
+      import { placeView, recommendationsView } from "./catalog.mjs";
       import { canSend, failureView, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
+      import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
       import { profileView } from "./profile.mjs";
 
       var telegram = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe;
@@ -342,70 +344,184 @@
       var recs = document.querySelector("[data-recs]");
       var recsEmpty = document.querySelector("[data-recs-empty]");
       var catalogPlaces = [];
+      var favouritePlaces = [];
+      var currentPlace = null;
+      var currentSaved = false;
+      var saveFailed = false;
+      var saveBusy = false;
+      var initData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || "";
 
       var cover = document.querySelector("[data-place-photo]");
+      var backLink = document.querySelector("[data-place-back]");
+      var heart = document.querySelector("[data-place-save]");
+      var saveError = document.querySelector("[data-place-save-error]");
+      var savedGrid = document.querySelector("[data-saved]");
+      var savedEmpty = document.querySelector("[data-saved-empty]");
       cover.addEventListener("error", function () {
         if (!cover.src.endsWith("empty_picture_placeholder.jpg")) {
           cover.src = "./assets/empty_picture_placeholder.jpg";
         }
       });
 
-      function showPlace(index) {
-        var place = placeView(catalogPlaces[index]);
-        cover.src = place.photoUrl;
-        document.querySelector("[data-place-name]").textContent = place.name;
-        document.querySelector("[data-place-category]").textContent = place.category;
-        document.querySelector("[data-place-blurb]").textContent = place.blurb;
+      function paintHeart() {
+        var heartState = heartView({ saved: currentSaved, failed: saveFailed });
+        heart.classList.toggle("is-saved", heartState.filled);
+        heart.setAttribute("aria-pressed", heartState.filled ? "true" : "false");
+        heart.setAttribute("aria-label", heartState.filled ? "Убрать из избранного" : "В избранное");
+        saveError.hidden = !heartState.error;
+        saveError.textContent = heartState.error;
+      }
+
+      function showPlace(place, back) {
+        currentPlace = place;
+        currentSaved = favouritePlaces.some(function (item) { return item.id === place.id; });
+        saveFailed = false;
+        var view = placeView(place);
+        cover.src = view.photoUrl;
+        document.querySelector("[data-place-name]").textContent = view.name;
+        document.querySelector("[data-place-category]").textContent = view.category;
+        document.querySelector("[data-place-blurb]").textContent = view.blurb;
         var maps = document.querySelector("[data-place-maps]");
-        maps.href = place.mapsUrl;
-        maps.lastChild.textContent = place.mapsLabel;
+        maps.href = view.mapsUrl;
+        maps.lastChild.textContent = view.mapsLabel;
         var badge = document.querySelector("[data-place-badge]");
-        badge.hidden = !place.badge;
+        badge.hidden = !view.badge;
+        backLink.href = back;
+        paintHeart();
+      }
+
+      function createPlaceCard(card, onOpen) {
+        var link = document.createElement("a");
+        link.className = "rec";
+        link.href = "#place";
+        link.addEventListener("click", onOpen);
+
+        var photoWrap = document.createElement("span");
+        photoWrap.className = "thumb";
+        var photo = document.createElement("img");
+        photo.className = "thumb-photo";
+        photo.alt = "";
+        photo.addEventListener("error", function () {
+          if (!photo.src.endsWith("empty_picture_placeholder.jpg")) {
+            photo.src = "./assets/empty_picture_placeholder.jpg";
+          }
+        });
+        photo.src = card.photoUrl;
+        photoWrap.appendChild(photo);
+        if (card.badge) {
+          var badge = document.createElement("img");
+          badge.className = "recommend-badge";
+          badge.src = "./assets/mike-recommends.png";
+          badge.alt = "MIKE рекомендует";
+          photoWrap.appendChild(badge);
+        }
+        link.appendChild(photoWrap);
+
+        var title = document.createElement("span");
+        title.className = "rec-title";
+        title.textContent = card.name;
+        link.appendChild(title);
+
+        var meta = document.createElement("span");
+        meta.className = "rec-meta";
+        meta.textContent = card.category;
+        link.appendChild(meta);
+        return link;
+      }
+
+      function openCatalogCard(card) {
+        var place = catalogPlaces.find(function (item) {
+          return item.name === card.name && item.category === card.category;
+        });
+        if (place) showPlace(place, "#home");
+      }
+
+      function createPartnerCard(partner) {
+        var card = document.createElement("article");
+        card.className = "partner-head";
+
+        var mark = document.createElement("span");
+        mark.className = "partner-mark";
+        mark.setAttribute("aria-hidden", "true");
+        if (partner.logoUrl) {
+          var logo = document.createElement("img");
+          logo.alt = "";
+          logo.addEventListener("error", function () {
+            mark.textContent = partner.initial;
+          });
+          logo.src = partner.logoUrl;
+          mark.appendChild(logo);
+        } else {
+          mark.textContent = partner.initial;
+        }
+        card.appendChild(mark);
+
+        var copy = document.createElement("div");
+        copy.className = "partner-copy";
+        var name = document.createElement("h3");
+        name.textContent = partner.name;
+        copy.appendChild(name);
+        if (partner.blurb) {
+          var blurb = document.createElement("p");
+          blurb.textContent = partner.blurb;
+          copy.appendChild(blurb);
+        }
+        card.appendChild(copy);
+        return card;
+      }
+
+      function createPlaceRow(cards) {
+        var row = document.createElement("div");
+        row.className = "rec-row";
+        cards.forEach(function (card) {
+          row.appendChild(createPlaceCard(card, function () {
+            openCatalogCard(card);
+          }));
+        });
+        return row;
       }
 
       function renderCards(view) {
         recsEmpty.hidden = !view.empty;
+        recsEmpty.textContent = "Пока нет мест";
         recs.replaceChildren();
-        view.cards.forEach(function (card, index) {
-          var link = document.createElement("a");
-          link.className = "rec";
-          link.href = "#place";
-          link.addEventListener("click", function () {
-            showPlace(index);
-          });
-
-          var photoWrap = document.createElement("span");
-          photoWrap.className = "thumb";
-          var photo = document.createElement("img");
-          photo.className = "thumb-photo";
-          photo.alt = "";
-          photo.addEventListener("error", function () {
-            if (!photo.src.endsWith("empty_picture_placeholder.jpg")) {
-              photo.src = "./assets/empty_picture_placeholder.jpg";
-            }
-          });
-          photo.src = card.photoUrl;
-          photoWrap.appendChild(photo);
-          if (card.badge) {
-            var badge = document.createElement("img");
-            badge.className = "recommend-badge";
-            badge.src = "./assets/mike-recommends.png";
-            badge.alt = "MIKE рекомендует";
-            photoWrap.appendChild(badge);
-          }
-          link.appendChild(photoWrap);
-
-          var title = document.createElement("span");
-          title.className = "rec-title";
-          title.textContent = card.name;
-          link.appendChild(title);
-
-          var meta = document.createElement("span");
-          meta.className = "rec-meta";
-          meta.textContent = card.category;
-          link.appendChild(meta);
-          recs.appendChild(link);
+        view.partners.forEach(function (partner) {
+          var block = document.createElement("section");
+          block.className = "partner-block";
+          block.setAttribute("aria-label", partner.name);
+          block.appendChild(createPartnerCard(partner));
+          block.appendChild(createPlaceRow(partner.places));
+          recs.appendChild(block);
         });
+        if (view.showPlacesHeading) {
+          var heading = document.createElement("h3");
+          heading.className = "places-head";
+          heading.textContent = "Места";
+          recs.appendChild(heading);
+        }
+        if (view.places.length) recs.appendChild(createPlaceRow(view.places));
+      }
+
+      function renderSaved() {
+        var view = favouritesView(favouritePlaces);
+        savedEmpty.hidden = !view.empty;
+        savedEmpty.textContent = "Пока ничего не сохранено";
+        savedGrid.querySelectorAll(".rec").forEach(function (node) { node.remove(); });
+        view.cards.forEach(function (card, index) {
+          var place = favouritePlaces[index];
+          savedGrid.appendChild(createPlaceCard(card, function () {
+            showPlace(place, "#saved");
+          }));
+        });
+      }
+
+      function applyFavourites(places) {
+        favouritePlaces = places;
+        renderSaved();
+        if (currentPlace && !saveBusy && !saveFailed) {
+          currentSaved = favouritePlaces.some(function (item) { return item.id === currentPlace.id; });
+          paintHeart();
+        }
       }
 
       fetch("/api/catalog/places")
@@ -415,14 +531,59 @@
         })
         .then(function (places) {
           catalogPlaces = places;
-          renderCards(catalogView(places));
+          renderCards(recommendationsView(places));
         })
         .catch(function () {
           recsEmpty.hidden = false;
           recsEmpty.textContent = "Не удалось загрузить места";
         });
 
-      var initData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || "";
+      if (initData) {
+        var fetchJson = window.fetch.bind(window);
+        openSession({ initData: initData, fetch: fetchJson }).catch(function () {});
+        loadFavourites({ initData: initData, fetch: fetchJson })
+          .then(applyFavourites)
+          .catch(function () {
+            savedEmpty.hidden = false;
+            savedEmpty.textContent = "Не удалось загрузить места";
+          });
+      }
+
+      heart.addEventListener("click", function () {
+        if (!currentPlace || saveBusy) return;
+        if (!initData) {
+          saveFailed = true;
+          paintHeart();
+          return;
+        }
+        var next = !currentSaved;
+        saveBusy = true;
+        setSaved({
+          id: currentPlace.id,
+          saved: next,
+          initData: initData,
+          fetch: window.fetch.bind(window),
+        })
+          .then(function (saved) {
+            currentSaved = saved;
+            saveFailed = false;
+            paintHeart();
+            return loadFavourites({ initData: initData, fetch: window.fetch.bind(window) }).catch(function () {
+              return null;
+            });
+          })
+          .then(function (places) {
+            if (places) applyFavourites(places);
+          })
+          .catch(function () {
+            saveFailed = true;
+            paintHeart();
+          })
+          .then(function () {
+            saveBusy = false;
+          });
+      });
+
       var thread = document.querySelector("[data-thread]");
       var composer = document.querySelector("#chat .composer");
       var field = composer.querySelector("input");

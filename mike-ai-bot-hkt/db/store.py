@@ -934,6 +934,66 @@ class SessionStore:
             )
         return [_place_from_row(row) for row in rows]
 
+    async def ensure_identity(self, channel: str, external_id: str, *, source: str) -> UUID:
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                user_id, _ = await self._ensure_user(conn, channel, external_id, source)
+                return user_id
+
+    async def set_place_favourite(
+        self,
+        channel: str,
+        external_id: str,
+        place_id: UUID,
+        *,
+        saved: bool,
+    ) -> None:
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                user_id, _ = await self._ensure_user(conn, channel, external_id, "tma")
+                if saved:
+                    await conn.execute(
+                        """
+                        INSERT INTO place_favourites (user_id, place_id)
+                        VALUES ($1, $2)
+                        ON CONFLICT (user_id, place_id) DO NOTHING
+                        """,
+                        user_id,
+                        place_id,
+                    )
+                    return
+                await conn.execute(
+                    """
+                    DELETE FROM place_favourites
+                    WHERE user_id = $1 AND place_id = $2
+                    """,
+                    user_id,
+                    place_id,
+                )
+
+    async def list_favourite_places(self, channel: str, external_id: str) -> list[Place]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT place.id, place.name, place.category_id, place.partner_id,
+                       place.google_place_id, place.latitude, place.longitude,
+                       place.blurb, place.is_active, place.maps_url,
+                       place.mike_recommends
+                FROM place_favourites AS fav
+                JOIN identities AS i ON i.user_id = fav.user_id
+                JOIN places AS place ON place.id = fav.place_id
+                LEFT JOIN partners AS partner ON partner.id = place.partner_id
+                WHERE i.channel = $1
+                  AND i.external_id = $2
+                  AND place.is_active
+                  AND (place.partner_id IS NULL OR partner.is_active)
+                ORDER BY fav.created_at DESC, place.id
+                """,
+                channel,
+                external_id,
+            )
+        return [_place_from_row(row) for row in rows]
+
     async def list_places(self) -> list[Place]:
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(

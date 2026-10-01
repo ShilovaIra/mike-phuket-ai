@@ -36,11 +36,43 @@ from tma_chat import (
     notify_admins,
     send as tma_send,
 )
+from tma_favourites import list_places as tma_favourite_places
+from tma_favourites import open_session as tma_open_session
+from tma_favourites import save_place as tma_save_place
 from place_catalog import Place, PlaceAsset, PlaceCategory
-
-PLACEHOLDER_COVER = "media/places/placeholder.jpg"
 from storage import AssetStorage
 from topic_labels import labeled_topic_rows
+
+PLACEHOLDER_COVER = "media/places/placeholder.jpg"
+
+
+def _catalog_partner(partner, storage: AssetStorage | None) -> dict:
+    logo = partner.logo_path or ""
+    logo_url = storage.public_url(logo) if logo and storage is not None else logo
+    return {
+        "name": partner.name,
+        "blurb": partner.blurb or "",
+        "logo_url": logo_url,
+        "sort_order": partner.sort_order,
+    }
+
+
+def _catalog_card(
+    place: Place,
+    category: str,
+    photo_url: str,
+    partner: dict | None = None,
+) -> dict:
+    return {
+        "id": str(place.id),
+        "name": place.name,
+        "category": category,
+        "blurb": place.blurb or "",
+        "maps_url": place.maps_url or "",
+        "photo_url": photo_url,
+        "mike_recommends": place.mike_recommends,
+        "partner": partner,
+    }
 
 
 class LoginRequest(BaseModel):
@@ -55,6 +87,10 @@ class LoginResponse(BaseModel):
 
 class TmaMessageIn(BaseModel):
     text: str
+
+
+class FavouriteIn(BaseModel):
+    saved: bool
 
 
 class PartnerTypeIn(BaseModel):
@@ -353,21 +389,17 @@ def create_app(
     async def list_catalog_places(request: Request) -> list[dict]:
         store = _store(request)
         categories = {item.id: item.label for item in await store.list_place_categories()}
+        partners = {item.id: item for item in await store.list_partners()}
         storage = request.app.state.storage
         payloads = []
         for place in await store.list_visible_places():
             assets = await store.list_place_assets(place.id)
             cover = assets[0].path if assets else PLACEHOLDER_COVER
             photo_url = storage.public_url(cover) if storage is not None else cover
+            bound = partners.get(place.partner_id) if place.partner_id else None
+            partner = _catalog_partner(bound, storage) if bound is not None else None
             payloads.append(
-                {
-                    "name": place.name,
-                    "category": categories[place.category_id],
-                    "blurb": place.blurb or "",
-                    "maps_url": place.maps_url or "",
-                    "photo_url": photo_url,
-                    "mike_recommends": place.mike_recommends,
-                }
+                _catalog_card(place, categories[place.category_id], photo_url, partner)
             )
         return payloads
 
@@ -554,6 +586,63 @@ def create_app(
         except ReplyInFlight:
             raise HTTPException(status_code=409, detail="reply in flight") from None
         return {"reply": reply}
+
+    @app.post("/api/tma/session", status_code=204)
+    async def open_tma_session(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ) -> None:
+        try:
+            await tma_open_session(
+                _store(request),
+                init_data=_tma_init_data(authorization),
+                bot_token=_bot_token(),
+            )
+        except InvalidInitData:
+            raise HTTPException(status_code=401, detail="unauthorized") from None
+
+    @app.get("/api/tma/favourites")
+    async def list_tma_favourites(
+        request: Request,
+        authorization: Optional[str] = Header(default=None),
+    ) -> list[dict]:
+        store = _store(request)
+        try:
+            places = await tma_favourite_places(
+                store,
+                init_data=_tma_init_data(authorization),
+                bot_token=_bot_token(),
+            )
+        except InvalidInitData:
+            raise HTTPException(status_code=401, detail="unauthorized") from None
+        categories = {item.id: item.label for item in await store.list_place_categories()}
+        storage = request.app.state.storage
+        payloads = []
+        for place in places:
+            assets = await store.list_place_assets(place.id)
+            cover = assets[0].path if assets else PLACEHOLDER_COVER
+            photo_url = storage.public_url(cover) if storage is not None else cover
+            payloads.append(_catalog_card(place, categories[place.category_id], photo_url))
+        return payloads
+
+    @app.put("/api/tma/favourites/{place_id}")
+    async def set_tma_favourite(
+        request: Request,
+        place_id: UUID,
+        body: FavouriteIn,
+        authorization: Optional[str] = Header(default=None),
+    ) -> dict:
+        try:
+            saved = await tma_save_place(
+                _store(request),
+                init_data=_tma_init_data(authorization),
+                bot_token=_bot_token(),
+                place_id=place_id,
+                saved=body.saved,
+            )
+        except InvalidInitData:
+            raise HTTPException(status_code=401, detail="unauthorized") from None
+        return {"saved": saved}
 
     app.include_router(partner_logos_router)
     app.include_router(place_photos_router)
