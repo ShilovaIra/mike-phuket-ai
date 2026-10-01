@@ -26,49 +26,39 @@ function byRecommendThenName(a, b) {
   return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
 }
 
-export function recommendationsView(places) {
-  const partners = [];
-  const byName = new Map();
-  const unbound = [];
-  for (const place of places) {
-    const card = placeCard(place);
-    if (!place.partner) {
-      unbound.push(card);
-      continue;
-    }
-    let block = byName.get(place.partner.name);
-    if (!block) {
-      block = {
-        name: place.partner.name,
-        blurb: place.partner.blurb || "",
-        logoUrl: place.partner.logo_url || "",
-        initial: place.partner.name.trim().charAt(0).toUpperCase(),
-        sortOrder: place.partner.sort_order,
-        places: [],
-      };
-      byName.set(place.partner.name, block);
-      partners.push(block);
-    }
-    block.places.push(card);
-  }
-  unbound.sort(byRecommendThenName);
+export function homeView(partners, places) {
+  const listed = [...partners].sort(
+    (a, b) =>
+      a.sort_order - b.sort_order || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
+  );
   return {
-    partners: partners
-      .sort(
-        (a, b) =>
-          a.sortOrder - b.sortOrder || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
-      )
-      .map((block) => ({
-        name: block.name,
-        blurb: block.blurb,
-        logoUrl: block.logoUrl,
-        initial: block.initial,
-        places: block.places.sort(byRecommendThenName),
+    recommendations: {
+      partners: listed.map((partner) => ({
+        id: partner.id,
+        name: partner.name,
+        logoUrl: partner.logo_url || "",
       })),
-    places: unbound,
-    showPlacesHeading: partners.length > 0 && unbound.length > 0,
-    empty: partners.length === 0 && unbound.length === 0,
+      places: places
+        .filter((place) => !place.partner && place.mike_recommends)
+        .map(placeCard)
+        .sort(byRecommendThenName),
+    },
+    places: {
+      places: places
+        .filter((place) => !place.partner)
+        .map(placeCard)
+        .sort(byRecommendThenName),
+    },
   };
+}
+
+export function partnerPage(partner, places) {
+  const offices = places
+    .filter((place) => place.partner && place.partner.id === partner.id)
+    .map(placeCard)
+    .sort(byRecommendThenName);
+  if (offices.length === 0) return { officesTitle: null, places: [] };
+  return { officesTitle: "Офисы партнёра", places: offices };
 }
 
 export function placeView(place) {

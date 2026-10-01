@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { catalogView, EMPTY_PHOTO, placeView, recommendationsView } from "./catalog.mjs";
+import {
+  catalogView,
+  EMPTY_PHOTO,
+  homeView,
+  partnerPage,
+  placeView,
+} from "./catalog.mjs";
 
 const recommended = {
   name: "Якорная",
@@ -46,120 +52,86 @@ test("an empty catalog is an empty state", () => {
   assert.deepEqual(view.cards, []);
 });
 
-test("a partner place sits under its partner and stays out of the places row", () => {
-  const bound = {
-    ...plain,
-    name: "Касса",
-    partner: {
+test("home recommendations list every partner, then only unbound Mike picks", () => {
+  const partners = [
+    {
+      id: "p-esim",
+      name: "Mike eSIM",
+      blurb: "",
+      logo_url: "",
+      sort_order: 2,
+      type_label: "eSIM",
+    },
+    {
+      id: "p-money",
       name: "Money Shop",
       blurb: "Обмен",
       logo_url: "https://cdn.example/logo.png",
       sort_order: 1,
+      type_label: "Обмен",
     },
-  };
-  const view = recommendationsView([bound, { ...recommended, partner: null }]);
-
-  assert.equal(view.partners.length, 1);
-  assert.equal(view.partners[0].name, "Money Shop");
-  assert.deepEqual(view.partners[0].places, [
-    {
-      name: "Касса",
-      category: "Магазин",
-      photoUrl: "https://cdn.example/kata.jpg",
-      badge: false,
-    },
-  ]);
-  assert.deepEqual(
-    view.places.map((card) => card.name),
-    ["Якорная"],
-  );
-});
-
-test("partners follow sort order then name, and places put recommended first", () => {
-  const partner = (name, sort_order) => ({
-    name,
-    blurb: "",
-    logo_url: "",
-    sort_order,
-  });
-  const view = recommendationsView([
-    {
-      ...plain,
-      name: "Бар",
-      mike_recommends: false,
-      partner: partner("Boomerang", 2),
-    },
-    { ...plain, name: "Анапа", partner: null },
+  ];
+  const places = [
     {
       ...recommended,
-      name: "Зона",
-      partner: partner("Boomerang", 2),
-    },
-    {
-      ...plain,
-      name: "Стойка",
-      partner: partner("Alpha", 2),
+      name: "Касса",
+      category: "Магазин",
+      photo_url: "https://cdn.example/kata.jpg",
+      partner: { id: "p-money", name: "Money Shop" },
     },
     { ...recommended, name: "Якорная", partner: null },
-    {
-      ...plain,
-      name: "Касса",
-      partner: partner("Money Shop", 1),
-    },
-  ]);
+    { ...plain, name: "Анапа", partner: null },
+  ];
 
-  assert.deepEqual(
-    view.partners.map((block) => block.name),
-    ["Money Shop", "Alpha", "Boomerang"],
-  );
-  assert.deepEqual(
-    view.partners[2].places.map((card) => card.name),
-    ["Зона", "Бар"],
-  );
-  assert.deepEqual(
-    view.places.map((card) => card.name),
-    ["Якорная", "Анапа"],
-  );
+  const view = homeView(partners, places);
+  const names = (cards) => cards.map((card) => card.name);
+
+  assert.deepEqual(view.recommendations.partners, [
+    { id: "p-money", name: "Money Shop", logoUrl: "https://cdn.example/logo.png" },
+    { id: "p-esim", name: "Mike eSIM", logoUrl: "" },
+  ]);
+  assert.deepEqual(names(view.recommendations.places), ["Якорная"]);
+  assert.equal(names(view.recommendations.places).includes("Касса"), false);
+  assert.equal(names(view.places.places).includes("Касса"), false);
 });
 
-test("the places heading shows only beside partners, and a missing logo is a letter", () => {
-  const both = recommendationsView([
+test("the places row lists every unbound place, including Mike picks", () => {
+  const places = [
+    { ...plain, name: "Анапа", partner: null },
     {
       ...plain,
       name: "Касса",
-      partner: { name: "Money Shop", blurb: "", logo_url: "", sort_order: 1 },
+      partner: { id: "p-money", name: "Money Shop" },
     },
-    { ...recommended, partner: null },
-  ]);
-  assert.equal(both.showPlacesHeading, true);
-  assert.equal(both.empty, false);
-  assert.equal(both.partners[0].logoUrl, "");
-  assert.equal(both.partners[0].initial, "M");
-  assert.equal(both.partners[0].blurb, "");
+    { ...recommended, name: "Якорная", partner: null },
+  ];
 
-  const partnersOnly = recommendationsView([
-    {
-      ...plain,
-      partner: {
-        name: "Money Shop",
-        blurb: "Обмен",
-        logo_url: "https://cdn.example/logo.png",
-        sort_order: 1,
-      },
-    },
-  ]);
-  assert.equal(partnersOnly.showPlacesHeading, false);
-  assert.equal(partnersOnly.empty, false);
-  assert.equal(partnersOnly.partners[0].blurb, "Обмен");
-  assert.equal(partnersOnly.partners[0].logoUrl, "https://cdn.example/logo.png");
+  const view = homeView([], places);
+  const names = (cards) => cards.map((card) => card.name);
 
-  const placesOnly = recommendationsView([{ ...recommended, partner: null }]);
-  assert.equal(placesOnly.showPlacesHeading, false);
-  assert.equal(placesOnly.empty, false);
+  assert.deepEqual(names(view.places.places), ["Якорная", "Анапа"]);
+  assert.deepEqual(names(view.recommendations.places), ["Якорная"]);
+});
 
-  const none = recommendationsView([]);
-  assert.equal(none.empty, true);
-  assert.equal(none.showPlacesHeading, false);
+test("a partner page titles its offices only when that partner has places", () => {
+  const money = { id: "p-money", name: "Money Shop" };
+  const esim = { id: "p-esim", name: "Mike eSIM" };
+  const places = [
+    { ...plain, name: "Касса", partner: { id: "p-money", name: "Money Shop" } },
+    { ...recommended, name: "Якорная", partner: null },
+    { ...plain, name: "Стойка", partner: { id: "p-other", name: "Other" } },
+  ];
+
+  const withOffices = partnerPage(money, places);
+  assert.equal(withOffices.officesTitle, "Офисы партнёра");
+  assert.deepEqual(
+    withOffices.places.map((card) => card.name),
+    ["Касса"],
+  );
+
+  const withoutOffices = partnerPage(esim, places);
+  assert.equal(withoutOffices.officesTitle, null);
+  assert.deepEqual(withoutOffices.places, []);
 });
 
 test("the place screen opens the maps link and keeps the badge", () => {

@@ -610,6 +610,7 @@ async def test_public_catalog_names_the_partner_on_a_bound_place(store, asset_st
     assert catalog.status_code == 200
     places = {item["name"]: item for item in catalog.json()}
     assert places["Касса Ката"]["partner"] == {
+        "id": partner_id,
         "name": "Money Shop",
         "blurb": "Обмен без комиссии",
         "logo_url": "https://cdn-test.mikephuketai.com/partners/money/logo.png",
@@ -620,3 +621,40 @@ async def test_public_catalog_names_the_partner_on_a_bound_place(store, asset_st
     assert "referral_url" not in places["Касса Ката"]["partner"]
     assert places["Якорная"]["partner"] is None
     assert "partner_id" not in places["Якорная"]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_catalog_lists_every_listed_partner_without_a_referral_url(store):
+    async with authed_client(store) as client:
+        listed = await client.post(
+            "/api/partners",
+            json={
+                "name": "Shore Only",
+                "type": "esim",
+                "referral_url": "https://example.test/esim",
+                "blurb": "",
+            },
+        )
+        hidden = await client.post(
+            "/api/partners",
+            json={
+                "name": "Hidden Shop",
+                "type": "money_exchange",
+                "referral_url": "https://example.test/hidden",
+                "is_active": False,
+            },
+        )
+        assert listed.status_code == 201
+        assert hidden.status_code == 201
+        catalog = await client.get("/api/catalog/partners")
+
+    assert catalog.status_code == 200
+    body = catalog.json()
+    assert all("referral_url" not in item for item in body)
+    assert "Hidden Shop" not in [item["name"] for item in body]
+    shore = next(item for item in body if item["id"] == listed.json()["id"])
+    assert shore["name"] == "Shore Only"
+    assert shore["type_label"] == "eSIM"
+    assert shore["blurb"] == ""
+    assert "places" not in shore

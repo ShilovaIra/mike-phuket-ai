@@ -39,6 +39,7 @@ from tma_chat import (
 from tma_favourites import list_places as tma_favourite_places
 from tma_favourites import open_session as tma_open_session
 from tma_favourites import save_place as tma_save_place
+from tma_offers import open_partner_offer as tma_open_partner_offer
 from place_catalog import Place, PlaceAsset, PlaceCategory
 from storage import AssetStorage
 from topic_labels import labeled_topic_rows
@@ -46,10 +47,18 @@ from topic_labels import labeled_topic_rows
 PLACEHOLDER_COVER = "media/places/placeholder.jpg"
 
 
+def _type_label(topic_label: str) -> str:
+    text = topic_label.strip()
+    while text and not text[0].isalnum():
+        text = text[1:]
+    return text.lstrip()
+
+
 def _catalog_partner(partner, storage: AssetStorage | None) -> dict:
     logo = partner.logo_path or ""
     logo_url = storage.public_url(logo) if logo and storage is not None else logo
     return {
+        "id": str(partner.id),
         "name": partner.name,
         "blurb": partner.blurb or "",
         "logo_url": logo_url,
@@ -403,6 +412,20 @@ def create_app(
             )
         return payloads
 
+    @app.get("/api/catalog/partners")
+    async def list_catalog_partners(request: Request) -> list[dict]:
+        store = _store(request)
+        types = {item.slug: item for item in await store.list_partner_types()}
+        storage = request.app.state.storage
+        payloads = []
+        for partner in await store.list_partners():
+            if not partner.is_active:
+                continue
+            card = _catalog_partner(partner, storage)
+            card["type_label"] = _type_label(types[partner.type].topic_label)
+            payloads.append(card)
+        return payloads
+
     @app.post("/api/places", status_code=201)
     async def create_place(
         request: Request,
@@ -600,6 +623,25 @@ def create_app(
             )
         except InvalidInitData:
             raise HTTPException(status_code=401, detail="unauthorized") from None
+
+    @app.post("/api/tma/partners/{partner_id}/offer")
+    async def create_tma_partner_offer(
+        request: Request,
+        partner_id: UUID,
+        authorization: Optional[str] = Header(default=None),
+    ) -> dict:
+        try:
+            return await tma_open_partner_offer(
+                _store(request),
+                init_data=_tma_init_data(authorization),
+                bot_token=_bot_token(),
+                partner_id=partner_id,
+                public_base=os.environ.get("PARTNER_OFFER_BASE_URL", ""),
+            )
+        except InvalidInitData:
+            raise HTTPException(status_code=401, detail="unauthorized") from None
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Партнёр не найден") from None
 
     @app.get("/api/tma/favourites")
     async def list_tma_favourites(

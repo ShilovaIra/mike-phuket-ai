@@ -46,12 +46,25 @@
               </button>
             </div>
 
-            <div class="row-head">
+            <div class="row-head" data-recommendations-head hidden>
               <h2>Рекомендации для вас</h2>
-              <button class="text-link stub" type="button">Смотреть все</button>
+              <button class="text-link" type="button" data-see="recommendations">Смотреть все</button>
             </div>
-            <div class="recs" tabindex="0" data-recs></div>
+            <div class="rec-row" data-recommendations tabindex="0"></div>
+            <div class="row-head" data-places-head hidden>
+              <h2>Места</h2>
+              <button class="text-link" type="button" data-see="places">Смотреть все</button>
+            </div>
+            <div class="rec-row" data-home-places tabindex="0"></div>
             <p class="recs-empty" data-recs-empty hidden>Пока нет мест</p>
+          </div>
+          <div class="peek" data-peek hidden>
+            <button class="peek-backdrop" type="button" data-peek-close aria-label="Закрыть"></button>
+            <div class="peek-panel" role="dialog" aria-modal="true" aria-labelledby="peek-title">
+              <div class="peek-grab" data-peek-grab></div>
+              <h2 id="peek-title" data-peek-title></h2>
+              <div class="stack" data-peek-list></div>
+            </div>
           </div>
           <div class="dock">
             <button class="ask stub" type="button">Спросите Майка о Пхукете</button>
@@ -125,6 +138,25 @@
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 Открыть в картах
               </a>
+            </div>
+          </article>
+        </section>
+
+        <section class="screen screen-partner" id="partner" aria-label="Партнёр">
+          <article class="place">
+            <header class="partner-hero">
+              <a class="icon-btn icon-ghost" href="#home" aria-label="Назад">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </a>
+              <span class="partner-logo" data-partner-logo></span>
+            </header>
+            <div class="place-body">
+              <h1 data-partner-name></h1>
+              <p class="sub" data-partner-type></p>
+              <p class="prose" data-partner-blurb hidden></p>
+              <a class="cta" data-partner-offer href="" target="_blank" rel="noopener" hidden></a>
+              <h2 class="offices-title" data-offices-title hidden></h2>
+              <div class="stack" data-offices></div>
             </div>
           </article>
         </section>
@@ -300,6 +332,7 @@
           <a href="#about">О приложении</a>
           <a href="#voice">Голосовой разговор</a>
           <a href="#place">Место</a>
+          <a href="#partner">Партнёр</a>
           <a href="#route">Маршрут</a>
         </nav>
         <ul>
@@ -310,7 +343,7 @@
     </div>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script type="module">
-      import { placeView, recommendationsView } from "./catalog.mjs";
+      import { homeView, partnerPage, placeView } from "./catalog.mjs";
       import { canSend, failureView, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
       import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
       import { profileView } from "./profile.mjs";
@@ -341,9 +374,18 @@
         photo.src = view.photoUrl;
       }
 
-      var recs = document.querySelector("[data-recs]");
+      var recommendationsHead = document.querySelector("[data-recommendations-head]");
+      var recommendationsRow = document.querySelector("[data-recommendations]");
+      var placesHead = document.querySelector("[data-places-head]");
+      var placesRow = document.querySelector("[data-home-places]");
       var recsEmpty = document.querySelector("[data-recs-empty]");
+      var peek = document.querySelector("[data-peek]");
+      var peekTitle = document.querySelector("[data-peek-title]");
+      var peekList = document.querySelector("[data-peek-list]");
+      var peekPanel = peek.querySelector(".peek-panel");
       var catalogPlaces = [];
+      var catalogPartners = [];
+      var home = null;
       var favouritePlaces = [];
       var currentPlace = null;
       var currentSaved = false;
@@ -429,16 +471,27 @@
         return link;
       }
 
-      function openCatalogCard(card) {
+      function openCatalogCard(card, back) {
         var place = catalogPlaces.find(function (item) {
           return item.name === card.name && item.category === card.category;
         });
-        if (place) showPlace(place, "#home");
+        if (place) showPlace(place, back || "#home");
+        closePeek();
       }
 
-      function createPartnerCard(partner) {
-        var card = document.createElement("article");
-        card.className = "partner-head";
+      function partnerInitial(name) {
+        return (name || "").trim().charAt(0).toUpperCase();
+      }
+
+      function createPartnerTile(partner) {
+        var link = document.createElement("a");
+        link.className = "partner-tile";
+        link.href = "#partner";
+        link.addEventListener("click", function () {
+          var source = catalogPartners.find(function (item) { return item.id === partner.id; });
+          if (source) showPartner(source);
+          closePeek();
+        });
 
         var mark = document.createElement("span");
         mark.className = "partner-mark";
@@ -447,60 +500,136 @@
           var logo = document.createElement("img");
           logo.alt = "";
           logo.addEventListener("error", function () {
-            mark.textContent = partner.initial;
+            mark.textContent = partnerInitial(partner.name);
           });
           logo.src = partner.logoUrl;
           mark.appendChild(logo);
         } else {
-          mark.textContent = partner.initial;
+          mark.textContent = partnerInitial(partner.name);
         }
-        card.appendChild(mark);
+        link.appendChild(mark);
 
-        var copy = document.createElement("div");
-        copy.className = "partner-copy";
-        var name = document.createElement("h3");
-        name.textContent = partner.name;
-        copy.appendChild(name);
-        if (partner.blurb) {
-          var blurb = document.createElement("p");
-          blurb.textContent = partner.blurb;
-          copy.appendChild(blurb);
-        }
-        card.appendChild(copy);
-        return card;
+        var title = document.createElement("span");
+        title.className = "rec-title";
+        title.textContent = partner.name;
+        link.appendChild(title);
+        return link;
       }
 
-      function createPlaceRow(cards) {
-        var row = document.createElement("div");
-        row.className = "rec-row";
-        cards.forEach(function (card) {
-          row.appendChild(createPlaceCard(card, function () {
-            openCatalogCard(card);
+      function fillRow(row, partners, places) {
+        row.replaceChildren();
+        partners.forEach(function (partner) { row.appendChild(createPartnerTile(partner)); });
+        places.forEach(function (card) {
+          row.appendChild(createPlaceCard(card, function () { openCatalogCard(card, "#home"); }));
+        });
+      }
+
+      var offerPartnerId = null;
+
+      function showPartner(partner) {
+        offerPartnerId = partner.id;
+        var page = partnerPage(partner, catalogPlaces);
+        document.querySelector("[data-partner-name]").textContent = partner.name;
+        document.querySelector("[data-partner-type]").textContent = partner.type_label || "";
+        var blurb = document.querySelector("[data-partner-blurb]");
+        blurb.hidden = !partner.blurb;
+        blurb.textContent = partner.blurb || "";
+        var logo = document.querySelector("[data-partner-logo]");
+        logo.replaceChildren();
+        if (partner.logo_url) {
+          var image = document.createElement("img");
+          image.alt = "";
+          image.addEventListener("error", function () {
+            logo.textContent = partnerInitial(partner.name);
+          });
+          image.src = partner.logo_url;
+          logo.appendChild(image);
+        } else {
+          logo.textContent = partnerInitial(partner.name);
+        }
+        var offer = document.querySelector("[data-partner-offer]");
+        offer.hidden = true;
+        offer.removeAttribute("href");
+        offer.textContent = "";
+        var officesTitle = document.querySelector("[data-offices-title]");
+        officesTitle.hidden = !page.officesTitle;
+        officesTitle.textContent = page.officesTitle || "";
+        var offices = document.querySelector("[data-offices]");
+        offices.replaceChildren();
+        page.places.forEach(function (card) {
+          offices.appendChild(createPlaceCard(card, function () {
+            openCatalogCard(card, "#partner");
           }));
         });
-        return row;
+        if (!initData) return;
+        fetch("/api/tma/partners/" + partner.id + "/offer", {
+          method: "POST",
+          headers: { Authorization: "tma " + initData },
+        })
+          .then(function (response) {
+            if (!response.ok) throw new Error("offer");
+            return response.json();
+          })
+          .then(function (body) {
+            if (offerPartnerId !== partner.id) return;
+            offer.href = body.url;
+            offer.textContent = body.label;
+            offer.hidden = false;
+          })
+          .catch(function () {});
       }
 
-      function renderCards(view) {
-        recsEmpty.hidden = !view.empty;
-        recsEmpty.textContent = "Пока нет мест";
-        recs.replaceChildren();
-        view.partners.forEach(function (partner) {
-          var block = document.createElement("section");
-          block.className = "partner-block";
-          block.setAttribute("aria-label", partner.name);
-          block.appendChild(createPartnerCard(partner));
-          block.appendChild(createPlaceRow(partner.places));
-          recs.appendChild(block);
-        });
-        if (view.showPlacesHeading) {
-          var heading = document.createElement("h3");
-          heading.className = "places-head";
-          heading.textContent = "Места";
-          recs.appendChild(heading);
-        }
-        if (view.places.length) recs.appendChild(createPlaceRow(view.places));
+      function closePeek() {
+        peek.hidden = true;
+        peekPanel.style.transform = "";
       }
+
+      function openPeek(title, partners, places) {
+        peekTitle.textContent = title;
+        fillRow(peekList, partners, places);
+        peek.hidden = false;
+        peekPanel.style.transform = "";
+      }
+
+      function renderHome() {
+        home = homeView(catalogPartners, catalogPlaces);
+        var recommendationsEmpty = home.recommendations.partners.length === 0
+          && home.recommendations.places.length === 0;
+        var placesEmpty = home.places.places.length === 0;
+        recommendationsHead.hidden = recommendationsEmpty;
+        placesHead.hidden = placesEmpty;
+        recsEmpty.hidden = !(recommendationsEmpty && placesEmpty);
+        recsEmpty.textContent = "Пока нет мест";
+        fillRow(recommendationsRow, home.recommendations.partners, home.recommendations.places);
+        fillRow(placesRow, [], home.places.places);
+      }
+
+      document.querySelectorAll("[data-see]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          if (!home) return;
+          if (button.getAttribute("data-see") === "recommendations") {
+            openPeek("Рекомендации для вас", home.recommendations.partners, home.recommendations.places);
+          } else {
+            openPeek("Места", [], home.places.places);
+          }
+        });
+      });
+      peek.querySelector("[data-peek-close]").addEventListener("click", closePeek);
+      var grabStart = null;
+      peek.querySelector("[data-peek-grab]").addEventListener("pointerdown", function (event) {
+        grabStart = event.clientY;
+        event.currentTarget.setPointerCapture(event.pointerId);
+      });
+      peek.querySelector("[data-peek-grab]").addEventListener("pointermove", function (event) {
+        if (grabStart === null) return;
+        var delta = Math.max(0, event.clientY - grabStart);
+        peekPanel.style.transform = "translateY(" + delta + "px)";
+      });
+      peek.querySelector("[data-peek-grab]").addEventListener("pointerup", function (event) {
+        if (grabStart !== null && event.clientY - grabStart > 80) closePeek();
+        else peekPanel.style.transform = "";
+        grabStart = null;
+      });
 
       function renderSaved() {
         var view = favouritesView(favouritePlaces);
@@ -524,14 +653,20 @@
         }
       }
 
-      fetch("/api/catalog/places")
-        .then(function (response) {
+      Promise.all([
+        fetch("/api/catalog/places").then(function (response) {
           if (!response.ok) throw new Error("catalog");
           return response.json();
-        })
-        .then(function (places) {
-          catalogPlaces = places;
-          renderCards(recommendationsView(places));
+        }),
+        fetch("/api/catalog/partners").then(function (response) {
+          if (!response.ok) throw new Error("catalog");
+          return response.json();
+        }),
+      ])
+        .then(function (loaded) {
+          catalogPlaces = loaded[0];
+          catalogPartners = loaded[1];
+          renderHome();
         })
         .catch(function () {
           recsEmpty.hidden = false;
