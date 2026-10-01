@@ -15,7 +15,8 @@ test("fullscreen headers clear Telegram Close by summing both safe areas", () =>
     rule(":root"),
     /--chrome-top:\s*calc\(\s*var\(--tg-safe-area-inset-top,\s*0px\)\s*\+\s*var\(--tg-content-safe-area-inset-top,\s*0px\)\s*\)/,
   );
-  for (const selector of [".hero-copy", ".cover-tools", ".tab-head", ".partner-hero", ".route-head", ".close"]) {
+  for (const selector of [".hero", ".cover-tools", ".tab-head", ".partner-hero", ".route-head", ".close"]) {
     assert.match(rule(selector), /var\(--chrome-top\)/, `${selector} sits under the Telegram Close button`);
   }
+  assert.doesNotMatch(rule(".hero-copy"), /var\(--chrome-top\)/, "the home photo must move, not the title inside it");
 });
