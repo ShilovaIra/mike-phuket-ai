@@ -52,6 +52,11 @@ jobs:
             mkdir -p /opt/mike-phuket-incoming
             rm -f /opt/mike-phuket-incoming/*.tgz
             rm -f /tmp/mike-phuket-ai.tgz /tmp/mike-phuket-images.tgz || true
+            df -h /
+            docker image prune -af
+            docker builder prune -af
+            docker container prune -f
+            df -h /
 
       - name: Copy pack to Droplet
         uses: appleboy/scp-action@v1.0.0
