@@ -49,14 +49,32 @@ jobs:
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
           script: |
             set -euo pipefail
+            as_root() {
+              if [ "$(id -u)" -eq 0 ]; then
+                "$@"
+              else
+                sudo -n "$@"
+              fi
+            }
             mkdir -p /opt/mike-phuket-incoming
             rm -f /opt/mike-phuket-incoming/*.tgz
             rm -f /tmp/mike-phuket-ai.tgz /tmp/mike-phuket-images.tgz || true
+            df -h /
+            # containerd GC cannot start when the disk has 0 bytes free.
+            as_root find /var/lib/docker/containers -name '*-json.log' -size +1M -exec truncate -s 0 {} + || true
+            as_root find /var/lib/containerd/io.containerd.content.v1.content/ingest -mindepth 1 -maxdepth 1 -exec rm -rf {} + || true
+            as_root journalctl --vacuum-size=20M || true
+            as_root apt-get clean || true
             df -h /
             docker image prune -af
             docker builder prune -af
             docker container prune -f
             df -h /
+            avail_kb="$(df -P / | awk 'NR==2 {print $4}')"
+            if [ "$avail_kb" -lt 512000 ]; then
+              echo "Need at least 500MB free to upload images, have ${avail_kb}KB"
+              exit 1
+            fi
 
       - name: Copy pack to Droplet
         uses: appleboy/scp-action@v1.0.0
