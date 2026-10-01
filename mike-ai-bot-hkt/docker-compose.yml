@@ -85,7 +85,7 @@ services:
 
   tma-web:
     build:
-      context: ../mike-phuket-ai-tma-v2
+      context: ../mike-phuket-ai-tma
       dockerfile: Dockerfile
     image: mike-phuket-tma-web:local
     restart: unless-stopped
