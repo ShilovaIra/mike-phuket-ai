@@ -815,21 +815,20 @@
       }
       syncComposer();
     </script>
-    <script>
-      (function () {
-        var root = document.documentElement;
-        function pin() {
-          var viewport = window.visualViewport;
-          var height = viewport ? viewport.height : window.innerHeight;
-          root.style.setProperty("--app-height", Math.round(height) + "px");
-        }
-        pin();
-        window.addEventListener("resize", pin);
-        if (window.visualViewport) {
-          window.visualViewport.addEventListener("resize", pin);
-          window.visualViewport.addEventListener("scroll", pin);
-        }
-      })();
+    <script type="module">
+      import { bootTelegram, measureAppViewport, pinAppHeight } from "./viewport.mjs";
+
+      var root = document.documentElement;
+      function pin() {
+        pinAppHeight(root, measureAppViewport(window));
+      }
+      pin();
+      window.addEventListener("resize", pin);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", pin);
+        window.visualViewport.addEventListener("scroll", pin);
+      }
+      bootTelegram(window.Telegram && window.Telegram.WebApp, pin);
     </script>
   </body>
 </html>
