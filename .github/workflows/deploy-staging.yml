@@ -76,8 +76,14 @@ jobs:
           script: |
             set -euo pipefail
             ls -lh /opt/mike-phuket-incoming
+            df -h /
+            docker image prune -af
+            docker builder prune -af
+            docker container prune -f
+            df -h /
             tar xzf /opt/mike-phuket-incoming/mike-phuket-ai.tgz -C /opt/mike-phuket-ai
             gunzip -c /opt/mike-phuket-incoming/mike-phuket-images.tgz | docker load
+            rm -f /opt/mike-phuket-incoming/mike-phuket-images.tgz
             SKIP_GIT_PULL=1 SKIP_IMAGE_BUILD=1 /opt/mike-phuket-ai/mike-ai-bot-hkt/scripts/deploy_staging.sh
 
       - name: Verify admin panel responds on Droplet
