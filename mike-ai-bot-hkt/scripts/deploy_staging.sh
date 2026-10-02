@@ -83,10 +83,14 @@ fi
 
 PARTNER_WEB_PORT="$(awk -F= '/^PARTNER_WEB_PORT=/{v=substr($0, index($0,$2))} END{print v}' .env)"
 PARTNER_WEB_PORT="${PARTNER_WEB_PORT:-8081}"
+TMA_WEB_PORT="$(awk -F= '/^TMA_WEB_PORT=/{v=substr($0, index($0,$2))} END{print v}' .env)"
+TMA_WEB_PORT="${TMA_WEB_PORT:-8082}"
 PARTNER_PUBLIC_HOST="$(awk -F= '/^PARTNER_PUBLIC_HOST=/{v=substr($0, index($0,$2))} END{print v}' .env)"
 PARTNER_PUBLIC_HOST="${PARTNER_PUBLIC_HOST:-partners-staging.mikephuketai.com}"
 ADMIN_PUBLIC_HOST="$(awk -F= '/^ADMIN_PUBLIC_HOST=/{v=substr($0, index($0,$2))} END{print v}' .env)"
 ADMIN_PUBLIC_HOST="${ADMIN_PUBLIC_HOST:-admin-staging.mikephuketai.com}"
+TMA_PUBLIC_HOST="$(awk -F= '/^TMA_PUBLIC_HOST=/{v=substr($0, index($0,$2))} END{print v}' .env)"
+TMA_PUBLIC_HOST="${TMA_PUBLIC_HOST:-app-staging.mikephuketai.com}"
 desired_offer_url="https://${PARTNER_PUBLIC_HOST}"
 PARTNER_OFFER_BASE_WRITTEN=0
 current_offer_base="$(awk -F= '/^PARTNER_OFFER_BASE_URL=/{v=substr($0, index($0,$2))} END{print v}' .env)"
@@ -113,6 +117,9 @@ fi
 if ! grep -qE '^ADMIN_PUBLIC_HOST=' .env; then
   echo "ADMIN_PUBLIC_HOST=${ADMIN_PUBLIC_HOST}" >> .env
 fi
+if ! grep -qE '^TMA_PUBLIC_HOST=' .env; then
+  echo "TMA_PUBLIC_HOST=${TMA_PUBLIC_HOST}" >> .env
+fi
 if ! grep -qE '^COMPOSE_PROFILES=' .env; then
   echo 'COMPOSE_PROFILES=tls' >> .env
 fi
@@ -120,10 +127,11 @@ fi
 if [[ "${SKIP_IMAGE_BUILD:-}" != "1" ]]; then
   # One image at a time: pip + two npm builds in parallel OOMs a 1 GB Droplet
   # and takes down systemd-resolved ("Temporary failure in name resolution").
-  echo "→ Building images (bot, admin-web, partner-web)"
+  echo "→ Building images (bot, admin-web, partner-web, tma-web)"
   docker compose build bot
   docker compose build admin-web
   docker compose build partner-web
+  docker compose build tma-web
 fi
 echo "→ Starting containers"
 docker compose --profile tls up -d
@@ -170,6 +178,17 @@ if curl -fsS --max-time 8 "https://${PARTNER_PUBLIC_HOST}/" >/dev/null 2>&1; the
 else
   echo "→ https://${PARTNER_PUBLIC_HOST}/ not reachable yet (add the A record and open firewall TCP 80/443)"
 fi
+tma_code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${TMA_WEB_PORT}/" || true)"
+if [[ "$tma_code" != "200" ]]; then
+  echo "Expected Mini App / → 200, got ${tma_code}"
+  docker compose logs --tail=80 tma-web
+  exit 1
+fi
+if curl -fsS --max-time 8 "https://${TMA_PUBLIC_HOST}/" >/dev/null 2>&1; then
+  echo "→ Mini App https://${TMA_PUBLIC_HOST}/ is up"
+else
+  echo "→ https://${TMA_PUBLIC_HOST}/ not reachable yet (add the app-staging A record)"
+fi
 
 if [[ "${SKIP_GIT_PULL:-}" != "1" ]]; then
   echo "→ Branch: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
@@ -183,4 +202,5 @@ echo "  Admin API logs:  docker compose logs -f admin-api"
 echo "  Caddy logs:      docker compose --profile tls logs -f caddy"
 echo "  Admin UI:        https://${ADMIN_PUBLIC_HOST}/"
 echo "  Partner UI:      https://${PARTNER_PUBLIC_HOST}/"
+echo "  Mini App:        https://${TMA_PUBLIC_HOST}/"
 echo "  Create admin:    docker compose run --rm bot python scripts/create_admin_user.py --email you@example.com --password '…'"

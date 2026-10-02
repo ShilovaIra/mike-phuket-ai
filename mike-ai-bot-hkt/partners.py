@@ -23,6 +23,8 @@ class PartnerType:
     caption_cta: str
     button_template: str
     follow_up_text: str = ""
+    choice_phrase: str = ""
+    id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -43,6 +45,11 @@ class PartnerCard:
     button_text: str
     referral_url: str
     logo_path: str | None
+
+
+def is_bundled_logo(logo_path: str) -> bool:
+    """Bundled logos ship in the image under media/; anything else is a storage key."""
+    return logo_path.startswith("media/")
 
 
 def resolve_logo_path(logo_path: str | None, *, root: Path = PACKAGE_ROOT) -> Path | None:

@@ -28,11 +28,12 @@ jobs:
         env:
           POSTGRES_PASSWORD: unused
         run: |
-          docker compose build bot admin-web partner-web
+          docker compose build bot admin-web partner-web tma-web
           docker save \
             mike-phuket-app:local \
             mike-phuket-admin-web:local \
             mike-phuket-partner-web:local \
+            mike-phuket-tma-web:local \
             | gzip -1 > "$RUNNER_TEMP/mike-phuket-images.tgz"
           cp "$RUNNER_TEMP/mike-phuket-images.tgz" "$GITHUB_WORKSPACE/mike-phuket-images.tgz"
 
@@ -48,9 +49,32 @@ jobs:
           port: ${{ secrets.STAGING_SSH_PORT || 22 }}
           script: |
             set -euo pipefail
+            as_root() {
+              if [ "$(id -u)" -eq 0 ]; then
+                "$@"
+              else
+                sudo -n "$@"
+              fi
+            }
             mkdir -p /opt/mike-phuket-incoming
             rm -f /opt/mike-phuket-incoming/*.tgz
             rm -f /tmp/mike-phuket-ai.tgz /tmp/mike-phuket-images.tgz || true
+            df -h /
+            # containerd GC cannot start when the disk has 0 bytes free.
+            as_root find /var/lib/docker/containers -name '*-json.log' -size +1M -exec truncate -s 0 {} + || true
+            as_root find /var/lib/containerd/io.containerd.content.v1.content/ingest -mindepth 1 -maxdepth 1 -exec rm -rf {} + || true
+            as_root journalctl --vacuum-size=20M || true
+            as_root apt-get clean || true
+            df -h /
+            docker image prune -af
+            docker builder prune -af
+            docker container prune -f
+            df -h /
+            avail_kb="$(df -P / | awk 'NR==2 {print $4}')"
+            if [ "$avail_kb" -lt 512000 ]; then
+              echo "Need at least 500MB free to upload images, have ${avail_kb}KB"
+              exit 1
+            fi
 
       - name: Copy pack to Droplet
         uses: appleboy/scp-action@v1.0.0
@@ -75,8 +99,14 @@ jobs:
           script: |
             set -euo pipefail
             ls -lh /opt/mike-phuket-incoming
+            df -h /
+            docker image prune -af
+            docker builder prune -af
+            docker container prune -f
+            df -h /
             tar xzf /opt/mike-phuket-incoming/mike-phuket-ai.tgz -C /opt/mike-phuket-ai
             gunzip -c /opt/mike-phuket-incoming/mike-phuket-images.tgz | docker load
+            rm -f /opt/mike-phuket-incoming/mike-phuket-images.tgz
             SKIP_GIT_PULL=1 SKIP_IMAGE_BUILD=1 /opt/mike-phuket-ai/mike-ai-bot-hkt/scripts/deploy_staging.sh
 
       - name: Verify admin panel responds on Droplet

@@ -48,6 +48,7 @@ export function PartnersPage() {
       <table className="w-full border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-slate-300">
+            <th className="py-2 pr-4 font-medium">Лого</th>
             <th className="py-2 pr-4 font-medium">Имя</th>
             <th className="py-2 pr-4 font-medium">Тип</th>
             <th className="py-2 pr-4 font-medium">Порядок</th>
@@ -58,6 +59,15 @@ export function PartnersPage() {
         <tbody>
           {partners.map((partner) => (
             <tr key={partner.id} className="border-b border-slate-200">
+              <td className="py-2 pr-4">
+                {partner.logo_url ? (
+                  <img
+                    src={partner.logo_url}
+                    alt={`Логотип ${partner.name}`}
+                    className="h-8 w-8 rounded object-contain"
+                  />
+                ) : null}
+              </td>
               <td className="py-2 pr-4">{partner.name}</td>
               <td className="py-2 pr-4">{typeLabel[partner.type] ?? 'Без названия'}</td>
               <td className="py-2 pr-4">{partner.sort_order}</td>
@@ -82,6 +92,7 @@ export function PartnersPage() {
           partnerId={modal.partnerId}
           types={types}
           onClose={() => setModal(null)}
+          onChanged={() => void partnersApi.list().then(setPartners)}
           onSaved={async () => {
             setModal(null)
             await reload()

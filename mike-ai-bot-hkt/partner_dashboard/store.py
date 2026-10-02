@@ -134,10 +134,37 @@ async def get_partner_stats(pool: asyncpg.Pool, partner_id: UUID) -> dict:
             """,
             partner_id,
         )
+        category = await conn.fetchrow(
+            """
+            SELECT
+                partner_type.choice_phrase AS phrase,
+                (
+                    SELECT COUNT(DISTINCT topic_event.user_id)::int
+                    FROM topic_events AS topic_event
+                    WHERE topic_event.topic = partner_type.slug
+                ) AS all_time,
+                (
+                    SELECT COUNT(DISTINCT topic_event.user_id)::int
+                    FROM topic_events AS topic_event
+                    WHERE topic_event.topic = partner_type.slug
+                      AND topic_event.created_at >= now() - interval '30 days'
+                ) AS last_30_days
+            FROM partners AS partner
+            JOIN partner_types AS partner_type
+                ON partner_type.id = partner.partner_type_id
+            WHERE partner.id = $1
+            """,
+            partner_id,
+        )
     return {
         "partner_id": str(partner_id),
         "all_time": _counts(all_time["views"], all_time["clicks"], all_time["opened"]),
         "last_30_days": _counts(last_30["views"], last_30["clicks"], last_30["opened"]),
+        "category_users": {
+            "phrase": category["phrase"],
+            "all_time": category["all_time"],
+            "last_30_days": category["last_30_days"],
+        },
     }
 
 

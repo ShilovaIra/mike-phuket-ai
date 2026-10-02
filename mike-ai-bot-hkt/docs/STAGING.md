@@ -13,6 +13,7 @@ This guide sets up a **private staging environment** on DigitalOcean: one small 
 | Schema migration | Automatic on bot start (`SessionStore.create`) |
 | Partner Dashboard | `https://partners-staging.mikephuketai.com/` (Caddy → `partner-web`) |
 | Operator admin | `https://admin-staging.mikephuketai.com/` (Caddy → `admin-web`) |
+| Mini App | `https://app-staging.mikephuketai.com/` (Caddy → `tma-web`) |
 | Deploy source | Git branch `staging` only |
 
 Postgres is **not** exposed to the internet — only the bot container talks to it on the internal Docker network.
@@ -49,9 +50,9 @@ DigitalOcean → **Networking** → **Firewalls** → Create:
 |---|---|---|---|
 | SSH | TCP | 22 | `0.0.0.0/0` (key-only auth; required for GitHub Actions deploy) |
 | HTTP | TCP | 80 | `0.0.0.0/0` (Let’s Encrypt challenge + redirect to HTTPS) |
-| HTTPS | TCP | 443 | `0.0.0.0/0` (`partners-staging` and `admin-staging`) |
+| HTTPS | TCP | 443 | `0.0.0.0/0` (`partners-staging`, `admin-staging`, `app-staging`) |
 
-Attach the firewall to the droplet. Do **not** open **5432**, **8080**, or **8081** — Caddy serves both sites on 443. The bot still uses outbound polling to Telegram.
+Attach the firewall to the droplet. Do **not** open **5432**, **8080**, **8081**, or **8082** — Caddy serves the sites on 443. The bot still uses outbound polling to Telegram.
 
 ### Domain (`mikephuketai.com`)
 
@@ -61,6 +62,7 @@ DigitalOcean DNS for `mikephuketai.com` (after the registrar uses DigitalOcean n
 |---|---|---|
 | **A** | `partners-staging` | staging Droplet (`152.42.221.33`) |
 | **A** | `admin-staging` | staging Droplet |
+| **A** | `app-staging` | staging Droplet |
 
 Leave `@` and `www` empty. Production uses `partners` / `admin` on the production Droplet — see [PRODUCTION.md](PRODUCTION.md).
 
@@ -70,9 +72,10 @@ At the registrar set nameservers to `ns1.digitalocean.com`, `ns2.digitalocean.co
 dig NS mikephuketai.com +short
 dig A partners-staging.mikephuketai.com +short
 dig A admin-staging.mikephuketai.com +short
+dig A app-staging.mikephuketai.com +short
 ```
 
-Both A records must be the staging Droplet IP. Then Caddy can obtain certificates.
+Those A records must be the staging Droplet IP. Then Caddy can obtain certificates.
 
 Production hostnames (`partners.` / `admin.`) are documented in [PRODUCTION.md](PRODUCTION.md).
 
@@ -157,6 +160,27 @@ Generate a strong Postgres password:
 
 ```bash
 openssl rand -base64 32
+```
+
+### Dynamic assets (DigitalOcean Spaces)
+
+Partner logos uploaded in the admin panel live in a Spaces bucket, not in the image. Mike's own logos and interface pictures stay bundled in the repo.
+
+1. **Spaces Object Storage → Create Bucket** in `sgp1` (staging: `mike-phuket-staging-spaces`).
+2. Bucket **Settings → CDN**: enable, add custom subdomain `cdn-staging` (enter only the subdomain; DigitalOcean appends `.mikephuketai.com`).
+3. **Spaces Object Storage → Access Keys → Create Access Key**: *Limited Access*, this bucket only, Read/Write/Delete. Copy the secret now — it is shown once.
+4. Fill the `S3_*` block in `.env` on the Droplet. Never put the key in `.env.*.example` files (they are committed).
+
+Check from your laptop (uses your local `.env`):
+
+```bash
+python scripts/s3_smoke_test.py      # upload → fetch via CDN → delete
+```
+
+After the first deploy with logo uploads, move the bundled partner logos into the bucket and set the `tmp/` cleanup rule (safe to re-run):
+
+```bash
+docker compose exec bot python scripts/migrate_partner_logos.py
 ```
 
 ---
@@ -280,7 +304,7 @@ Push or merge to the **`staging`** branch runs [`.github/workflows/deploy-stagin
 
 **First-time admin panel setup on the Droplet**
 
-1. Ensure `.env` includes `ADMIN_JWT_SECRET`, `PARTNER_PUBLIC_HOST=partners-staging.mikephuketai.com`, `ADMIN_PUBLIC_HOST=admin-staging.mikephuketai.com`, and `COMPOSE_PROFILES=tls`.
+1. Ensure `.env` includes `ADMIN_JWT_SECRET`, `PARTNER_PUBLIC_HOST=partners-staging.mikephuketai.com`, `ADMIN_PUBLIC_HOST=admin-staging.mikephuketai.com`, `TMA_PUBLIC_HOST=app-staging.mikephuketai.com`, and `COMPOSE_PROFILES=tls`.
 2. Firewall: TCP **80** + **443** to the world; do not open 8080/8081 (see [Firewall](#firewall-recommended)). `deploy_staging.sh` sets `PARTNER_OFFER_BASE_URL=https://partners-staging.mikephuketai.com` when it is empty or still an `http://IP:port` value.
 3. After deploy, create an admin user once:
 
@@ -339,6 +363,7 @@ That script pulls `origin/staging` with `--ff-only` and rebuilds. It exits with 
 | Manual redeploy from `staging` | `./scripts/deploy_staging.sh` |
 | Admin UI | `https://admin-staging.mikephuketai.com/` |
 | Partner Dashboard / wrap | `https://partners-staging.mikephuketai.com/` (`/r/…` counts Referral Clicks) |
+| Mini App | `https://app-staging.mikephuketai.com/` |
 | Caddy logs | `docker compose --profile tls logs -f caddy` |
 | View bot logs | `docker compose logs -f bot` |
 | View admin API logs | `docker compose logs -f admin-api` |
@@ -389,10 +414,11 @@ Schema still applies automatically on bot start.
 - [ ] Firewall allows SSH from `0.0.0.0/0` with key-only auth (for GitHub Actions)
 - [ ] GitHub Actions secrets set (`STAGING_HOST`, `STAGING_SSH_USER`, `STAGING_SSH_KEY`)
 - [ ] Push to `staging` triggers a green **Deploy staging** workflow
-- [ ] `partners-staging` and `admin-staging` A records point at the staging Droplet
-- [ ] Firewall allows TCP 80/443 from the world; 8080 and 8081 closed
+- [ ] `partners-staging`, `admin-staging`, and `app-staging` A records point at the staging Droplet
+- [ ] Firewall allows TCP 80/443 from the world; 8080, 8081, and 8082 closed
 - [ ] `https://partners-staging.mikephuketai.com/` loads the Partner Dashboard
 - [ ] `https://admin-staging.mikephuketai.com/` loads Operator admin
+- [ ] `https://app-staging.mikephuketai.com/` loads the Mini App
 - [ ] `POSTGRES_PASSWORD` is strong and not committed to git
 - [ ] `mike_sessions_export*.json` deleted from Droplet and never committed
 

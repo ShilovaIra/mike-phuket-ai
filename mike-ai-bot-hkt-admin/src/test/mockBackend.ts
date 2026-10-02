@@ -9,6 +9,7 @@ type PartnerType = {
   caption_emoji: string
   caption_cta: string
   button_template: string
+  choice_phrase: string
 }
 
 type Partner = {
@@ -18,6 +19,7 @@ type Partner = {
   referral_url: string
   blurb: string
   logo_path: string
+  logo_url: string
   is_active: boolean
   sort_order: number
 }
@@ -34,6 +36,7 @@ const seedTypes: PartnerType[] = [
     caption_emoji: '💰',
     caption_cta: '⬇️ Обменять сейчас ⬇️',
     button_template: 'Обменять с {name}',
+    choice_phrase: 'обмен рублей',
   },
   {
     slug: 'vehicle_rental',
@@ -46,6 +49,7 @@ const seedTypes: PartnerType[] = [
     caption_emoji: '🛵',
     caption_cta: '⬇️ Арендовать сейчас ⬇️',
     button_template: 'Арендовать у {name}',
+    choice_phrase: 'аренду транспорта',
   },
   {
     slug: 'excursions',
@@ -58,6 +62,7 @@ const seedTypes: PartnerType[] = [
     caption_emoji: '🇹🇭',
     caption_cta: '⬇️ Забронировать сейчас ⬇️',
     button_template: 'Забронировать с {name}',
+    choice_phrase: 'экскурсии',
   },
   {
     slug: 'esim',
@@ -72,7 +77,23 @@ const seedTypes: PartnerType[] = [
     caption_emoji: '📱',
     caption_cta: '⬇️ Купить eSIM ⬇️',
     button_template: 'Купить eSIM',
+    choice_phrase: 'eSIM',
   },
+]
+
+type PlaceCategory = {
+  id: string
+  slug: string
+  label: string
+  sort_order: number
+}
+
+const seedPlaceCategories: PlaceCategory[] = [
+  { id: 'cat-cafe', slug: 'cafe', label: 'Кафе', sort_order: 10 },
+  { id: 'cat-restaurant', slug: 'restaurant', label: 'Ресторан', sort_order: 20 },
+  { id: 'cat-bar', slug: 'bar', label: 'Бар', sort_order: 30 },
+  { id: 'cat-beach', slug: 'beach', label: 'Пляж', sort_order: 40 },
+  { id: 'cat-shop', slug: 'shop', label: 'Магазин', sort_order: 50 },
 ]
 
 const seedPartners: Partner[] = [
@@ -83,6 +104,7 @@ const seedPartners: Partner[] = [
     referral_url: 'https://moneyshopphuket.online/links/pp413',
     blurb: 'Money Shop',
     logo_path: '',
+    logo_url: '',
     is_active: true,
     sort_order: 1,
   },
@@ -93,6 +115,7 @@ const seedPartners: Partner[] = [
     referral_url: 'https://ex24qr.com/epihelgnld',
     blurb: 'Ex24',
     logo_path: '',
+    logo_url: '',
     is_active: true,
     sort_order: 2,
   },
@@ -103,6 +126,7 @@ const seedPartners: Partner[] = [
     referral_url: 'https://tisland.link/excurs?ref=72s5z3yp3jb79r7',
     blurb: 'Экскурсии',
     logo_path: '',
+    logo_url: '',
     is_active: true,
     sort_order: 1,
   },
@@ -113,6 +137,7 @@ const seedPartners: Partner[] = [
     referral_url: 'https://boomerang.rent/catalog/?utm_source=MikePhuketAIBot',
     blurb: 'Boomerang - надежный сервис аренды автомобилей и мотобайков на Пхукете. Доставка по всему острову.',
     logo_path: 'media/partners/boomerang.jpeg',
+    logo_url: '',
     is_active: true,
     sort_order: 1,
   },
@@ -123,15 +148,40 @@ const seedPartners: Partner[] = [
     referral_url: 'https://t.me/Mike_esim_bot',
     blurb: '',
     logo_path: 'media/partners/esim.jpeg',
+    logo_url: '',
     is_active: true,
     sort_order: 1,
   },
 ]
 
 let types = structuredClone(seedTypes)
+let placeCategories = structuredClone(seedPlaceCategories)
+let places: {
+  id: string
+  name: string
+  category: string
+  blurb: string
+  maps_url: string
+  partner_id: string | null
+  is_active: boolean
+  mike_recommends: boolean
+  latitude: number
+  longitude: number
+  photos: { id: string; path: string; url: string }[]
+  cover: string
+}[] = []
 let partners = structuredClone(seedPartners)
 let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
 let partnerTypesListFailure: { status: number; detail: string } | null = null
+let logoUploads = new Map<string, string>()
+let photoUploads = new Map<string, string>()
+let placePhotoSaveDown = false
+let logoStorageDown = false
+let logoLinkDown = false
+
+export const MOCK_CDN = 'https://cdn-test.mikephuketai.com'
+const STORAGE_DOWN = 'Хранилище недоступно, попробуйте позже'
+const MAX_LOGO_BYTES = 5 * 1024 * 1024
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -142,9 +192,47 @@ function json(data: unknown, status = 200): Response {
 
 export function resetMockBackend(): void {
   types = structuredClone(seedTypes)
+  placeCategories = structuredClone(seedPlaceCategories)
+  places = []
   partners = structuredClone(seedPartners)
   partnerUsers = []
   partnerTypesListFailure = null
+  logoUploads = new Map()
+  photoUploads = new Map()
+  placePhotoSaveDown = false
+  logoStorageDown = false
+  logoLinkDown = false
+}
+
+export function failLogoStorage(): void {
+  logoStorageDown = true
+}
+
+export function failLogoLink(): void {
+  logoLinkDown = true
+}
+
+export function restoreLogoLink(): void {
+  logoLinkDown = false
+}
+
+export function failPlacePhotoSave(): void {
+  placePhotoSaveDown = true
+}
+
+export function restorePlacePhotoSave(): void {
+  placePhotoSaveDown = false
+}
+
+export function mockPartnerByName(name: string): Partner | undefined {
+  return partners.find((p) => p.name === name)
+}
+
+async function sniffLogo(file: File): Promise<string | null> {
+  const head = new Uint8Array(await file.slice(0, 8).arrayBuffer())
+  if (head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47) return 'png'
+  if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return 'jpg'
+  return null
 }
 
 export function failPartnerTypesList(status: number, detail: string): void {
@@ -157,7 +245,8 @@ export function installFetchMock(): void {
     const url = new URL(String(input), 'http://localhost:8000')
     const path = url.pathname
     const method = (init?.method ?? 'GET').toUpperCase()
-    const body = init?.body ? JSON.parse(String(init.body)) : null
+    const body =
+      init?.body && !(init.body instanceof FormData) ? JSON.parse(String(init.body)) : null
 
     if (path === '/api/auth/login' && method === 'POST') {
       if (body?.email === 'admin@example.com' && body?.password === 'admin123') {
@@ -218,6 +307,107 @@ export function installFetchMock(): void {
       return json(body)
     }
 
+    if (path === '/api/place-categories' && method === 'GET') {
+      return json([...placeCategories].sort((a, b) => a.sort_order - b.sort_order))
+    }
+
+    if (path === '/api/place-categories' && method === 'POST') {
+      const category = { id: crypto.randomUUID(), ...body }
+      placeCategories.push(category)
+      return json(category, 201)
+    }
+
+    const placeCategoryMatch = path.match(/^\/api\/place-categories\/([^/]+)$/)
+    if (placeCategoryMatch && method === 'PATCH') {
+      const slug = decodeURIComponent(placeCategoryMatch[1])
+      const index = placeCategories.findIndex((category) => category.slug === slug)
+      if (index < 0) return json({ detail: 'not found' }, 404)
+      placeCategories[index] = {
+        ...placeCategories[index],
+        label: body.label,
+        sort_order: body.sort_order,
+      }
+      return json(placeCategories[index])
+    }
+
+    if (placeCategoryMatch && method === 'DELETE') {
+      const slug = decodeURIComponent(placeCategoryMatch[1])
+      const used = places.some((place) => place.category === slug)
+      if (used) return json({ detail: 'Категорию используют места' }, 409)
+      placeCategories = placeCategories.filter((category) => category.slug !== slug)
+      return new Response(null, { status: 204 })
+    }
+
+    if (path === '/api/places' && method === 'GET') {
+      return json([...places])
+    }
+
+    if (path === '/api/places' && method === 'POST') {
+      const place = {
+        id: crypto.randomUUID(),
+        name: body.name as string,
+        category: body.category as string,
+        blurb: (body.blurb as string) ?? '',
+        maps_url: body.maps_url as string,
+        partner_id: (body.partner_id as string | null) ?? null,
+        is_active: body.is_active !== false,
+        mike_recommends: body.mike_recommends === true,
+        latitude: 7.76,
+        longitude: 98.3,
+        photos: [],
+        cover: 'media/places/placeholder.jpg',
+      }
+      places.push(place)
+      return json(place, 201)
+    }
+
+    if (path === '/api/place-photos/uploads' && method === 'POST') {
+      const file = (init!.body as FormData).get('file') as File
+      if (file.size > MAX_LOGO_BYTES) return json({ detail: 'Файл больше 5 МБ' }, 400)
+      const extension = await sniffLogo(file)
+      if (!extension) return json({ detail: 'Только JPEG или PNG' }, 400)
+      const token = `upload-${crypto.randomUUID()}`
+      const previewUrl = `${MOCK_CDN}/tmp/${token}.${extension}`
+      photoUploads.set(token, extension)
+      return json({ upload_token: token, preview_url: previewUrl }, 201)
+    }
+
+    const placeMatch = path.match(/^\/api\/places\/([^/]+)$/)
+    if (placeMatch && method === 'PATCH') {
+      const id = decodeURIComponent(placeMatch[1])
+      const index = places.findIndex((place) => place.id === id)
+      if (index < 0) return json({ detail: 'Место не найдено' }, 404)
+      const current = places[index]
+      let photos = current.photos
+      if (Array.isArray(body.photos)) {
+        if (body.photos.length > 0 && placePhotoSaveDown) {
+          return json({ detail: 'Хранилище недоступно, попробуйте позже' }, 503)
+        }
+        if (body.photos.length === 0) {
+          photos = []
+        } else {
+          const token = body.photos[0].upload_token as string
+          const extension = photoUploads.get(token)
+          if (!extension) return json({ detail: 'Загрузка устарела, выберите файл заново' }, 400)
+          const key = `places/${id}/${token.slice(-12)}.${extension}`
+          photos = [{ id: crypto.randomUUID(), path: key, url: `${MOCK_CDN}/${key}` }]
+        }
+      }
+      places[index] = {
+        ...current,
+        name: body.name ?? current.name,
+        category: body.category ?? current.category,
+        blurb: body.blurb ?? current.blurb,
+        maps_url: body.maps_url ?? current.maps_url,
+        partner_id: body.partner_id === undefined ? current.partner_id : body.partner_id,
+        is_active: body.is_active ?? current.is_active,
+        mike_recommends: body.mike_recommends ?? current.mike_recommends,
+        photos,
+        cover: photos[0]?.path ?? 'media/places/placeholder.jpg',
+      }
+      return json(places[index])
+    }
+
     if (path === '/api/partners' && method === 'GET') {
       return json([...partners])
     }
@@ -227,6 +417,7 @@ export function installFetchMock(): void {
         id: crypto.randomUUID(),
         ...body,
         logo_path: '',
+        logo_url: '',
       }
       partners.push(partner)
       return json(partner, 201)
@@ -237,7 +428,41 @@ export function installFetchMock(): void {
       const id = decodeURIComponent(partnerMatch[1])
       const index = partners.findIndex((p) => p.id === id)
       if (index < 0) return json({ detail: 'not found' }, 404)
-      partners[index] = { ...partners[index], ...body, logo_path: '' }
+      partners[index] = {
+        ...partners[index],
+        ...body,
+        logo_path: partners[index].logo_path,
+        logo_url: partners[index].logo_url,
+      }
+      return json(partners[index])
+    }
+
+    if (path === '/api/partner-logos/uploads' && method === 'POST') {
+      const file = (init!.body as FormData).get('file') as File
+      if (file.size > MAX_LOGO_BYTES) return json({ detail: 'Файл больше 5 МБ' }, 400)
+      const extension = await sniffLogo(file)
+      if (!extension) return json({ detail: 'Только JPEG или PNG' }, 400)
+      if (logoStorageDown) return json({ detail: STORAGE_DOWN }, 503)
+      const token = `upload-${crypto.randomUUID()}`
+      const previewUrl = `${MOCK_CDN}/tmp/${token}.${extension}`
+      logoUploads.set(token, extension)
+      return json({ upload_token: token, preview_url: previewUrl }, 201)
+    }
+
+    const logoMatch = path.match(/^\/api\/partners\/([^/]+)\/logo$/)
+    if (logoMatch && (method === 'PUT' || method === 'DELETE')) {
+      const id = decodeURIComponent(logoMatch[1])
+      const index = partners.findIndex((p) => p.id === id)
+      if (index < 0) return json({ detail: 'Партнёр не найден' }, 404)
+      if (method === 'DELETE') {
+        partners[index] = { ...partners[index], logo_path: '', logo_url: '' }
+        return json(partners[index])
+      }
+      if (logoLinkDown) return json({ detail: STORAGE_DOWN }, 503)
+      const extension = logoUploads.get(body.upload_token)
+      if (!extension) return json({ detail: 'Загрузка устарела, выберите файл заново' }, 400)
+      const key = `partners/${id}/logo-${body.upload_token.slice(-12)}.${extension}`
+      partners[index] = { ...partners[index], logo_path: key, logo_url: `${MOCK_CDN}/${key}` }
       return json(partners[index])
     }
 

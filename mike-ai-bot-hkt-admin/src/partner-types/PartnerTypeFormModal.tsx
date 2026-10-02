@@ -12,6 +12,7 @@ const emptyForm: PartnerType = {
   caption_emoji: '',
   caption_cta: '',
   button_template: '',
+  choice_phrase: '',
 }
 
 type Props = {
@@ -162,6 +163,15 @@ export function PartnerTypeFormModal({ mode, slug: routeSlug, onClose, onSaved }
               <input
                 value={form.caption_cta}
                 onChange={(e) => setField('caption_cta', e.target.value)}
+                className="rounded border border-slate-300 bg-white px-3 py-2"
+                required
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              Фраза «выбравших»
+              <input
+                value={form.choice_phrase}
+                onChange={(e) => setField('choice_phrase', e.target.value)}
                 className="rounded border border-slate-300 bg-white px-3 py-2"
                 required
               />

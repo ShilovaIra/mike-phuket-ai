@@ -29,16 +29,19 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
-from telegram.error import Forbidden, TelegramError
+from telegram.error import BadRequest, Forbidden, TelegramError
 
 from db.store import SessionStore
 from db.url import resolve_database_url
 from partner_dashboard.offers import wrap_partners_for_channel_user
 from partners import (
+    PartnerCard,
     PartnerType,
     build_partner_cards,
+    is_bundled_logo,
     resolve_logo_path,
 )
+from storage import AssetStorage
 from buttons import (
     BUTTON_TO_TOPIC,
     NEARBY_BUTTON,
@@ -76,6 +79,7 @@ CHANNEL = "telegram"
 client = OpenAI(api_key=OPENAI_API_KEY)
 store: SessionStore | None = None
 places: PlacesClient | None = None
+storage = AssetStorage.from_env(os.environ)
 
 FIND_PLACES_TOOL = {
     "type": "function",
@@ -398,25 +402,42 @@ async def handle_partner_topic(update: Update, partner_type: PartnerType):
         return
 
     for card in cards:
-        keyboard = InlineKeyboardMarkup(
-            [[InlineKeyboardButton(card.button_text, url=card.referral_url)]]
-        )
+        await send_partner_card(update.message, card)
+
+
+async def send_partner_card(message, card: PartnerCard) -> None:
+    keyboard = InlineKeyboardMarkup(
+        [[InlineKeyboardButton(card.button_text, url=card.referral_url)]]
+    )
+    if card.logo_path and not is_bundled_logo(card.logo_path) and storage is not None:
+        logo_url = storage.public_url(card.logo_path)
+        try:
+            await message.reply_photo(
+                photo=logo_url,
+                caption=card.caption_html,
+                parse_mode="HTML",
+                reply_markup=keyboard,
+            )
+            return
+        except BadRequest as exc:
+            print(f"Partner logo {logo_url} not sent, falling back to text: {exc}")
+    else:
         logo = resolve_logo_path(card.logo_path)
         if logo is not None:
             with logo.open("rb") as photo:
-                await update.message.reply_photo(
+                await message.reply_photo(
                     photo=photo,
                     caption=card.caption_html,
                     parse_mode="HTML",
                     reply_markup=keyboard,
                 )
-        else:
-            await update.message.reply_text(
-                card.caption_html,
-                parse_mode="HTML",
-                reply_markup=keyboard,
-                disable_web_page_preview=True,
-            )
+            return
+    await message.reply_text(
+        card.caption_html,
+        parse_mode="HTML",
+        reply_markup=keyboard,
+        disable_web_page_preview=True,
+    )
 
 
 async def find_places(arguments: dict) -> dict:

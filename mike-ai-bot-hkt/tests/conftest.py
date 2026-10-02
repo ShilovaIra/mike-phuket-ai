@@ -52,6 +52,36 @@ DELETE FROM partner_types
 WHERE slug NOT IN ('money_exchange', 'vehicle_rental', 'excursions', 'esim')
 """
 
+RESET_PLACE_CATEGORIES_SQL = """
+DELETE FROM place_categories
+WHERE slug NOT IN ('cafe', 'restaurant', 'bar', 'beach', 'shop')
+"""
+
+RESEED_CHOICE_PHRASES_SQL = """
+UPDATE partner_types
+SET choice_phrase = CASE slug
+    WHEN 'money_exchange' THEN 'обмен рублей'
+    WHEN 'vehicle_rental' THEN 'аренду транспорта'
+    WHEN 'excursions' THEN 'экскурсии'
+    WHEN 'esim' THEN 'eSIM'
+    ELSE choice_phrase
+END
+WHERE slug IN ('money_exchange', 'vehicle_rental', 'excursions', 'esim')
+"""
+
+RESEED_PLACE_CATEGORIES_SQL = """
+INSERT INTO place_categories (slug, label, sort_order)
+VALUES
+    ('cafe', 'Кафе', 10),
+    ('restaurant', 'Ресторан', 20),
+    ('bar', 'Бар', 30),
+    ('beach', 'Пляж', 40),
+    ('shop', 'Магазин', 50)
+ON CONFLICT (slug) DO UPDATE SET
+    label = EXCLUDED.label,
+    sort_order = EXCLUDED.sort_order
+"""
+
 
 @pytest_asyncio.fixture
 async def store() -> SessionStore:
@@ -59,12 +89,65 @@ async def store() -> SessionStore:
     assert url is not None
     pool = await asyncpg.create_pool(url, min_size=1, max_size=5)
     async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            DO $$
+            BEGIN
+                IF to_regclass('public.places') IS NOT NULL THEN
+                    DELETE FROM place_assets;
+                    DELETE FROM places;
+                END IF;
+            END $$;
+            """
+        )
         await apply_schema(conn)
         await conn.execute(TRUNCATE_SQL)
         await conn.execute(RESET_PARTNER_TYPES_SQL)
+        await conn.execute(RESET_PLACE_CATEGORIES_SQL)
         await apply_schema(conn)
         await conn.execute(TRUNCATE_SQL)
+        await conn.execute(RESET_PLACE_CATEGORIES_SQL)
+        await conn.execute(RESEED_PLACE_CATEGORIES_SQL)
+        await conn.execute(RESEED_CHOICE_PHRASES_SQL)
 
     session_store = SessionStore(pool)
     yield session_store
     await session_store.close()
+
+
+S3_ENDPOINT = "https://sgp1.digitaloceanspaces.com"
+S3_BUCKET = "mike-phuket-test"
+S3_ENV = {
+    "S3_ENDPOINT_URL": S3_ENDPOINT,
+    "S3_REGION": "sgp1",
+    "S3_BUCKET": S3_BUCKET,
+    "S3_ACCESS_KEY_ID": "test-key",
+    "S3_SECRET_ACCESS_KEY": "test-secret",
+    "S3_PUBLIC_BASE_URL": "https://cdn-test.mikephuketai.com",
+}
+
+
+@pytest.fixture
+def s3(monkeypatch):
+    """In-memory S3 (moto) with an empty test bucket; yields a raw boto3 client."""
+    import boto3
+    from moto import mock_aws
+
+    monkeypatch.setenv("MOTO_S3_CUSTOM_ENDPOINTS", S3_ENDPOINT)
+    with mock_aws():
+        client = boto3.client(
+            "s3",
+            endpoint_url=S3_ENDPOINT,
+            region_name="us-east-1",
+            aws_access_key_id="test-key",
+            aws_secret_access_key="test-secret",
+        )
+        client.create_bucket(Bucket=S3_BUCKET)
+        yield client
+
+
+@pytest.fixture
+def asset_storage(s3):
+    from storage import AssetStorage
+
+    return AssetStorage.from_env(S3_ENV)

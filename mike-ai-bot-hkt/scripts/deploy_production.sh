@@ -50,6 +50,8 @@ PARTNER_PUBLIC_HOST="$(awk -F= '/^PARTNER_PUBLIC_HOST=/{v=substr($0, index($0,$2
 PARTNER_PUBLIC_HOST="${PARTNER_PUBLIC_HOST:-partners.mikephuketai.com}"
 ADMIN_PUBLIC_HOST="$(awk -F= '/^ADMIN_PUBLIC_HOST=/{v=substr($0, index($0,$2))} END{print v}' .env)"
 ADMIN_PUBLIC_HOST="${ADMIN_PUBLIC_HOST:-admin.mikephuketai.com}"
+TMA_PUBLIC_HOST="$(awk -F= '/^TMA_PUBLIC_HOST=/{v=substr($0, index($0,$2))} END{print v}' .env)"
+TMA_PUBLIC_HOST="${TMA_PUBLIC_HOST:-app.mikephuketai.com}"
 desired_offer_url="https://${PARTNER_PUBLIC_HOST}"
 PARTNER_OFFER_BASE_WRITTEN=0
 current_offer_base="$(awk -F= '/^PARTNER_OFFER_BASE_URL=/{v=substr($0, index($0,$2))} END{print v}' .env)"
@@ -76,15 +78,19 @@ fi
 if ! grep -qE '^ADMIN_PUBLIC_HOST=' .env; then
   echo "ADMIN_PUBLIC_HOST=${ADMIN_PUBLIC_HOST}" >> .env
 fi
+if ! grep -qE '^TMA_PUBLIC_HOST=' .env; then
+  echo "TMA_PUBLIC_HOST=${TMA_PUBLIC_HOST}" >> .env
+fi
 if ! grep -qE '^COMPOSE_PROFILES=' .env; then
   echo 'COMPOSE_PROFILES=tls' >> .env
 fi
 
 # One image at a time: pip + two npm builds in parallel OOMs a 1 GB Droplet.
-echo "→ Building images (bot, admin-web, partner-web)"
+echo "→ Building images (bot, admin-web, partner-web, tma-web)"
 docker compose build bot
 docker compose build admin-web
 docker compose build partner-web
+docker compose build tma-web
 echo "→ Starting containers"
 docker compose --profile tls up -d
 if [[ "${PARTNER_OFFER_BASE_WRITTEN}" == 1 ]]; then

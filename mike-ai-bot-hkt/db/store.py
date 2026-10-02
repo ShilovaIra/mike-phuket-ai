@@ -10,6 +10,7 @@ import asyncpg
 
 from db.migrate import apply_schema_pool
 from partners import Partner, PartnerType
+from place_catalog import Place, PlaceAsset, PlaceCategory
 
 PARTNER_FOLLOW_UP_DELAY = timedelta(hours=24)
 WIN_BACK_DELAY = timedelta(days=7)
@@ -83,6 +84,7 @@ class DueFollowUpJob:
 def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
     names = set(row.keys())
     follow = row["follow_up_text"] if "follow_up_text" in names else ""
+    choice_phrase = row["choice_phrase"] if "choice_phrase" in names else ""
     return PartnerType(
         slug=row["slug"],
         is_menu_visible=row["is_menu_visible"],
@@ -95,6 +97,61 @@ def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
         caption_cta=row["caption_cta"],
         button_template=row["button_template"],
         follow_up_text=follow or "",
+        choice_phrase=choice_phrase or "",
+        id=row["id"] if "id" in names else None,
+    )
+
+
+def _partner_from_row(row: asyncpg.Record, *, is_active: bool | None = None) -> Partner:
+    return Partner(
+        id=row["id"],
+        name=row["name"],
+        type=row["type"],
+        referral_url=row["referral_url"],
+        blurb=row["blurb"],
+        sort_order=row["sort_order"],
+        logo_path=row["logo_path"],
+        is_active=row["is_active"] if is_active is None else is_active,
+    )
+
+
+def _place_from_row(row: asyncpg.Record) -> Place:
+    return Place(
+        id=row["id"],
+        name=row["name"],
+        category_id=row["category_id"],
+        partner_id=row["partner_id"],
+        google_place_id=row["google_place_id"],
+        latitude=row["latitude"],
+        longitude=row["longitude"],
+        blurb=row["blurb"],
+        is_active=row["is_active"],
+        maps_url=row["maps_url"],
+        mike_recommends=row["mike_recommends"],
+    )
+
+
+_PLACE_COLUMNS = """
+    id, name, category_id, partner_id, google_place_id,
+    latitude, longitude, blurb, is_active, maps_url, mike_recommends
+"""
+
+
+def _place_category_from_row(row: asyncpg.Record) -> PlaceCategory:
+    return PlaceCategory(
+        id=row["id"],
+        slug=row["slug"],
+        label=row["label"],
+        sort_order=row["sort_order"],
+    )
+
+
+def _place_asset_from_row(row: asyncpg.Record) -> PlaceAsset:
+    return PlaceAsset(
+        id=row["id"],
+        place_id=row["place_id"],
+        path=row["path"],
+        sort_order=row["sort_order"],
     )
 
 
@@ -724,6 +781,268 @@ class SessionStore:
             users_by_first_source={row["first_source"]: int(row["count"]) for row in source_rows},
         )
 
+    async def list_place_categories(self) -> list[PlaceCategory]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, slug, label, sort_order
+                FROM place_categories
+                ORDER BY sort_order ASC, slug ASC
+                """
+            )
+            return [_place_category_from_row(row) for row in rows]
+
+    async def create_place_category(
+        self, *, slug: str, label: str, sort_order: int
+    ) -> PlaceCategory:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                INSERT INTO place_categories (slug, label, sort_order)
+                VALUES ($1, $2, $3)
+                RETURNING id, slug, label, sort_order
+                """,
+                slug,
+                label,
+                sort_order,
+            )
+        return _place_category_from_row(row)
+
+    async def update_place_category(
+        self, slug: str, *, label: str, sort_order: int
+    ) -> PlaceCategory:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE place_categories
+                SET label = $2, sort_order = $3
+                WHERE slug = $1
+                RETURNING id, slug, label, sort_order
+                """,
+                slug,
+                label,
+                sort_order,
+            )
+        return _place_category_from_row(row)
+
+    async def delete_place_category(self, slug: str) -> None:
+        async with self._pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM place_categories WHERE slug = $1",
+                slug,
+            )
+
+    async def create_place(
+        self,
+        *,
+        name: str,
+        category_id: UUID,
+        google_place_id: str | None,
+        latitude: float,
+        longitude: float,
+        partner_id: UUID | None = None,
+        blurb: str | None = None,
+        is_active: bool = True,
+        maps_url: str | None = None,
+        mike_recommends: bool = False,
+    ) -> Place:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                INSERT INTO places (
+                    name, category_id, partner_id, google_place_id,
+                    latitude, longitude, blurb, is_active, maps_url, mike_recommends
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                RETURNING {_PLACE_COLUMNS}
+                """,
+                name,
+                category_id,
+                partner_id,
+                google_place_id,
+                latitude,
+                longitude,
+                blurb,
+                is_active,
+                maps_url,
+                mike_recommends,
+            )
+        return _place_from_row(row)
+
+    async def update_place(
+        self,
+        place_id: UUID,
+        *,
+        name: str,
+        category_id: UUID,
+        google_place_id: str | None,
+        latitude: float,
+        longitude: float,
+        partner_id: UUID | None = None,
+        blurb: str | None = None,
+        is_active: bool = True,
+        maps_url: str | None = None,
+        mike_recommends: bool = False,
+    ) -> Place:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                f"""
+                UPDATE places SET
+                    name = $2,
+                    category_id = $3,
+                    partner_id = $4,
+                    google_place_id = $5,
+                    latitude = $6,
+                    longitude = $7,
+                    blurb = $8,
+                    is_active = $9,
+                    maps_url = $10,
+                    mike_recommends = $11
+                WHERE id = $1
+                RETURNING {_PLACE_COLUMNS}
+                """,
+                place_id,
+                name,
+                category_id,
+                partner_id,
+                google_place_id,
+                latitude,
+                longitude,
+                blurb,
+                is_active,
+                maps_url,
+                mike_recommends,
+            )
+        if row is None:
+            raise KeyError(place_id)
+        return _place_from_row(row)
+
+    async def list_visible_places(self) -> list[Place]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT place.id, place.name, place.category_id, place.partner_id,
+                       place.google_place_id, place.latitude, place.longitude,
+                       place.blurb, place.is_active, place.maps_url,
+                       place.mike_recommends
+                FROM places AS place
+                LEFT JOIN partners AS partner ON partner.id = place.partner_id
+                WHERE place.is_active
+                  AND (place.partner_id IS NULL OR partner.is_active)
+                ORDER BY place.mike_recommends DESC, place.name ASC
+                """
+            )
+        return [_place_from_row(row) for row in rows]
+
+    async def ensure_identity(self, channel: str, external_id: str, *, source: str) -> UUID:
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                user_id, _ = await self._ensure_user(conn, channel, external_id, source)
+                return user_id
+
+    async def set_place_favourite(
+        self,
+        channel: str,
+        external_id: str,
+        place_id: UUID,
+        *,
+        saved: bool,
+    ) -> None:
+        async with self._pool.acquire() as conn:
+            async with conn.transaction():
+                user_id, _ = await self._ensure_user(conn, channel, external_id, "tma")
+                if saved:
+                    await conn.execute(
+                        """
+                        INSERT INTO place_favourites (user_id, place_id)
+                        VALUES ($1, $2)
+                        ON CONFLICT (user_id, place_id) DO NOTHING
+                        """,
+                        user_id,
+                        place_id,
+                    )
+                    return
+                await conn.execute(
+                    """
+                    DELETE FROM place_favourites
+                    WHERE user_id = $1 AND place_id = $2
+                    """,
+                    user_id,
+                    place_id,
+                )
+
+    async def list_favourite_places(self, channel: str, external_id: str) -> list[Place]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT place.id, place.name, place.category_id, place.partner_id,
+                       place.google_place_id, place.latitude, place.longitude,
+                       place.blurb, place.is_active, place.maps_url,
+                       place.mike_recommends
+                FROM place_favourites AS fav
+                JOIN identities AS i ON i.user_id = fav.user_id
+                JOIN places AS place ON place.id = fav.place_id
+                LEFT JOIN partners AS partner ON partner.id = place.partner_id
+                WHERE i.channel = $1
+                  AND i.external_id = $2
+                  AND place.is_active
+                  AND (place.partner_id IS NULL OR partner.is_active)
+                ORDER BY fav.created_at DESC, place.id
+                """,
+                channel,
+                external_id,
+            )
+        return [_place_from_row(row) for row in rows]
+
+    async def list_places(self) -> list[Place]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                f"""
+                SELECT {_PLACE_COLUMNS}
+                FROM places
+                ORDER BY name ASC
+                """
+            )
+        return [_place_from_row(row) for row in rows]
+
+    async def add_place_asset(
+        self, place_id: UUID, path: str, sort_order: int = 0
+    ) -> PlaceAsset:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                INSERT INTO place_assets (place_id, path, sort_order)
+                VALUES ($1, $2, $3)
+                RETURNING id, place_id, path, sort_order
+                """,
+                place_id,
+                path,
+                sort_order,
+            )
+        return _place_asset_from_row(row)
+
+    async def list_place_assets(self, place_id: UUID) -> list[PlaceAsset]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT id, place_id, path, sort_order
+                FROM place_assets
+                WHERE place_id = $1
+                ORDER BY sort_order ASC, id ASC
+                """,
+                place_id,
+            )
+        return [_place_asset_from_row(row) for row in rows]
+
+    async def delete_place_assets(self, asset_ids: list[UUID]) -> None:
+        if not asset_ids:
+            return
+        async with self._pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM place_assets WHERE id = ANY($1::uuid[])",
+                asset_ids,
+            )
+
     async def list_partner_types(self) -> list[PartnerType]:
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(
@@ -752,9 +1071,9 @@ class SessionStore:
                 INSERT INTO partner_types (
                     slug, is_menu_visible, sort_order, button_label, topic_label,
                     intro, fallback, caption_emoji, caption_cta, button_template,
-                    follow_up_text
+                    follow_up_text, choice_phrase
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 """,
                 partner_type.slug,
                 partner_type.is_menu_visible,
@@ -767,6 +1086,7 @@ class SessionStore:
                 partner_type.caption_cta,
                 partner_type.button_template,
                 partner_type.follow_up_text,
+                partner_type.choice_phrase,
             )
         return partner_type
 
@@ -780,52 +1100,32 @@ class SessionStore:
                 if existing is None:
                     raise KeyError(slug)
 
-                if partner_type.slug == slug:
-                    await conn.execute(
-                        """
-                        UPDATE partner_types SET
-                            is_menu_visible = $2,
-                            sort_order = $3,
-                            button_label = $4,
-                            topic_label = $5,
-                            intro = $6,
-                            fallback = $7,
-                            caption_emoji = $8,
-                            caption_cta = $9,
-                            button_template = $10,
-                            follow_up_text = $11
-                        WHERE slug = $1
-                        """,
-                        slug,
-                        partner_type.is_menu_visible,
-                        partner_type.sort_order,
-                        partner_type.button_label,
-                        partner_type.topic_label,
-                        partner_type.intro,
-                        partner_type.fallback,
-                        partner_type.caption_emoji,
-                        partner_type.caption_cta,
-                        partner_type.button_template,
-                        partner_type.follow_up_text,
+                if partner_type.slug != slug:
+                    conflict = await conn.fetchrow(
+                        "SELECT slug FROM partner_types WHERE slug = $1",
+                        partner_type.slug,
                     )
-                    return partner_type
-
-                conflict = await conn.fetchrow(
-                    "SELECT slug FROM partner_types WHERE slug = $1",
-                    partner_type.slug,
-                )
-                if conflict is not None:
-                    raise ValueError("partner type slug already exists")
+                    if conflict is not None:
+                        raise ValueError("partner type slug already exists")
 
                 await conn.execute(
                     """
-                    INSERT INTO partner_types (
-                        slug, is_menu_visible, sort_order, button_label, topic_label,
-                        intro, fallback, caption_emoji, caption_cta, button_template,
-                        follow_up_text
-                    )
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    UPDATE partner_types SET
+                        slug = $2,
+                        is_menu_visible = $3,
+                        sort_order = $4,
+                        button_label = $5,
+                        topic_label = $6,
+                        intro = $7,
+                        fallback = $8,
+                        caption_emoji = $9,
+                        caption_cta = $10,
+                        button_template = $11,
+                        follow_up_text = $12,
+                        choice_phrase = $13
+                    WHERE slug = $1
                     """,
+                    slug,
                     partner_type.slug,
                     partner_type.is_menu_visible,
                     partner_type.sort_order,
@@ -837,61 +1137,41 @@ class SessionStore:
                     partner_type.caption_cta,
                     partner_type.button_template,
                     partner_type.follow_up_text,
+                    partner_type.choice_phrase,
                 )
-                await conn.execute(
-                    "UPDATE partners SET type = $1 WHERE type = $2",
-                    partner_type.slug,
-                    slug,
-                )
-                await conn.execute("DELETE FROM partner_types WHERE slug = $1", slug)
                 return partner_type
 
     async def list_partners(self) -> list[Partner]:
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(
                 """
-                SELECT id, name, type, referral_url, blurb, logo_path, is_active, sort_order
-                FROM partners
-                ORDER BY type ASC, sort_order ASC, name ASC
+                SELECT partner.id, partner.name, partner_type.slug AS type,
+                       partner.referral_url, partner.blurb, partner.logo_path,
+                       partner.is_active, partner.sort_order
+                FROM partners AS partner
+                JOIN partner_types AS partner_type
+                    ON partner_type.id = partner.partner_type_id
+                ORDER BY partner_type.slug ASC, partner.sort_order ASC, partner.name ASC
                 """
             )
-            return [
-                Partner(
-                    id=row["id"],
-                    name=row["name"],
-                    type=row["type"],
-                    referral_url=row["referral_url"],
-                    blurb=row["blurb"],
-                    sort_order=row["sort_order"],
-                    logo_path=row["logo_path"],
-                    is_active=row["is_active"],
-                )
-                for row in rows
-            ]
+            return [_partner_from_row(row) for row in rows]
 
     async def list_active_partners(self, partner_type: str) -> list[Partner]:
         async with self._pool.acquire() as conn:
             rows = await conn.fetch(
                 """
-                SELECT id, name, type, referral_url, blurb, logo_path, sort_order
-                FROM partners
-                WHERE type = $1 AND is_active = true
-                ORDER BY sort_order ASC, name ASC
+                SELECT partner.id, partner.name, partner_type.slug AS type,
+                       partner.referral_url, partner.blurb, partner.logo_path,
+                       partner.sort_order
+                FROM partners AS partner
+                JOIN partner_types AS partner_type
+                    ON partner_type.id = partner.partner_type_id
+                WHERE partner_type.slug = $1 AND partner.is_active = true
+                ORDER BY partner.sort_order ASC, partner.name ASC
                 """,
                 partner_type,
             )
-            return [
-                Partner(
-                    id=row["id"],
-                    name=row["name"],
-                    type=row["type"],
-                    referral_url=row["referral_url"],
-                    blurb=row["blurb"],
-                    sort_order=row["sort_order"],
-                    logo_path=row["logo_path"],
-                )
-                for row in rows
-            ]
+            return [_partner_from_row(row, is_active=True) for row in rows]
 
     async def create_partner(
         self,
@@ -906,9 +1186,23 @@ class SessionStore:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
-                INSERT INTO partners (name, type, referral_url, blurb, logo_path, is_active, sort_order)
-                VALUES ($1, $2, $3, $4, '', $5, $6)
-                RETURNING id, name, type, referral_url, blurb, logo_path, is_active, sort_order
+                WITH inserted AS (
+                    INSERT INTO partners (
+                        name, partner_type_id, referral_url, blurb, logo_path,
+                        is_active, sort_order
+                    )
+                    SELECT $1, id, $3, $4, '', $5, $6
+                    FROM partner_types
+                    WHERE slug = $2
+                    RETURNING id, name, partner_type_id, referral_url, blurb,
+                        logo_path, is_active, sort_order
+                )
+                SELECT inserted.id, inserted.name, partner_type.slug AS type,
+                       inserted.referral_url, inserted.blurb, inserted.logo_path,
+                       inserted.is_active, inserted.sort_order
+                FROM inserted
+                JOIN partner_types AS partner_type
+                    ON partner_type.id = inserted.partner_type_id
                 """,
                 name,
                 type,
@@ -917,16 +1211,9 @@ class SessionStore:
                 is_active,
                 sort_order,
             )
-        return Partner(
-            id=row["id"],
-            name=row["name"],
-            type=row["type"],
-            referral_url=row["referral_url"],
-            blurb=row["blurb"],
-            sort_order=row["sort_order"],
-            logo_path=row["logo_path"],
-            is_active=row["is_active"],
-        )
+        if row is None:
+            raise KeyError(type)
+        return _partner_from_row(row)
 
     async def update_partner(
         self,
@@ -942,16 +1229,26 @@ class SessionStore:
         async with self._pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
-                UPDATE partners SET
-                    name = $2,
-                    type = $3,
-                    referral_url = $4,
-                    blurb = $5,
-                    logo_path = '',
-                    is_active = $6,
-                    sort_order = $7
-                WHERE id = $1
-                RETURNING id, name, type, referral_url, blurb, logo_path, is_active, sort_order
+                WITH updated AS (
+                    UPDATE partners SET
+                        name = $2,
+                        partner_type_id = (
+                            SELECT id FROM partner_types WHERE slug = $3
+                        ),
+                        referral_url = $4,
+                        blurb = $5,
+                        is_active = $6,
+                        sort_order = $7
+                    WHERE id = $1
+                    RETURNING id, name, partner_type_id, referral_url, blurb,
+                        logo_path, is_active, sort_order
+                )
+                SELECT updated.id, updated.name, partner_type.slug AS type,
+                       updated.referral_url, updated.blurb, updated.logo_path,
+                       updated.is_active, updated.sort_order
+                FROM updated
+                JOIN partner_types AS partner_type
+                    ON partner_type.id = updated.partner_type_id
                 """,
                 partner_id,
                 name,
@@ -963,16 +1260,40 @@ class SessionStore:
             )
         if row is None:
             raise KeyError(partner_id)
-        return Partner(
-            id=row["id"],
-            name=row["name"],
-            type=row["type"],
-            referral_url=row["referral_url"],
-            blurb=row["blurb"],
-            sort_order=row["sort_order"],
-            logo_path=row["logo_path"],
-            is_active=row["is_active"],
-        )
+        return _partner_from_row(row)
+
+    async def set_partner_logo(
+        self, partner_id: UUID, logo_path: str | None
+    ) -> tuple[str | None, Partner]:
+        """Replace a partner's logo; returns (previous logo_path, updated partner)."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                WITH old AS (
+                    SELECT logo_path FROM partners WHERE id = $1 FOR UPDATE
+                ),
+                updated AS (
+                    UPDATE partners SET logo_path = $2
+                    FROM old
+                    WHERE partners.id = $1
+                    RETURNING partners.id, partners.name, partners.partner_type_id,
+                        partners.referral_url, partners.blurb, partners.logo_path,
+                        partners.is_active, partners.sort_order,
+                        old.logo_path AS previous_logo_path
+                )
+                SELECT updated.id, updated.name, partner_type.slug AS type,
+                       updated.referral_url, updated.blurb, updated.logo_path,
+                       updated.is_active, updated.sort_order, updated.previous_logo_path
+                FROM updated
+                JOIN partner_types AS partner_type
+                    ON partner_type.id = updated.partner_type_id
+                """,
+                partner_id,
+                logo_path,
+            )
+        if row is None:
+            raise KeyError(partner_id)
+        return row["previous_logo_path"], _partner_from_row(row)
 
     async def _fetch_topic_counts(
         self,

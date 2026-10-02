@@ -79,7 +79,8 @@ CREATE INDEX IF NOT EXISTS webhook_events_pending
     WHERE status = 'pending';
 
 CREATE TABLE IF NOT EXISTS partner_types (
-    slug TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug TEXT NOT NULL UNIQUE,
     is_menu_visible BOOLEAN NOT NULL DEFAULT true,
     sort_order INT NOT NULL DEFAULT 0,
     button_label TEXT NOT NULL,
@@ -89,11 +90,40 @@ CREATE TABLE IF NOT EXISTS partner_types (
     caption_emoji TEXT NOT NULL,
     caption_cta TEXT NOT NULL,
     button_template TEXT NOT NULL,
-    follow_up_text TEXT NOT NULL DEFAULT ''
+    follow_up_text TEXT NOT NULL DEFAULT '',
+    choice_phrase TEXT NOT NULL DEFAULT ''
 );
+
+-- Existing databases used slug as the primary key. Give each row its own id
+-- before partners stop storing the slug.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'partner_types'
+          AND column_name = 'id'
+    ) THEN
+        RETURN;
+    END IF;
+
+    ALTER TABLE partners DROP CONSTRAINT IF EXISTS partners_type_fkey;
+
+    ALTER TABLE partner_types ADD COLUMN id UUID;
+    UPDATE partner_types SET id = gen_random_uuid() WHERE id IS NULL;
+    ALTER TABLE partner_types ALTER COLUMN id SET DEFAULT gen_random_uuid();
+    ALTER TABLE partner_types ALTER COLUMN id SET NOT NULL;
+    ALTER TABLE partner_types DROP CONSTRAINT partner_types_pkey;
+    ALTER TABLE partner_types ADD PRIMARY KEY (id);
+    ALTER TABLE partner_types ADD CONSTRAINT partner_types_slug_key UNIQUE (slug);
+END $$;
 
 ALTER TABLE partner_types
     ADD COLUMN IF NOT EXISTS follow_up_text TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE partner_types
+    ADD COLUMN IF NOT EXISTS choice_phrase TEXT NOT NULL DEFAULT '';
 
 INSERT INTO partner_types (
     slug,
@@ -106,7 +136,8 @@ INSERT INTO partner_types (
     caption_emoji,
     caption_cta,
     button_template,
-    follow_up_text
+    follow_up_text,
+    choice_phrase
 )
 VALUES
 (
@@ -120,7 +151,8 @@ VALUES
     '💰',
     '⬇️ Обменять сейчас ⬇️',
     'Обменять с {name}',
-    'Как прошел обмен? Нужна ли ещё помощь? 😊'
+    'Как прошел обмен? Нужна ли ещё помощь? 😊',
+    'обмен рублей'
 ),
 (
     'vehicle_rental',
@@ -133,7 +165,8 @@ VALUES
     '🛵',
     '⬇️ Арендовать сейчас ⬇️',
     'Арендовать у {name}',
-    ''
+    '',
+    'аренду транспорта'
 ),
 (
     'excursions',
@@ -146,7 +179,8 @@ VALUES
     '🇹🇭',
     '⬇️ Забронировать сейчас ⬇️',
     'Забронировать с {name}',
-    'Как все прошло? Получилось ли воспользоваться рекомендацией? 😊'
+    'Как все прошло? Получилось ли воспользоваться рекомендацией? 😊',
+    'экскурсии'
 ),
 (
     'esim',
@@ -159,7 +193,8 @@ VALUES
     '📱',
     '⬇️ Купить eSIM ⬇️',
     'Купить eSIM',
-    ''
+    '',
+    'eSIM'
 )
 ON CONFLICT (slug) DO UPDATE SET
     is_menu_visible = EXCLUDED.is_menu_visible,
@@ -171,12 +206,16 @@ ON CONFLICT (slug) DO UPDATE SET
     caption_emoji = EXCLUDED.caption_emoji,
     caption_cta = EXCLUDED.caption_cta,
     button_template = EXCLUDED.button_template,
-    follow_up_text = EXCLUDED.follow_up_text;
+    follow_up_text = EXCLUDED.follow_up_text,
+    choice_phrase = CASE
+        WHEN partner_types.choice_phrase = '' THEN EXCLUDED.choice_phrase
+        ELSE partner_types.choice_phrase
+    END;
 
 CREATE TABLE IF NOT EXISTS partners (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
-    type TEXT NOT NULL,
+    partner_type_id UUID NOT NULL REFERENCES partner_types (id) ON DELETE RESTRICT,
     referral_url TEXT NOT NULL,
     blurb TEXT,
     logo_path TEXT,
@@ -187,83 +226,120 @@ CREATE TABLE IF NOT EXISTS partners (
 
 ALTER TABLE partners ADD COLUMN IF NOT EXISTS logo_path TEXT;
 
+-- Replace the slug column with a foreign key to partner_types.id.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'partners'
+          AND column_name = 'type'
+    ) THEN
+        RETURN;
+    END IF;
+
+    ALTER TABLE partners ADD COLUMN IF NOT EXISTS partner_type_id UUID;
+    UPDATE partners AS partner
+    SET partner_type_id = partner_type.id
+    FROM partner_types AS partner_type
+    WHERE partner.partner_type_id IS NULL
+      AND partner.type = partner_type.slug;
+
+    ALTER TABLE partners DROP CONSTRAINT IF EXISTS partners_type_fkey;
+    DROP INDEX IF EXISTS partners_type_active_sort;
+    ALTER TABLE partners DROP COLUMN type;
+END $$;
+
 DO $$
 BEGIN
     ALTER TABLE partners
-        ADD CONSTRAINT partners_type_fkey
-        FOREIGN KEY (type) REFERENCES partner_types (slug) ON DELETE RESTRICT;
+        ADD CONSTRAINT partners_partner_type_id_fkey
+        FOREIGN KEY (partner_type_id) REFERENCES partner_types (id) ON DELETE RESTRICT;
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
 
+ALTER TABLE partners ALTER COLUMN partner_type_id SET NOT NULL;
+
 CREATE INDEX IF NOT EXISTS partners_type_active_sort
-    ON partners (type, sort_order)
+    ON partners (partner_type_id, sort_order)
     WHERE is_active;
 
-INSERT INTO partners (id, name, type, referral_url, blurb, logo_path, is_active, sort_order)
-VALUES
-(
-    '00000000-0000-4000-8000-000000000001',
-    'Money Shop',
-    'money_exchange',
-    'https://moneyshopphuket.online/links/pp413',
-    'Money Shop - Сеть обменных офисов на Пхукете!',
-    'media/partners/moneyshop.jpeg',
-    true,
-    1
-),
-(
-    '00000000-0000-4000-8000-000000000002',
-    'Ex24.pro',
-    'money_exchange',
-    'https://ex24qr.com/epihelgnld',
-    'Лицензированный обмен валюты. Таиланд, Вьетнам, ОАЭ, Китай, Бали. Переводы по всему миру.',
-    'media/partners/ex24pro.png',
-    true,
-    2
-),
-(
-    '00000000-0000-4000-8000-000000000003',
-    'Остров Сокровищ',
-    'excursions',
-    'https://tisland.link/excurs?ref=72s5z3yp3jb79r7',
-    'С 2003 года в туризме. Авторские групповые и индивидуальные экскурсии.',
-    'media/partners/excursions.png',
-    true,
-    1
-),
-(
-    '00000000-0000-4000-8000-000000000004',
-    'Boomerang',
-    'vehicle_rental',
-    'https://boomerang.rent/catalog/?utm_source=MikePhuketAIBot',
-    'Boomerang - надежный сервис аренды автомобилей и мотобайков на Пхукете. Доставка по всему острову.',
-    'media/partners/boomerang.jpeg',
-    true,
-    1
-),
-(
-    '00000000-0000-4000-8000-000000000005',
-    'Mike eSIM',
-    'esim',
-    'https://t.me/Mike_esim_bot',
-    '',
-    'media/partners/esim.jpeg',
-    true,
-    1
-)
+INSERT INTO partners (id, name, partner_type_id, referral_url, blurb, logo_path, is_active, sort_order)
+SELECT
+    seed.id,
+    seed.name,
+    partner_type.id,
+    seed.referral_url,
+    seed.blurb,
+    seed.logo_path,
+    seed.is_active,
+    seed.sort_order
+FROM (
+    VALUES
+    (
+        '00000000-0000-4000-8000-000000000001'::uuid,
+        'Money Shop',
+        'money_exchange',
+        'https://moneyshopphuket.online/links/pp413',
+        'Money Shop - Сеть обменных офисов на Пхукете!',
+        'media/partners/moneyshop.jpeg',
+        true,
+        1
+    ),
+    (
+        '00000000-0000-4000-8000-000000000002'::uuid,
+        'Ex24.pro',
+        'money_exchange',
+        'https://ex24qr.com/epihelgnld',
+        'Лицензированный обмен валюты. Таиланд, Вьетнам, ОАЭ, Китай, Бали. Переводы по всему миру.',
+        'media/partners/ex24pro.png',
+        true,
+        2
+    ),
+    (
+        '00000000-0000-4000-8000-000000000003'::uuid,
+        'Остров Сокровищ',
+        'excursions',
+        'https://tisland.link/excurs?ref=72s5z3yp3jb79r7',
+        'С 2003 года в туризме. Авторские групповые и индивидуальные экскурсии.',
+        'media/partners/excursions.png',
+        true,
+        1
+    ),
+    (
+        '00000000-0000-4000-8000-000000000004'::uuid,
+        'Boomerang',
+        'vehicle_rental',
+        'https://boomerang.rent/catalog/?utm_source=MikePhuketAIBot',
+        'Boomerang - надежный сервис аренды автомобилей и мотобайков на Пхукете. Доставка по всему острову.',
+        'media/partners/boomerang.jpeg',
+        true,
+        1
+    ),
+    (
+        '00000000-0000-4000-8000-000000000005'::uuid,
+        'Mike eSIM',
+        'esim',
+        'https://t.me/Mike_esim_bot',
+        '',
+        'media/partners/esim.jpeg',
+        true,
+        1
+    )
+) AS seed (id, name, type_slug, referral_url, blurb, logo_path, is_active, sort_order)
+JOIN partner_types AS partner_type ON partner_type.slug = seed.type_slug
+-- Operators own every column after the first insert. Bundled logos only fill an
+-- empty logo_path, so uploads from the admin panel survive deploys.
 ON CONFLICT (id) DO UPDATE SET
-    name = EXCLUDED.name,
-    type = EXCLUDED.type,
-    referral_url = EXCLUDED.referral_url,
-    blurb = EXCLUDED.blurb,
-    logo_path = EXCLUDED.logo_path,
-    is_active = EXCLUDED.is_active,
-    sort_order = EXCLUDED.sort_order;
+    logo_path = EXCLUDED.logo_path
+WHERE COALESCE(partners.logo_path, '') = '';
 
 UPDATE partners
 SET logo_path = 'media/partners/esim.jpeg'
-WHERE type = 'esim';
+WHERE partner_type_id = (SELECT id FROM partner_types WHERE slug = 'esim')
+  AND COALESCE(logo_path, '') = '';
 
 CREATE TABLE IF NOT EXISTS admin_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -329,3 +405,59 @@ CREATE TABLE IF NOT EXISTS partner_referral_clicks (
     view_id UUID NOT NULL REFERENCES partner_views (id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS place_categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    slug TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0
+);
+
+INSERT INTO place_categories (slug, label, sort_order)
+SELECT seed.slug, seed.label, seed.sort_order
+FROM (
+    VALUES
+        ('cafe', 'Кафе', 10),
+        ('restaurant', 'Ресторан', 20),
+        ('bar', 'Бар', 30),
+        ('beach', 'Пляж', 40),
+        ('shop', 'Магазин', 50)
+) AS seed(slug, label, sort_order)
+WHERE NOT EXISTS (SELECT 1 FROM place_categories);
+
+CREATE TABLE IF NOT EXISTS places (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    category_id UUID NOT NULL REFERENCES place_categories (id) ON DELETE RESTRICT,
+    partner_id UUID REFERENCES partners (id) ON DELETE RESTRICT,
+    google_place_id TEXT UNIQUE,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    maps_url TEXT,
+    blurb TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    mike_recommends BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE places ADD COLUMN IF NOT EXISTS maps_url TEXT;
+ALTER TABLE places ADD COLUMN IF NOT EXISTS mike_recommends BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE places ALTER COLUMN google_place_id DROP NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS places_maps_url_key ON places (maps_url);
+
+CREATE TABLE IF NOT EXISTS place_assets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    place_id UUID NOT NULL REFERENCES places (id) ON DELETE CASCADE,
+    path TEXT NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS place_favourites (
+    user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    place_id UUID NOT NULL REFERENCES places (id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, place_id)
+);
+
+CREATE INDEX IF NOT EXISTS place_favourites_user_created
+    ON place_favourites (user_id, created_at DESC);

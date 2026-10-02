@@ -58,10 +58,32 @@ test('admin can create a partner type in a modal and see it on the list', async 
   await user.type(within(dialog).getByLabelText(/emoji подписи/i), '🤿')
   await user.type(within(dialog).getByLabelText(/cta подписи/i), '⬇️ Записаться ⬇️')
   await user.type(within(dialog).getByLabelText(/шаблон кнопки/i), 'Записаться у {name}')
+  await user.type(within(dialog).getByLabelText(/фраза «выбравших»/i), 'дайвинг')
   await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(await screen.findByText('diving')).toBeInTheDocument()
+})
+
+test('admin can set the phrase that finishes “users who chose”', async () => {
+  const user = userEvent.setup()
+  await renderAuthed('/partner-types')
+
+  const row = (await screen.findByText('money_exchange')).closest('tr')!
+  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+
+  const dialog = await screen.findByRole('dialog')
+  const phrase = within(dialog).getByLabelText(/фраза «выбравших»/i)
+  expect(phrase).toHaveValue('обмен рублей')
+  await user.clear(phrase)
+  await user.type(phrase, 'обмен валюты')
+  await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
+
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+  expect(within(await screen.findByRole('dialog')).getByLabelText(/фраза «выбравших»/i)).toHaveValue(
+    'обмен валюты',
+  )
 })
 
 test('admin can edit partner type copy in a modal and see updates on the list', async () => {

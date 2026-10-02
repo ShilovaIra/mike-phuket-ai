@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { partnerTypesApi, type PartnerType } from '../partner-types/partnerTypesApi'
 import { partnersApi, type PartnerInput } from './partnersApi'
 
@@ -17,11 +17,43 @@ type Props = {
   types: PartnerType[]
   onClose: () => void
   onSaved: () => void
+  onChanged?: () => void
 }
 
-export function PartnerFormModal({ mode, partnerId, types, onClose, onSaved }: Props) {
+type LogoState = {
+  previewUrl: string
+  uploadToken: string | null
+  uploading: boolean
+  error: string | null
+}
+
+const emptyLogo: LogoState = { previewUrl: '', uploadToken: null, uploading: false, error: null }
+
+const MAX_LOGO_BYTES = 5 * 1024 * 1024
+const LOGO_TYPES = ['image/png', 'image/jpeg']
+
+function logoFileProblem(file: File): string | null {
+  if (!LOGO_TYPES.includes(file.type)) return 'Только JPEG или PNG'
+  if (file.size > MAX_LOGO_BYTES) return 'Файл больше 5 МБ'
+  return null
+}
+
+export function PartnerFormModal({
+  mode,
+  partnerId,
+  types,
+  onClose,
+  onSaved,
+  onChanged = () => {},
+}: Props) {
   const [typeOptions, setTypeOptions] = useState<PartnerType[]>(types)
   const [form, setForm] = useState<PartnerInput>(emptyForm)
+  const [logo, setLogo] = useState<LogoState>(emptyLogo)
+  const [savedLogoUrl, setSavedLogoUrl] = useState('')
+  const [createdId, setCreatedId] = useState<string | undefined>(undefined)
+  const [fileInputKey, setFileInputKey] = useState(0)
+  const [fileName, setFileName] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
 
@@ -59,6 +91,8 @@ export function PartnerFormModal({ mode, partnerId, types, onClose, onSaved }: P
           is_active: existing.is_active,
           sort_order: existing.sort_order,
         })
+        setLogo({ ...emptyLogo, previewUrl: existing.logo_url })
+        setSavedLogoUrl(existing.logo_url)
       } else {
         setForm({ ...emptyForm })
       }
@@ -73,13 +107,72 @@ export function PartnerFormModal({ mode, partnerId, types, onClose, onSaved }: P
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  async function onLogoPicked(file: File | undefined) {
+    if (!file) return
+    const invalid = logoFileProblem(file)
+    if (invalid) {
+      setLogo((prev) => ({ ...prev, uploadToken: null, error: invalid }))
+      return
+    }
+    setLogo((prev) => ({ ...prev, uploading: true, error: null }))
+    try {
+      const staged = await partnersApi.uploadLogo(file)
+      setLogo({
+        previewUrl: staged.preview_url,
+        uploadToken: staged.upload_token,
+        uploading: false,
+        error: null,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Не удалось загрузить логотип'
+      setLogo((prev) => ({ ...prev, uploading: false, error: message }))
+    }
+  }
+
+  async function removeSavedLogo() {
+    const id = partnerId ?? createdId
+    if (!id) return
+    try {
+      await partnersApi.removeLogo(id)
+      setSavedLogoUrl('')
+      setLogo(emptyLogo)
+      setFileName('')
+      onChanged()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось удалить логотип')
+    }
+  }
+
+  function dropPickedLogo() {
+    setLogo({ ...emptyLogo, previewUrl: savedLogoUrl })
+    setFileName('')
+    setFileInputKey((key) => key + 1)
+  }
+
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
+    setError(null)
     try {
-      if (mode === 'create') {
-        await partnersApi.create(form)
-      } else if (partnerId) {
-        await partnersApi.update(partnerId, form)
+      let savedId = partnerId ?? createdId
+      if (!savedId) {
+        savedId = (await partnersApi.create(form)).id
+        setCreatedId(savedId)
+        onChanged()
+      } else {
+        await partnersApi.update(savedId, form)
+      }
+      if (logo.uploadToken) {
+        try {
+          await partnersApi.linkLogo(savedId, logo.uploadToken)
+        } catch (err) {
+          const reason = err instanceof Error ? err.message : 'Не удалось привязать логотип'
+          setError(
+            mode === 'create'
+              ? `Партнёр создан, но логотип не загрузился: ${reason}`
+              : `Логотип не загрузился: ${reason}`,
+          )
+          return
+        }
       }
       onSaved()
     } catch (err) {
@@ -168,6 +261,70 @@ export function PartnerFormModal({ mode, partnerId, types, onClose, onSaved }: P
                 required
               />
             </label>
+            <div className="flex flex-col gap-2 text-sm">
+              <label htmlFor="partner-logo">Логотип</label>
+              <div className="flex items-center gap-4">
+                {logo.previewUrl ? (
+                  <img
+                    src={logo.previewUrl}
+                    alt="Предпросмотр логотипа"
+                    className="h-16 w-16 rounded border border-slate-200 object-contain"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded border border-dashed border-slate-300 text-center text-xs text-slate-400">
+                    Нет логотипа
+                  </div>
+                )}
+                <input
+                  key={fileInputKey}
+                  ref={fileInputRef}
+                  id="partner-logo"
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    setFileName(file?.name ?? '')
+                    void onLogoPicked(file)
+                  }}
+                  disabled={logo.uploading}
+                  className="sr-only"
+                />
+                <div className="flex min-w-0 flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={logo.uploading}
+                    className="self-start rounded border border-slate-300 bg-white px-4 py-2 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {logo.uploading
+                      ? 'Загружаем…'
+                      : logo.previewUrl
+                        ? 'Заменить файл'
+                        : 'Выбрать файл'}
+                  </button>
+                  {fileName ? <span className="truncate text-slate-500">{fileName}</span> : null}
+                </div>
+                {logo.uploadToken || logo.error ? (
+                  <button
+                    type="button"
+                    onClick={dropPickedLogo}
+                    className="text-slate-700 underline hover:text-slate-900"
+                  >
+                    Убрать файл
+                  </button>
+                ) : savedLogoUrl ? (
+                  <button
+                    type="button"
+                    onClick={removeSavedLogo}
+                    className="text-red-700 underline hover:text-red-900"
+                  >
+                    Удалить логотип
+                  </button>
+                ) : null}
+              </div>
+              <p className="text-slate-500">JPEG или PNG, до 5 МБ</p>
+              {logo.error ? <p role="alert">{logo.error}</p> : null}
+            </div>
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -180,7 +337,8 @@ export function PartnerFormModal({ mode, partnerId, types, onClose, onSaved }: P
             <div className="flex gap-3">
               <button
                 type="submit"
-                className="rounded bg-slate-900 px-4 py-2 text-white hover:bg-slate-800"
+                disabled={logo.uploading || logo.error !== null}
+                className="rounded bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Сохранить
               </button>

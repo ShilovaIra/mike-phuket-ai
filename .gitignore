@@ -11,3 +11,6 @@ mike_sessions_export_staging.json
 **/mike_sessions_export*.json
 mike-ai-bot-hkt/contacts.csv
 .staging_agent_key*
+
+# Rasterized customer PDFs (working files, not source)
+.impeccable/brand-ref/

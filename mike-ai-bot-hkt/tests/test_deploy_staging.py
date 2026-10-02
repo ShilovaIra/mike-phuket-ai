@@ -27,7 +27,7 @@ def test_ssh_deploy_copies_the_tree_from_the_runner():
         "Write the tarball outside the tree. tar czf ./archive . exits 1 with "
         "'file changed as we read it'."
     )
-    assert "docker compose build bot admin-web partner-web" in text
+    assert "docker compose build bot admin-web partner-web tma-web" in text
     assert "docker load" in text
     assert "SKIP_GIT_PULL=1" in text
     assert "SKIP_IMAGE_BUILD=1" in text
@@ -57,6 +57,7 @@ def test_deploy_script_builds_images_one_at_a_time():
     assert "docker compose build bot" in script
     assert "docker compose build admin-web" in script
     assert "docker compose build partner-web" in script
+    assert "docker compose build tma-web" in script
     assert "docker compose up -d --build" not in script, (
         "up --build compiles all images in parallel and OOMs 1 GB Droplets"
     )
@@ -98,12 +99,15 @@ def test_deploy_script_starts_caddy_tls_profile():
     assert "admin-staging.mikephuketai.com" in caddyfile
     assert "reverse_proxy partner-web:80" in caddyfile
     assert "reverse_proxy admin-web:80" in caddyfile
+    assert "app-staging.mikephuketai.com" in caddyfile
+    assert "reverse_proxy tma-web:80" in caddyfile
 
 
 def test_web_services_have_named_images_for_docker_save():
     compose = (ROOT / "docker-compose.yml").read_text()
     assert "image: mike-phuket-admin-web:local" in compose
     assert "image: mike-phuket-partner-web:local" in compose
+    assert "image: mike-phuket-tma-web:local" in compose
 
 
 def test_bot_and_admin_api_share_one_image():

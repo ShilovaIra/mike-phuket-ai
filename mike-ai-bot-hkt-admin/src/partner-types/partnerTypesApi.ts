@@ -11,6 +11,7 @@ export type PartnerType = {
   caption_emoji: string
   caption_cta: string
   button_template: string
+  choice_phrase: string
 }
 
 export const partnerTypesApi = {

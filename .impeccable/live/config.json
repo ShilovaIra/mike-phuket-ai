@@ -1,0 +1,6 @@
+{
+  "files": ["mike-phuket-ai-tma/*.html"],
+  "insertBefore": "</body>",
+  "commentSyntax": "html",
+  "cspChecked": true
+}

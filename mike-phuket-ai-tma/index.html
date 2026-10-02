@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#F4F7FB" />
+    <title>Mike Phuket AI · v2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=46" />
+  </head>
+  <body>
+    <a class="skip" href="#home">К экранам</a>
+    <div class="studio">
+      <div class="device">
+        <section class="screen screen-home" id="home" aria-label="Главный экран">
+          <div class="home-scroll">
+            <header class="hero">
+              <img
+                class="hero-photo"
+                src="./assets/hero-mike.jpg"
+                alt=""
+                width="923"
+                height="1024"
+              />
+              <div class="hero-copy">
+                <h1>Майк</h1>
+                <p>Ваш AI-гид по Пхукету</p>
+              </div>
+              <p class="bubble">Привет! Я Майк. Спрашивай что угодно о Пхукете.</p>
+            </header>
+
+            <div class="sheet" hidden>
+              <label class="search">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="M16 16.5 20 20.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                <input type="search" placeholder="Куда вы хотите пойти?" readonly tabindex="-1" />
+              </label>
+              <button class="filters stub" type="button">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M7 12h10M10 17h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+                Фильтры
+              </button>
+            </div>
+
+            <div class="row-head" data-recommendations-head hidden>
+              <h2>Рекомендации для вас</h2>
+              <button class="text-link" type="button" data-see="recommendations">Смотреть все</button>
+            </div>
+            <div class="rec-row" data-recommendations tabindex="0"></div>
+            <div class="row-head" data-places-head hidden>
+              <h2>Места</h2>
+              <button class="text-link" type="button" data-see="places">Смотреть все</button>
+            </div>
+            <div class="rec-row" data-home-places tabindex="0"></div>
+            <p class="recs-empty" data-recs-empty hidden>Пока нет мест</p>
+          </div>
+          <div class="peek" data-peek hidden>
+            <button class="peek-backdrop" type="button" data-peek-close aria-label="Закрыть"></button>
+            <div class="peek-panel" role="dialog" aria-modal="true" aria-labelledby="peek-title">
+              <div class="peek-grab" data-peek-grab></div>
+              <h2 id="peek-title" data-peek-title></h2>
+              <div class="stack" data-peek-list></div>
+            </div>
+          </div>
+          <div class="dock">
+            <button class="ask stub" type="button">Спросите Майка о Пхукете</button>
+            <nav class="tabs tabs-bar" aria-label="Разделы">
+              <a class="tab is-on" href="#home" aria-current="page">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>
+                Главная
+              </a>
+              <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро">
+                <span class="tab-mark">
+                  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>
+                  <span class="soon">скоро</span>
+                </span>
+                Карта
+              </span>
+              <a class="tab" href="#chat">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
+                Чат
+              </a>
+              <a class="tab" href="#saved">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
+                Избранное
+              </a>
+              <a class="tab" href="#profile">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+                Профиль
+              </a>
+            </nav>
+          </div>
+        </section>
+
+        <section class="screen screen-voice" id="voice" aria-label="Голосовой разговор">
+          <button class="close stub" type="button" aria-label="Закрыть">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+          </button>
+          <div class="voice-body">
+            <p class="listen">Майк слушает...</p>
+            <div class="wave" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <p class="voice-hint">Скажите, что вас интересует</p>
+          </div>
+          <div class="voice-actions">
+            <button class="mic-lg stub" type="button" aria-label="Микрофон">
+              <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M6.5 11a5.5 5.5 0 0 0 11 0M12 16.5V20M9 20h6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+            </button>
+            <button class="cancel stub" type="button">Отмена</button>
+          </div>
+        </section>
+
+        <section class="screen screen-place" id="place" aria-label="Место">
+          <article class="place">
+            <div class="cover-tools">
+              <a class="icon-btn icon-ghost" href="#home" data-place-back aria-label="Назад">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </a>
+              <button class="icon-btn icon-ghost" type="button" data-place-save aria-pressed="false" aria-label="В избранное">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
+              </button>
+            </div>
+            <header class="cover">
+              <img class="cover-photo" data-place-photo alt="" />
+              <img class="recommend-badge" data-place-badge src="./assets/mike-recommends.png" alt="MIKE рекомендует" hidden />
+            </header>
+            <div class="place-body">
+              <h1 data-place-name></h1>
+              <p class="sub" data-place-category></p>
+              <p class="prose" data-place-blurb></p>
+              <p class="place-save-error" data-place-save-error hidden></p>
+              <a class="cta" data-place-maps href="" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                Открыть в картах
+              </a>
+            </div>
+          </article>
+        </section>
+
+        <section class="screen screen-partner" id="partner" aria-label="Партнёр">
+          <article class="place">
+            <header class="partner-hero">
+              <a class="icon-btn icon-ghost" href="#home" aria-label="Назад">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </a>
+            </header>
+            <div class="partner-logo" data-partner-logo></div>
+            <div class="place-body">
+              <h1 data-partner-name></h1>
+              <p class="sub" data-partner-type></p>
+              <p class="prose" data-partner-blurb hidden></p>
+              <a class="cta" data-partner-offer href="" target="_blank" rel="noopener" hidden></a>
+              <h2 class="offices-title" data-offices-title hidden></h2>
+              <div class="stack" data-offices></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="screen screen-route" id="route" aria-label="Маршрут">
+          <header class="route-head">
+            <button class="icon-btn icon-ghost stub" type="button" aria-label="Назад">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+            <h1>Маршрут</h1>
+          </header>
+          <div class="stops">
+            <div class="stop">
+              <span class="stop-mark stop-from" aria-hidden="true"></span>
+              <span>Мое местоположение</span>
+            </div>
+            <div class="stop">
+              <span class="stop-mark stop-to" aria-hidden="true"></span>
+              <span>Куда</span>
+            </div>
+          </div>
+          <div class="modes" role="group" aria-label="Способ">
+            <button class="mode stub" type="button">На авто</button>
+            <button class="mode is-on stub" type="button" aria-pressed="true">На байке</button>
+            <button class="mode stub" type="button">Пешком</button>
+          </div>
+          <div class="route-map" aria-hidden="true">
+            <svg viewBox="0 0 360 280">
+              <rect width="360" height="280" fill="#e7f3ea" />
+              <path d="M0 40h360M0 110h360M0 180h360M0 250h360M70 0v280M160 0v280M250 0v280M330 0v280" stroke="#ffffff" stroke-width="10" />
+              <path d="M0 70h360M90 0v280" stroke="#d5e4d4" stroke-width="4" />
+              <path d="M78 46 C120 46 130 90 168 120 C210 154 200 200 248 214 C280 224 300 250 328 236" fill="none" stroke="#2f7cf6" stroke-width="5" stroke-linecap="round" />
+              <circle cx="78" cy="46" r="8" fill="#2f7cf6" />
+              <path d="M328 214c6 0 11 5 11 12 0 9-11 20-11 20s-11-11-11-20c0-7 5-12 11-12Z" fill="#e23b3b" />
+            </svg>
+          </div>
+          <div class="route-card">
+            <p class="eta"><strong>8 мин</strong> <span>(2,6 км)</span></p>
+            <p class="eta-note">Самый быстрый маршрут</p>
+            <ul>
+              <li>Легкий трафик, дорога свободна</li>
+              <li>Парковка доступна</li>
+              <li>Опасных участков нет</li>
+            </ul>
+            <button class="cta stub" type="button">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              Поехали
+            </button>
+          </div>
+        </section>
+
+        <section class="screen screen-tab" id="map" aria-label="Карта">
+          <header class="tab-head">
+            <h1>Карта</h1>
+          </header>
+          <div class="map-fill">
+            <svg class="island" viewBox="0 0 360 520" role="img" aria-label="Пхукет">
+              <rect width="360" height="520" fill="#d5ecf8" />
+              <path fill="#9fc98e" d="M150 70c28 4 48 28 58 52 16 8 40 14 48 36 10 22 2 42-12 56 14 12 28 32 20 54-8 24-36 32-50 50-10 14-6 36 4 50-18 18-50 14-72 26-24 10-32 36-56 38-28 4-50-18-74-14-22 4-40 22-62 14-24-8-28-36-50-46-18-10-42-8-54-28-10-22 4-42 14-60 8-14 4-32-8-46-14-18-10-46 8-60 18-14 42-10 56-26 12-14 14-36 32-42 22-10 50-4 70-14 18-8 32-26 54-28 14-2 32 0 46 4Z" />
+              <text x="168" y="250" text-anchor="middle" fill="#1d4e38" font-size="14" font-weight="700" font-family="Golos Text, sans-serif">ПХУКЕТ</text>
+            </svg>
+          </div>
+          <nav class="tabs tabs-bar" aria-label="Разделы">
+            <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
+            <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро"><span class="tab-mark"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg><span class="soon">скоро</span></span>Карта</span>
+            <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
+            <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
+            <a class="tab" href="#profile"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>Профиль</a>
+          </nav>
+        </section>
+
+        <section class="screen screen-tab" id="chat" aria-label="Чат">
+          <header class="tab-head chat-head">
+            <span class="chat-face">
+              <img src="./assets/hero-mike.jpg" alt="" width="923" height="1024" />
+            </span>
+            <div>
+              <h1>Майк</h1>
+              <p>AI-гид по Пхукету</p>
+            </div>
+          </header>
+          <div class="thread" data-thread>
+            <p class="msg msg-mike">Привет! Я Майк. Спрашивай что угодно о Пхукете.</p>
+          </div>
+          <form class="composer" action="#">
+            <input type="text" placeholder="Напишите Майку" autocomplete="off" enterkeyhint="send" />
+            <button class="send" type="submit" aria-label="Отправить" disabled>
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h12M13 7l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          </form>
+          <nav class="tabs tabs-bar" aria-label="Разделы">
+            <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
+            <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро"><span class="tab-mark"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg><span class="soon">скоро</span></span>Карта</span>
+            <a class="tab is-on" href="#chat" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="currentColor" /></svg>Чат</a>
+            <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
+            <a class="tab" href="#profile"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>Профиль</a>
+          </nav>
+        </section>
+
+        <section class="screen screen-tab" id="saved" aria-label="Избранное">
+          <header class="tab-head"><h1>Избранное</h1></header>
+          <div class="saved-grid" data-saved>
+            <p class="saved-empty" data-saved-empty>Пока ничего не сохранено</p>
+          </div>
+          <nav class="tabs tabs-bar" aria-label="Разделы">
+            <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
+            <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро"><span class="tab-mark"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg><span class="soon">скоро</span></span>Карта</span>
+            <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
+            <a class="tab is-on" href="#saved" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="currentColor" /></svg>Избранное</a>
+            <a class="tab" href="#profile"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>Профиль</a>
+          </nav>
+        </section>
+
+        <section class="screen screen-tab" id="profile" aria-label="Профиль">
+          <header class="tab-head"><h1>Профиль</h1></header>
+          <div class="profile">
+            <div class="profile-avatar" data-profile-avatar>
+              <img alt="" width="72" height="72" hidden />
+              <span class="profile-letter">Г</span>
+            </div>
+            <p class="profile-name">Гость</p>
+            <p class="profile-meta">Пхукет</p>
+            <ul class="profile-rows">
+              <li hidden>
+                <div class="row is-soon" aria-disabled="true">
+                  Язык
+                  <span class="soon-label">скоро</span>
+                </div>
+              </li>
+              <li><a class="row" href="#about">О приложении</a></li>
+            </ul>
+          </div>
+          <a class="profile-credit" href="https://phuketpromax.com/clip4" target="_blank" rel="noopener">Phuket Pro Max</a>
+          <nav class="tabs tabs-bar" aria-label="Разделы">
+            <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
+            <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро"><span class="tab-mark"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg><span class="soon">скоро</span></span>Карта</span>
+            <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
+            <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
+            <a class="tab is-on" href="#profile" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="currentColor" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="currentColor" /></svg>Профиль</a>
+          </nav>
+        </section>
+
+        <section class="screen screen-tab" id="about" aria-label="О приложении">
+          <header class="tab-head about-head">
+            <a class="about-back" href="#profile" aria-label="Назад к профилю">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </a>
+            <h1>О приложении</h1>
+          </header>
+          <div class="about">
+            <img class="about-logo" src="./assets/hero-mike.jpg" alt="" width="923" height="1024" />
+            <h2>Майк</h2>
+            <p>Ваш AI-гид по Пхукету 🇹🇭 Спросите, где поесть 🍛, куда сходить и как провести день на острове 🏝️ — Майк подскажет места и ответит на вопросы о Пхукете. Помогаем с арендой байков 🛵 и обменом валюты 💸 на острове, поиском недвижимости, а также поиском экскурсий - только надежные партнеры!</p>
+          </div>
+          <nav class="tabs tabs-bar" aria-label="Разделы">
+            <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
+            <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро"><span class="tab-mark"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg><span class="soon">скоро</span></span>Карта</span>
+            <a class="tab" href="#chat"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>Чат</a>
+            <a class="tab" href="#saved"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>Избранное</a>
+            <a class="tab is-on" href="#profile" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="currentColor" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="currentColor" /></svg>Профиль</a>
+          </nav>
+        </section>
+      </div>
+
+      <aside class="studio-spec">
+        <p class="kicker">v2 · шаг 2 презентации</p>
+        <h2>Экраны приложения</h2>
+        <p>Нижние вкладки открывают чат, избранное и профиль. Чат отвечает Майком. Карта отмечена «скоро» и не открывается. «О приложении» открывает описание.</p>
+        <nav class="rail" aria-label="Экраны макета">
+          <a href="#home">Главная</a>
+          <a href="#map">Карта</a>
+          <a href="#chat">Чат</a>
+          <a href="#saved">Избранное</a>
+          <a href="#profile">Профиль</a>
+          <a href="#about">О приложении</a>
+          <a href="#voice">Голосовой разговор</a>
+          <a href="#place">Место</a>
+          <a href="#partner">Партнёр</a>
+          <a href="#route">Маршрут</a>
+        </nav>
+        <ul>
+          <li>Вкладки внизу экрана переключают разделы.</li>
+          <li>Поиск, фильтры, маршрут и «Поехали» остаются заглушками.</li>
+        </ul>
+      </aside>
+    </div>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script type="module">
+      import { homeView, partnerPage, placeView } from "./catalog.mjs";
+      import { canSend, failureView, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
+      import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
+      import { profileView } from "./profile.mjs";
+
+      var telegram = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe;
+      var telegramUser = telegram && telegram.user && telegram.user.first_name ? telegram.user : undefined;
+      var view = profileView(telegramUser);
+      var profile = document.getElementById("profile");
+      var avatar = profile.querySelector("[data-profile-avatar]");
+      var photo = avatar.querySelector("img");
+      var letter = avatar.querySelector(".profile-letter");
+
+      profile.querySelector(".profile-name").textContent = view.name;
+
+      function showLetter() {
+        photo.hidden = true;
+        photo.removeAttribute("src");
+        letter.hidden = false;
+        letter.textContent = view.letter;
+      }
+
+      if (!view.photoUrl) {
+        showLetter();
+      } else {
+        letter.hidden = true;
+        photo.hidden = false;
+        photo.addEventListener("error", showLetter);
+        photo.src = view.photoUrl;
+      }
+
+      profile.querySelector(".profile-credit").addEventListener("click", function (event) {
+        var tg = window.Telegram && window.Telegram.WebApp;
+        if (tg && typeof tg.openLink === "function") {
+          event.preventDefault();
+          tg.openLink(event.currentTarget.href);
+        }
+      });
+
+      var recommendationsHead = document.querySelector("[data-recommendations-head]");
+      var recommendationsRow = document.querySelector("[data-recommendations]");
+      var placesHead = document.querySelector("[data-places-head]");
+      var placesRow = document.querySelector("[data-home-places]");
+      var recsEmpty = document.querySelector("[data-recs-empty]");
+      var peek = document.querySelector("[data-peek]");
+      var peekTitle = document.querySelector("[data-peek-title]");
+      var peekList = document.querySelector("[data-peek-list]");
+      var peekPanel = peek.querySelector(".peek-panel");
+      var catalogPlaces = [];
+      var catalogPartners = [];
+      var home = null;
+      var favouritePlaces = [];
+      var currentPlace = null;
+      var currentSaved = false;
+      var saveFailed = false;
+      var saveBusy = false;
+      var initData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || "";
+
+      var cover = document.querySelector("[data-place-photo]");
+      var backLink = document.querySelector("[data-place-back]");
+      var heart = document.querySelector("[data-place-save]");
+      var saveError = document.querySelector("[data-place-save-error]");
+      var savedGrid = document.querySelector("[data-saved]");
+      var savedEmpty = document.querySelector("[data-saved-empty]");
+      cover.addEventListener("error", function () {
+        if (!cover.src.endsWith("empty_picture_placeholder.jpg")) {
+          cover.src = "./assets/empty_picture_placeholder.jpg";
+        }
+      });
+
+      function paintHeart() {
+        var heartState = heartView({ saved: currentSaved, failed: saveFailed });
+        heart.classList.toggle("is-saved", heartState.filled);
+        heart.setAttribute("aria-pressed", heartState.filled ? "true" : "false");
+        heart.setAttribute("aria-label", heartState.filled ? "Убрать из избранного" : "В избранное");
+        saveError.hidden = !heartState.error;
+        saveError.textContent = heartState.error;
+      }
+
+      function showPlace(place, back) {
+        currentPlace = place;
+        currentSaved = favouritePlaces.some(function (item) { return item.id === place.id; });
+        saveFailed = false;
+        var view = placeView(place);
+        cover.src = view.photoUrl;
+        document.querySelector("[data-place-name]").textContent = view.name;
+        document.querySelector("[data-place-category]").textContent = view.category;
+        document.querySelector("[data-place-blurb]").textContent = view.blurb;
+        var maps = document.querySelector("[data-place-maps]");
+        maps.href = view.mapsUrl;
+        maps.lastChild.textContent = view.mapsLabel;
+        var badge = document.querySelector("[data-place-badge]");
+        badge.hidden = !view.badge;
+        backLink.href = back;
+        paintHeart();
+      }
+
+      function createPlaceCard(card, onOpen) {
+        var link = document.createElement("a");
+        link.className = "rec";
+        link.href = "#place";
+        link.addEventListener("click", onOpen);
+
+        var photoWrap = document.createElement("span");
+        photoWrap.className = "thumb";
+        var photo = document.createElement("img");
+        photo.className = "thumb-photo";
+        photo.alt = "";
+        photo.addEventListener("error", function () {
+          if (!photo.src.endsWith("empty_picture_placeholder.jpg")) {
+            photo.src = "./assets/empty_picture_placeholder.jpg";
+          }
+        });
+        photo.src = card.photoUrl;
+        photoWrap.appendChild(photo);
+        if (card.badge) {
+          var badge = document.createElement("img");
+          badge.className = "recommend-badge";
+          badge.src = "./assets/mike-recommends.png";
+          badge.alt = "MIKE рекомендует";
+          photoWrap.appendChild(badge);
+        }
+        link.appendChild(photoWrap);
+
+        var title = document.createElement("span");
+        title.className = "rec-title";
+        title.textContent = card.name;
+        link.appendChild(title);
+
+        var meta = document.createElement("span");
+        meta.className = "rec-meta";
+        meta.textContent = card.category;
+        link.appendChild(meta);
+        return link;
+      }
+
+      function createOfficeCard(card) {
+        var article = document.createElement("article");
+        article.className = "office";
+
+        var photoWrap = document.createElement("span");
+        photoWrap.className = "office-photo";
+        var photo = document.createElement("img");
+        photo.alt = "";
+        photo.addEventListener("error", function () {
+          if (!photo.src.endsWith("empty_picture_placeholder.jpg")) {
+            photo.src = "./assets/empty_picture_placeholder.jpg";
+          }
+        });
+        photo.src = card.photoUrl;
+        photoWrap.appendChild(photo);
+        article.appendChild(photoWrap);
+
+        var copy = document.createElement("div");
+        copy.className = "office-copy";
+        var name = document.createElement("p");
+        name.className = "office-name";
+        name.textContent = card.name;
+        copy.appendChild(name);
+        if (card.mapsUrl) {
+          var maps = document.createElement("a");
+          maps.className = "office-maps";
+          maps.href = card.mapsUrl;
+          maps.target = "_blank";
+          maps.rel = "noopener";
+          maps.textContent = card.mapsLabel;
+          copy.appendChild(maps);
+        }
+        article.appendChild(copy);
+
+        if (card.badge) {
+          var badge = document.createElement("img");
+          badge.className = "recommend-badge";
+          badge.src = "./assets/mike-recommends.png";
+          badge.alt = "MIKE рекомендует";
+          article.appendChild(badge);
+        }
+        return article;
+      }
+
+      function openCatalogCard(card, back) {
+        var place = catalogPlaces.find(function (item) {
+          return item.name === card.name && item.category === card.category;
+        });
+        if (place) showPlace(place, back || "#home");
+        closePeek();
+      }
+
+      function partnerInitial(name) {
+        return (name || "").trim().charAt(0).toUpperCase();
+      }
+
+      function createPartnerTile(partner) {
+        var link = document.createElement("a");
+        link.className = "partner-tile";
+        link.href = "#partner";
+        link.addEventListener("click", function () {
+          var source = catalogPartners.find(function (item) { return item.id === partner.id; });
+          if (source) showPartner(source);
+          closePeek();
+        });
+
+        var mark = document.createElement("span");
+        mark.className = "partner-mark";
+        mark.setAttribute("aria-hidden", "true");
+        if (partner.logoUrl) {
+          var logo = document.createElement("img");
+          logo.alt = "";
+          logo.addEventListener("error", function () {
+            mark.textContent = partnerInitial(partner.name);
+          });
+          logo.src = partner.logoUrl;
+          mark.appendChild(logo);
+        } else {
+          mark.textContent = partnerInitial(partner.name);
+        }
+        link.appendChild(mark);
+
+        var title = document.createElement("span");
+        title.className = "rec-title";
+        title.textContent = partner.name;
+        link.appendChild(title);
+        if (partner.typeLabel) {
+          var meta = document.createElement("span");
+          meta.className = "rec-meta";
+          meta.textContent = partner.typeLabel;
+          link.appendChild(meta);
+        }
+        return link;
+      }
+
+      function fillRow(row, partners, places) {
+        row.replaceChildren();
+        partners.forEach(function (partner) { row.appendChild(createPartnerTile(partner)); });
+        places.forEach(function (card) {
+          row.appendChild(createPlaceCard(card, function () { openCatalogCard(card, "#home"); }));
+        });
+      }
+
+      var offerPartnerId = null;
+
+      function showPartner(partner) {
+        offerPartnerId = partner.id;
+        var page = partnerPage(partner, catalogPlaces);
+        document.querySelector("[data-partner-name]").textContent = partner.name;
+        document.querySelector("[data-partner-type]").textContent = partner.type_label || "";
+        var blurb = document.querySelector("[data-partner-blurb]");
+        blurb.hidden = !partner.blurb;
+        blurb.textContent = partner.blurb || "";
+        var logo = document.querySelector("[data-partner-logo]");
+        logo.replaceChildren();
+        if (partner.logo_url) {
+          var image = document.createElement("img");
+          image.alt = "";
+          image.addEventListener("error", function () {
+            logo.textContent = partnerInitial(partner.name);
+          });
+          image.src = partner.logo_url;
+          logo.appendChild(image);
+        } else {
+          logo.textContent = partnerInitial(partner.name);
+        }
+        var offer = document.querySelector("[data-partner-offer]");
+        offer.hidden = true;
+        offer.removeAttribute("href");
+        offer.textContent = "";
+        var officesTitle = document.querySelector("[data-offices-title]");
+        officesTitle.hidden = !page.officesTitle;
+        officesTitle.textContent = page.officesTitle || "";
+        var offices = document.querySelector("[data-offices]");
+        offices.replaceChildren();
+        page.places.forEach(function (card) {
+          offices.appendChild(createOfficeCard(card));
+        });
+        if (!initData) return;
+        fetch("/api/tma/partners/" + partner.id + "/offer", {
+          method: "POST",
+          headers: { Authorization: "tma " + initData },
+        })
+          .then(function (response) {
+            if (!response.ok) throw new Error("offer");
+            return response.json();
+          })
+          .then(function (body) {
+            if (offerPartnerId !== partner.id) return;
+            offer.href = body.url;
+            offer.textContent = body.label;
+            offer.hidden = false;
+          })
+          .catch(function () {});
+      }
+
+      function closePeek() {
+        peek.hidden = true;
+        peekPanel.style.transform = "";
+      }
+
+      function openPeek(title, partners, places) {
+        peekTitle.textContent = title;
+        fillRow(peekList, partners, places);
+        peek.hidden = false;
+        peekPanel.style.transform = "";
+      }
+
+      function renderHome() {
+        home = homeView(catalogPartners, catalogPlaces);
+        var recommendationsEmpty = home.recommendations.partners.length === 0
+          && home.recommendations.places.length === 0;
+        var placesEmpty = home.places.places.length === 0;
+        recommendationsHead.hidden = recommendationsEmpty;
+        placesHead.hidden = placesEmpty;
+        recsEmpty.hidden = !(recommendationsEmpty && placesEmpty);
+        recsEmpty.textContent = "Пока нет мест";
+        fillRow(recommendationsRow, home.recommendations.partners, home.recommendations.places);
+        fillRow(placesRow, [], home.places.places);
+      }
+
+      document.querySelectorAll("[data-see]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          if (!home) return;
+          if (button.getAttribute("data-see") === "recommendations") {
+            openPeek("Рекомендации для вас", home.recommendations.partners, home.recommendations.places);
+          } else {
+            openPeek("Места", [], home.places.places);
+          }
+        });
+      });
+      peek.querySelector("[data-peek-close]").addEventListener("click", closePeek);
+      var grabStart = null;
+      peek.querySelector("[data-peek-grab]").addEventListener("pointerdown", function (event) {
+        grabStart = event.clientY;
+        event.currentTarget.setPointerCapture(event.pointerId);
+      });
+      peek.querySelector("[data-peek-grab]").addEventListener("pointermove", function (event) {
+        if (grabStart === null) return;
+        var delta = Math.max(0, event.clientY - grabStart);
+        peekPanel.style.transform = "translateY(" + delta + "px)";
+      });
+      peek.querySelector("[data-peek-grab]").addEventListener("pointerup", function (event) {
+        if (grabStart !== null && event.clientY - grabStart > 80) closePeek();
+        else peekPanel.style.transform = "";
+        grabStart = null;
+      });
+
+      function renderSaved() {
+        var view = favouritesView(favouritePlaces);
+        savedEmpty.hidden = !view.empty;
+        savedEmpty.textContent = "Пока ничего не сохранено";
+        savedGrid.querySelectorAll(".rec").forEach(function (node) { node.remove(); });
+        view.cards.forEach(function (card, index) {
+          var place = favouritePlaces[index];
+          savedGrid.appendChild(createPlaceCard(card, function () {
+            showPlace(place, "#saved");
+          }));
+        });
+      }
+
+      function applyFavourites(places) {
+        favouritePlaces = places;
+        renderSaved();
+        if (currentPlace && !saveBusy && !saveFailed) {
+          currentSaved = favouritePlaces.some(function (item) { return item.id === currentPlace.id; });
+          paintHeart();
+        }
+      }
+
+      Promise.all([
+        fetch("/api/catalog/places").then(function (response) {
+          if (!response.ok) throw new Error("catalog");
+          return response.json();
+        }),
+        fetch("/api/catalog/partners").then(function (response) {
+          if (!response.ok) throw new Error("catalog");
+          return response.json();
+        }),
+      ])
+        .then(function (loaded) {
+          catalogPlaces = loaded[0];
+          catalogPartners = loaded[1];
+          renderHome();
+        })
+        .catch(function () {
+          recsEmpty.hidden = false;
+          recsEmpty.textContent = "Не удалось загрузить места";
+        });
+
+      if (initData) {
+        var fetchJson = window.fetch.bind(window);
+        openSession({ initData: initData, fetch: fetchJson }).catch(function () {});
+        loadFavourites({ initData: initData, fetch: fetchJson })
+          .then(applyFavourites)
+          .catch(function () {
+            savedEmpty.hidden = false;
+            savedEmpty.textContent = "Не удалось загрузить места";
+          });
+      }
+
+      heart.addEventListener("click", function () {
+        if (!currentPlace || saveBusy) return;
+        if (!initData) {
+          saveFailed = true;
+          paintHeart();
+          return;
+        }
+        var next = !currentSaved;
+        saveBusy = true;
+        setSaved({
+          id: currentPlace.id,
+          saved: next,
+          initData: initData,
+          fetch: window.fetch.bind(window),
+        })
+          .then(function (saved) {
+            currentSaved = saved;
+            saveFailed = false;
+            paintHeart();
+            return loadFavourites({ initData: initData, fetch: window.fetch.bind(window) }).catch(function () {
+              return null;
+            });
+          })
+          .then(function (places) {
+            if (places) applyFavourites(places);
+          })
+          .catch(function () {
+            saveFailed = true;
+            paintHeart();
+          })
+          .then(function () {
+            saveBusy = false;
+          });
+      });
+
+      var thread = document.querySelector("[data-thread]");
+      var composer = document.querySelector("#chat .composer");
+      var field = composer.querySelector("input");
+      var sendButton = composer.querySelector(".send");
+      var busy = false;
+      var sent = false;
+
+      function createBubble(bubble) {
+        var el = document.createElement("p");
+        el.className = "msg " + (bubble.role === "user" ? "msg-user" : "msg-mike");
+        if (bubble.dots) {
+          el.classList.add("msg-thinking");
+          var dots = document.createElement("span");
+          dots.className = "dots";
+          dots.setAttribute("aria-hidden", "true");
+          dots.appendChild(document.createElement("span"));
+          dots.appendChild(document.createElement("span"));
+          dots.appendChild(document.createElement("span"));
+          el.appendChild(dots);
+          el.appendChild(document.createTextNode(bubble.text));
+          return el;
+        }
+        bubble.parts.forEach(function (part) {
+          if (part.type === "link") {
+            var link = document.createElement("a");
+            link.href = part.href;
+            link.textContent = part.href;
+            link.target = "_blank";
+            link.rel = "noopener";
+            link.addEventListener("click", function (event) {
+              var tg = window.Telegram && window.Telegram.WebApp;
+              if (tg && typeof tg.openLink === "function") {
+                event.preventDefault();
+                tg.openLink(part.href);
+              }
+            });
+            el.appendChild(link);
+          } else {
+            el.appendChild(document.createTextNode(part.value));
+          }
+        });
+        return el;
+      }
+
+      function showThread(messages) {
+        var view = threadView(messages);
+        thread.replaceChildren.apply(thread, view.bubbles.map(createBubble));
+        thread.scrollTop = thread.scrollHeight;
+      }
+
+      function syncComposer() {
+        var ready = canSend({ signedIn: Boolean(initData), busy: busy, text: field.value });
+        sendButton.disabled = !ready;
+        field.disabled = busy || !initData;
+      }
+
+      field.addEventListener("input", syncComposer);
+
+      composer.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var text = field.value.trim();
+        if (!canSend({ signedIn: Boolean(initData), busy: busy, text: text })) return;
+        busy = true;
+        sent = true;
+        field.value = "";
+        syncComposer();
+        thread.appendChild(createBubble(threadView([{ role: "user", content: text }]).bubbles[0]));
+        var waiting = createBubble(waitingView());
+        thread.appendChild(waiting);
+        thread.scrollTop = thread.scrollHeight;
+        postMessage({ text: text, initData: initData, fetch: window.fetch.bind(window) })
+          .then(function (reply) {
+            waiting.replaceWith(createBubble(threadView([{ role: "assistant", content: reply }]).bubbles[0]));
+          })
+          .catch(function () {
+            waiting.replaceWith(createBubble(failureView()));
+          })
+          .then(function () {
+            busy = false;
+            syncComposer();
+            field.focus();
+            thread.scrollTop = thread.scrollHeight;
+          });
+      });
+
+      if (initData) {
+        loadThread({ initData: initData, fetch: window.fetch.bind(window) })
+          .then(function (messages) {
+            if (!sent) showThread(messages);
+          })
+          .catch(function () {
+            if (!sent) showThread([]);
+          });
+      }
+      syncComposer();
+    </script>
+    <script type="module">
+      import { bootTelegram, measureAppViewport, pinAppHeight } from "./viewport.mjs";
+
+      var root = document.documentElement;
+      function pin() {
+        pinAppHeight(root, measureAppViewport(window));
+      }
+      pin();
+      window.addEventListener("resize", pin);
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", pin);
+        window.visualViewport.addEventListener("scroll", pin);
+      }
+      bootTelegram(window.Telegram && window.Telegram.WebApp, pin);
+    </script>
+  </body>
+</html>
