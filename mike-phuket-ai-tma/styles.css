@@ -1717,6 +1717,16 @@ a.row {
   border-top: 1px solid var(--line);
 }
 
+.profile-credit {
+  flex: none;
+  display: block;
+  padding: 8px 16px 12px;
+  text-align: center;
+  color: #8aa0b8;
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
 .row:hover {
   background: #eef3f9;
 }
