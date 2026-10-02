@@ -678,7 +678,9 @@ button {
 }
 
 .dock .ask {
+  /* 100% plus side margins overflows; the screen clips the right cap */
   margin: 8px 12px;
+  width: calc(100% - 24px);
 }
 
 .dock .tabs {
