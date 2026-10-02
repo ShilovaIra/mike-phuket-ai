@@ -517,10 +517,19 @@ button {
 }
 
 .partner-tile .partner-mark {
+  position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
   height: auto;
   border-radius: 14px;
+  background: #fff;
+}
+
+.partner-tile .partner-mark img {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  object-fit: contain;
 }
 
 .partner-hero {
