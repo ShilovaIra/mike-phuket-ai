@@ -47,6 +47,7 @@ export function homeView(partners, places) {
         id: partner.id,
         name: partner.name,
         logoUrl: partner.logo_url || "",
+        typeLabel: partner.type_label || "",
       })),
       places: places
         .filter((place) => !place.partner && place.mike_recommends)

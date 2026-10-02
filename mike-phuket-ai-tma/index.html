@@ -567,6 +567,12 @@
         title.className = "rec-title";
         title.textContent = partner.name;
         link.appendChild(title);
+        if (partner.typeLabel) {
+          var meta = document.createElement("span");
+          meta.className = "rec-meta";
+          meta.textContent = partner.typeLabel;
+          link.appendChild(meta);
+        }
         return link;
       }
 

@@ -87,12 +87,46 @@ test("home recommendations list every partner, then only unbound Mike picks", ()
   const names = (cards) => cards.map((card) => card.name);
 
   assert.deepEqual(view.recommendations.partners, [
-    { id: "p-money", name: "Money Shop", logoUrl: "https://cdn.example/logo.png" },
-    { id: "p-esim", name: "Mike eSIM", logoUrl: "" },
+    { id: "p-money", name: "Money Shop", logoUrl: "https://cdn.example/logo.png", typeLabel: "Обмен" },
+    { id: "p-esim", name: "Mike eSIM", logoUrl: "", typeLabel: "eSIM" },
   ]);
   assert.deepEqual(names(view.recommendations.places), ["Якорная"]);
   assert.equal(names(view.recommendations.places).includes("Касса"), false);
   assert.equal(names(view.places.places).includes("Касса"), false);
+});
+
+test("a recommended partner carries its type label", () => {
+  const view = homeView(
+    [
+      {
+        id: "p-esim",
+        name: "Mike eSIM",
+        logo_url: "",
+        sort_order: 1,
+        type_label: "eSIM",
+      },
+    ],
+    [],
+  );
+
+  assert.deepEqual(view.recommendations.partners, [
+    { id: "p-esim", name: "Mike eSIM", logoUrl: "", typeLabel: "eSIM" },
+  ]);
+});
+
+test("a partner with a blank type label has no type line", () => {
+  const view = homeView(
+    [
+      { id: "p-blank", name: "Boomerang", logo_url: "", sort_order: 1, type_label: "" },
+      { id: "p-missing", name: "Shore", logo_url: "", sort_order: 2 },
+    ],
+    [],
+  );
+
+  assert.deepEqual(
+    view.recommendations.partners.map((partner) => partner.typeLabel),
+    ["", ""],
+  );
 });
 
 test("the places row lists every unbound place, including Mike picks", () => {
