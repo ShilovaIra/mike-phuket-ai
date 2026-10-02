@@ -13,7 +13,7 @@ This guide sets up a **private staging environment** on DigitalOcean: one small 
 | Schema migration | Automatic on bot start (`SessionStore.create`) |
 | Partner Dashboard | `https://partners-staging.mikephuketai.com/` (Caddy → `partner-web`) |
 | Operator admin | `https://admin-staging.mikephuketai.com/` (Caddy → `admin-web`) |
-| Mini App (v2) | `https://app-staging.mikephuketai.com/` (Caddy → `tma-web`) |
+| Mini App | `https://app-staging.mikephuketai.com/` (Caddy → `tma-web`) |
 | Deploy source | Git branch `staging` only |
 
 Postgres is **not** exposed to the internet — only the bot container talks to it on the internal Docker network.
