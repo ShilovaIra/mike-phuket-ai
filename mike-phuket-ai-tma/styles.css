@@ -954,13 +954,11 @@ button {
 }
 
 .cover-tools {
-  position: absolute;
-  z-index: 2;
-  top: calc(16px + var(--chrome-top));
-  left: 12px;
-  right: 12px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  flex: none;
+  padding: calc(16px + var(--chrome-top)) 12px 12px;
 }
 
 .icon-btn {

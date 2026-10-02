@@ -12,7 +12,7 @@
       href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=43" />
+    <link rel="stylesheet" href="./styles.css?v=44" />
   </head>
   <body>
     <a class="skip" href="#home">К экранам</a>
@@ -117,17 +117,17 @@
 
         <section class="screen screen-place" id="place" aria-label="Место">
           <article class="place">
+            <div class="cover-tools">
+              <a class="icon-btn icon-ghost" href="#home" data-place-back aria-label="Назад">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </a>
+              <button class="icon-btn icon-ghost" type="button" data-place-save aria-pressed="false" aria-label="В избранное">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
+              </button>
+            </div>
             <header class="cover">
               <img class="cover-photo" data-place-photo alt="" />
               <img class="recommend-badge" data-place-badge src="./assets/mike-recommends.png" alt="MIKE рекомендует" hidden />
-              <div class="cover-tools">
-                <a class="icon-btn" href="#home" data-place-back aria-label="Назад">
-                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                </a>
-                <button class="icon-btn" type="button" data-place-save aria-pressed="false" aria-label="В избранное">
-                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
-                </button>
-              </div>
             </header>
             <div class="place-body">
               <h1 data-place-name></h1>
