@@ -15,6 +15,7 @@
   --tma-width: 390px;
   --tma-height: 844px;
   --chrome-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+  --wordmark-bar: calc(52px + var(--chrome-top));
   --z-sticky: 20;
   --z-device: 10;
 }
@@ -105,6 +106,33 @@ button {
 
 .device:not(:has(.screen:target)) #home {
   display: flex;
+}
+
+.wordmark {
+  display: none;
+  position: absolute;
+  z-index: var(--z-sticky);
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--wordmark-bar);
+  padding-top: var(--chrome-top);
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+
+.wordmark img {
+  height: 36px;
+  width: auto;
+}
+
+.device:has(.screen:target):not(:has(#home:target)) .wordmark {
+  display: flex;
+}
+
+.device:has(.screen:target):not(:has(#home:target)) .screen:target {
+  padding-top: var(--wordmark-bar);
 }
 
 .status {
@@ -536,7 +564,7 @@ button {
   display: flex;
   align-items: center;
   flex: none;
-  padding: calc(16px + var(--chrome-top)) 12px 12px;
+  padding: 16px 12px 12px;
 }
 
 .partner-logo {
@@ -873,7 +901,7 @@ button {
 .close {
   position: absolute;
   z-index: 3;
-  top: calc(16px + var(--chrome-top));
+  top: calc(16px + var(--wordmark-bar));
   left: 16px;
   width: 36px;
   height: 36px;
@@ -1003,7 +1031,8 @@ button {
 .place {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   background: var(--canvas);
 }
@@ -1046,7 +1075,7 @@ button {
   justify-content: space-between;
   align-items: center;
   flex: none;
-  padding: calc(16px + var(--chrome-top)) 12px 12px;
+  padding: 16px 12px 12px;
 }
 
 .icon-btn {
@@ -1231,7 +1260,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: calc(16px + var(--chrome-top)) 12px 0;
+  padding: 16px 12px 0;
 }
 
 .route-head h1 {
@@ -1364,7 +1393,7 @@ button {
 
 .tab-head {
   flex: none;
-  padding: calc(20px + var(--chrome-top)) 16px 8px;
+  padding: 20px 16px 8px;
 }
 
 .tab-head h1 {
@@ -1862,7 +1891,6 @@ a.row {
 
   .screen,
   .screen-voice,
-  .place,
   .screen-route,
   .screen-tab {
     min-height: calc(100dvh - 56px);
