@@ -210,6 +210,10 @@ button {
   z-index: 2;
 }
 
+.sheet[hidden] {
+  display: none;
+}
+
 .search {
   flex: 1;
   display: flex;
