@@ -1307,8 +1307,8 @@ button {
 .chat-face {
   display: block;
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   flex: none;
   border-radius: 50%;
   overflow: hidden;
@@ -1316,12 +1316,12 @@ button {
 
 .chat-face img {
   position: absolute;
-  width: 170%;
+  width: 125.2%;
   height: auto;
   max-width: none;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -32%);
+  transform: translate(-50%, -36%);
 }
 
 .map-fill {
