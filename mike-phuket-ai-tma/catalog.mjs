@@ -1,4 +1,5 @@
 export const EMPTY_PHOTO = "./assets/empty_picture_placeholder.jpg";
+const MAPS_LABEL = "Открыть в картах";
 
 function photoUrl(url) {
   if (!url || url.endsWith("media/places/placeholder.jpg")) return EMPTY_PHOTO;
@@ -11,6 +12,15 @@ function placeCard(place) {
     category: place.category,
     photoUrl: photoUrl(place.photo_url),
     badge: place.mike_recommends,
+  };
+}
+
+function officeCard(place) {
+  const mapsUrl = place.maps_url || null;
+  return {
+    ...placeCard(place),
+    mapsUrl,
+    mapsLabel: mapsUrl ? MAPS_LABEL : null,
   };
 }
 
@@ -55,7 +65,7 @@ export function homeView(partners, places) {
 export function partnerPage(partner, places) {
   const offices = places
     .filter((place) => place.partner && place.partner.id === partner.id)
-    .map(placeCard)
+    .map(officeCard)
     .sort(byRecommendThenName);
   if (offices.length === 0) return { officesTitle: null, places: [] };
   return { officesTitle: "Офисы партнёра", places: offices };
@@ -69,6 +79,6 @@ export function placeView(place) {
     photoUrl: photoUrl(place.photo_url),
     badge: place.mike_recommends,
     mapsUrl: place.maps_url,
-    mapsLabel: "Открыть в картах",
+    mapsLabel: MAPS_LABEL,
   };
 }

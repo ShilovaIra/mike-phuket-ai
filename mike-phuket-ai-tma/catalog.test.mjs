@@ -113,6 +113,41 @@ test("the places row lists every unbound place, including Mike picks", () => {
   assert.deepEqual(names(view.recommendations.places), ["Якорная"]);
 });
 
+test("a partner office exposes its name, photo, badge, and maps link", () => {
+  const money = { id: "p-money", name: "Money Shop" };
+  const office = {
+    ...recommended,
+    name: "Касса",
+    partner: { id: "p-money", name: "Money Shop" },
+  };
+
+  const card = partnerPage(money, [office]).places[0];
+
+  assert.equal(card.name, "Касса");
+  assert.equal(card.photoUrl, "https://cdn.example/promthep.jpg");
+  assert.equal(card.badge, true);
+  assert.equal(card.mapsUrl, "https://maps.example/promthep");
+  assert.equal(card.mapsLabel, "Открыть в картах");
+});
+
+test("a partner office without a map keeps its name, photo, and badge", () => {
+  const money = { id: "p-money", name: "Money Shop" };
+  const office = {
+    ...plain,
+    name: "Стойка",
+    maps_url: "",
+    partner: { id: "p-money", name: "Money Shop" },
+  };
+
+  const card = partnerPage(money, [office]).places[0];
+
+  assert.equal(card.name, "Стойка");
+  assert.equal(card.photoUrl, "https://cdn.example/kata.jpg");
+  assert.equal(card.badge, false);
+  assert.equal(card.mapsUrl, null);
+  assert.equal(card.mapsLabel, null);
+});
+
 test("a partner page titles its offices only when that partner has places", () => {
   const money = { id: "p-money", name: "Money Shop" };
   const esim = { id: "p-esim", name: "Mike eSIM" };

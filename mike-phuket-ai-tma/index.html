@@ -481,6 +481,50 @@
         return link;
       }
 
+      function createOfficeCard(card) {
+        var article = document.createElement("article");
+        article.className = "office";
+
+        var photoWrap = document.createElement("span");
+        photoWrap.className = "office-photo";
+        var photo = document.createElement("img");
+        photo.alt = "";
+        photo.addEventListener("error", function () {
+          if (!photo.src.endsWith("empty_picture_placeholder.jpg")) {
+            photo.src = "./assets/empty_picture_placeholder.jpg";
+          }
+        });
+        photo.src = card.photoUrl;
+        photoWrap.appendChild(photo);
+        article.appendChild(photoWrap);
+
+        var copy = document.createElement("div");
+        copy.className = "office-copy";
+        var name = document.createElement("p");
+        name.className = "office-name";
+        name.textContent = card.name;
+        copy.appendChild(name);
+        if (card.mapsUrl) {
+          var maps = document.createElement("a");
+          maps.className = "office-maps";
+          maps.href = card.mapsUrl;
+          maps.target = "_blank";
+          maps.rel = "noopener";
+          maps.textContent = card.mapsLabel;
+          copy.appendChild(maps);
+        }
+        article.appendChild(copy);
+
+        if (card.badge) {
+          var badge = document.createElement("img");
+          badge.className = "recommend-badge";
+          badge.src = "./assets/mike-recommends.png";
+          badge.alt = "MIKE рекомендует";
+          article.appendChild(badge);
+        }
+        return article;
+      }
+
       function openCatalogCard(card, back) {
         var place = catalogPlaces.find(function (item) {
           return item.name === card.name && item.category === card.category;
@@ -567,9 +611,7 @@
         var offices = document.querySelector("[data-offices]");
         offices.replaceChildren();
         page.places.forEach(function (card) {
-          offices.appendChild(createPlaceCard(card, function () {
-            openCatalogCard(card, "#partner");
-          }));
+          offices.appendChild(createOfficeCard(card));
         });
         if (!initData) return;
         fetch("/api/tma/partners/" + partner.id + "/offer", {
