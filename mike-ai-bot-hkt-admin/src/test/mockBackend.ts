@@ -170,7 +170,90 @@ let places: {
   photos: { id: string; path: string; url: string }[]
   cover: string
 }[] = []
+
+function seedPlaces() {
+  return [
+    {
+      id: 'place-treasure',
+      name: 'Офис Острова',
+      category: 'shop',
+      blurb: '',
+      maps_url: 'https://maps.example/treasure',
+      partner_id: '00000000-0000-4000-8000-000000000003',
+      is_active: true,
+      mike_recommends: false,
+      latitude: 7.8,
+      longitude: 98.3,
+      photos: [],
+      cover: 'media/places/placeholder.jpg',
+    },
+  ]
+}
+
 let partners = structuredClone(seedPartners)
+
+type KnowledgeBaseRow = {
+  id: string
+  partner_id: string | null
+  place_id: string | null
+  name: string
+  kind: string
+  blurb: string
+  referral_url: string
+  maps_url: string
+  in_chat: boolean
+}
+
+function seedKnowledgeBase(): KnowledgeBaseRow[] {
+  return [
+    {
+      id: 'kb-money-shop',
+      partner_id: '00000000-0000-4000-8000-000000000001',
+      place_id: null,
+      name: 'Money Shop',
+      kind: '💰 Обмен',
+      blurb: 'Money Shop',
+      referral_url: 'https://moneyshopphuket.online/links/pp413',
+      maps_url: '',
+      in_chat: true,
+    },
+    {
+      id: 'kb-ex24',
+      partner_id: '00000000-0000-4000-8000-000000000002',
+      place_id: null,
+      name: 'Ex24.pro',
+      kind: '💰 Обмен',
+      blurb: 'Ex24',
+      referral_url: 'https://ex24qr.com/epihelgnld',
+      maps_url: '',
+      in_chat: false,
+    },
+    {
+      id: 'kb-pier',
+      partner_id: null,
+      place_id: 'place-pier',
+      name: 'Reef Divers Pier',
+      kind: 'Магазин',
+      blurb: '',
+      referral_url: 'https://example.com/reef',
+      maps_url: 'https://maps.example/reef',
+      in_chat: true,
+    },
+    {
+      id: 'kb-treasure',
+      partner_id: null,
+      place_id: 'place-treasure',
+      name: 'Офис Острова',
+      kind: 'Магазин',
+      blurb: '',
+      referral_url: 'https://tisland.link/excurs?ref=72s5z3yp3jb79r7',
+      maps_url: 'https://maps.example/treasure',
+      in_chat: true,
+    },
+  ]
+}
+
+let knowledgeBase: KnowledgeBaseRow[] = seedKnowledgeBase()
 let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
 let partnerTypesListFailure: { status: number; detail: string } | null = null
 let logoUploads = new Map<string, string>()
@@ -193,8 +276,9 @@ function json(data: unknown, status = 200): Response {
 export function resetMockBackend(): void {
   types = structuredClone(seedTypes)
   placeCategories = structuredClone(seedPlaceCategories)
-  places = []
+  places = seedPlaces()
   partners = structuredClone(seedPartners)
+  knowledgeBase = seedKnowledgeBase()
   partnerUsers = []
   partnerTypesListFailure = null
   logoUploads = new Map()
@@ -406,6 +490,39 @@ export function installFetchMock(): void {
         cover: photos[0]?.path ?? 'media/places/placeholder.jpg',
       }
       return json(places[index])
+    }
+
+    if (path === '/api/knowledge-base' && method === 'GET') {
+      return json([...knowledgeBase])
+    }
+
+    if (path === '/api/knowledge-base' && method === 'POST' && body?.partner_id) {
+      const partner = partners.find((item) => item.id === body.partner_id)
+      if (!partner) return json({ detail: 'Партнёр не найден' }, 404)
+      if (knowledgeBase.some((row) => row.partner_id === partner.id)) {
+        return json({ detail: 'Уже в базе знаний' }, 409)
+      }
+      const kind = types.find((type) => type.slug === partner.type)?.topic_label ?? ''
+      const row = {
+        id: crypto.randomUUID(),
+        partner_id: partner.id,
+        place_id: null,
+        name: partner.name,
+        kind,
+        blurb: partner.blurb,
+        referral_url: partner.referral_url,
+        maps_url: '',
+        in_chat: partner.is_active,
+      }
+      knowledgeBase.push(row)
+      return json(row, 201)
+    }
+
+    const knowledgeBaseMatch = path.match(/^\/api\/knowledge-base\/([^/]+)$/)
+    if (knowledgeBaseMatch && method === 'DELETE') {
+      const id = decodeURIComponent(knowledgeBaseMatch[1])
+      knowledgeBase = knowledgeBase.filter((row) => row.id !== id)
+      return new Response(null, { status: 204 })
     }
 
     if (path === '/api/partners' && method === 'GET') {

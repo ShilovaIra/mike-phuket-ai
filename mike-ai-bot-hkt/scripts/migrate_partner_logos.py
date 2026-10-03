@@ -24,7 +24,7 @@ load_dotenv(ROOT / ".env")
 from db.store import SessionStore  # noqa: E402
 from db.url import resolve_database_url  # noqa: E402
 from partner_logo_migration import migrate_bundled_logos  # noqa: E402
-from storage import AssetStorage  # noqa: E402
+from storage import AssetStorage, StorageError  # noqa: E402
 
 
 async def main() -> int:
@@ -37,8 +37,13 @@ async def main() -> int:
         print("!! DATABASE_URL or POSTGRES_* is required")
         return 1
 
-    storage.expire_prefix("tmp/", days=1)
-    print("ok      tmp/ uploads expire after 1 day")
+    try:
+        storage.expire_prefix("tmp/", days=1)
+        print("ok      tmp/ uploads expire after 1 day")
+    except StorageError as exc:
+        # Limited Access Spaces keys can upload objects but cannot set bucket
+        # lifecycle rules. Abandoned tmp/ files are cheap; skip and migrate.
+        print(f"!! skipped tmp/ expiry rule ({exc})")
 
     store = await SessionStore.create(database_url)
     try:

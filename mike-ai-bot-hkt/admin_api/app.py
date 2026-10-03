@@ -9,7 +9,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
 from admin_api.deps import require_admin
 from admin_api.partner_logos import router as partner_logos_router
@@ -21,6 +21,7 @@ from admin_api.place_photos import (
 from admin_api.place_photos import router as place_photos_router
 from admin_api.passwords import verify_password
 from admin_api.payloads import partner_payload
+from knowledge_base import KnowledgeBaseEntry
 from admin_api.tokens import create_access_token
 from db.store import AdminUser, SessionStore
 from db.url import resolve_database_url
@@ -96,6 +97,31 @@ class LoginResponse(BaseModel):
 
 class TmaMessageIn(BaseModel):
     text: str
+
+
+class KnowledgeBaseIn(BaseModel):
+    partner_id: Optional[UUID] = None
+    place_id: Optional[UUID] = None
+
+    @model_validator(mode="after")
+    def one_target(self):
+        if (self.partner_id is None) == (self.place_id is None):
+            raise ValueError("Укажите место или партнёра")
+        return self
+
+
+def _knowledge_base_payload(entry: KnowledgeBaseEntry) -> dict:
+    return {
+        "id": str(entry.id),
+        "partner_id": None if entry.partner_id is None else str(entry.partner_id),
+        "place_id": None if entry.place_id is None else str(entry.place_id),
+        "name": entry.name,
+        "kind": entry.kind,
+        "blurb": entry.blurb,
+        "referral_url": entry.referral_url,
+        "maps_url": entry.maps_url,
+        "in_chat": entry.is_visible,
+    }
 
 
 class FavouriteIn(BaseModel):
@@ -562,6 +588,47 @@ def create_app(
         except KeyError:
             raise HTTPException(status_code=404, detail="Партнёр не найден") from None
         return partner_payload(updated, request.app.state.storage)
+
+    @app.get("/api/knowledge-base")
+    async def list_knowledge_base(
+        request: Request,
+        admin: AdminUser = Depends(require_admin),
+    ) -> list[dict]:
+        _ = admin
+        entries = await _store(request).list_knowledge_base()
+        return [_knowledge_base_payload(entry) for entry in entries]
+
+    @app.post("/api/knowledge-base", status_code=201)
+    async def add_knowledge_base_entry(
+        request: Request,
+        body: KnowledgeBaseIn,
+        admin: AdminUser = Depends(require_admin),
+    ) -> dict:
+        _ = admin
+        store = _store(request)
+        try:
+            if body.place_id is not None:
+                if await store.place_partner_is_in_knowledge_base(body.place_id):
+                    raise HTTPException(status_code=409, detail="Уже в базе знаний")
+                entry = await store.add_knowledge_base_place(body.place_id)
+            else:
+                partner_id = body.partner_id
+                assert partner_id is not None
+                if await store.partner_place_is_in_knowledge_base(partner_id):
+                    raise HTTPException(status_code=409, detail="Уже в базе знаний")
+                entry = await store.add_knowledge_base_partner(partner_id)
+        except asyncpg.UniqueViolationError:
+            raise HTTPException(status_code=409, detail="Уже в базе знаний") from None
+        return _knowledge_base_payload(entry)
+
+    @app.delete("/api/knowledge-base/{entry_id}", status_code=204)
+    async def delete_knowledge_base_entry(
+        request: Request,
+        entry_id: UUID,
+        admin: AdminUser = Depends(require_admin),
+    ) -> None:
+        _ = admin
+        await _store(request).delete_knowledge_base_entry(entry_id)
 
     def _tma_init_data(authorization: Optional[str]) -> str:
         if not authorization or not authorization.startswith("tma "):

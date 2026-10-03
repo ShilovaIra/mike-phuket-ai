@@ -461,3 +461,34 @@ CREATE TABLE IF NOT EXISTS place_favourites (
 
 CREATE INDEX IF NOT EXISTS place_favourites_user_created
     ON place_favourites (user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS knowledge_base (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    partner_id UUID REFERENCES partners (id) ON DELETE CASCADE,
+    place_id UUID REFERENCES places (id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT knowledge_base_one_target CHECK (
+        (partner_id IS NOT NULL AND place_id IS NULL)
+        OR (partner_id IS NULL AND place_id IS NOT NULL)
+    )
+);
+
+ALTER TABLE knowledge_base ADD COLUMN IF NOT EXISTS place_id UUID REFERENCES places (id) ON DELETE CASCADE;
+ALTER TABLE knowledge_base ALTER COLUMN partner_id DROP NOT NULL;
+
+DO $$
+BEGIN
+    ALTER TABLE knowledge_base
+        ADD CONSTRAINT knowledge_base_one_target CHECK (
+            (partner_id IS NOT NULL AND place_id IS NULL)
+            OR (partner_id IS NULL AND place_id IS NOT NULL)
+        );
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS knowledge_base_partner_id_key
+    ON knowledge_base (partner_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS knowledge_base_place_id_key
+    ON knowledge_base (place_id);

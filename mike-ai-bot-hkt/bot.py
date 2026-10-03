@@ -33,6 +33,7 @@ from telegram.error import BadRequest, Forbidden, TelegramError
 
 from db.store import SessionStore
 from db.url import resolve_database_url
+from knowledge_base import format_for_prompt
 from partner_dashboard.offers import wrap_partners_for_channel_user
 from partners import (
     PartnerCard,
@@ -171,10 +172,13 @@ PLACE_SEARCH_PROMPT = """
 """
 
 
-def system_prompt() -> str:
-    if places is None:
-        return MIKE_PROMPT
-    return MIKE_PROMPT + PLACE_SEARCH_PROMPT
+def system_prompt(knowledge_base: str = "") -> str:
+    prompt = MIKE_PROMPT
+    if places is not None:
+        prompt += PLACE_SEARCH_PROMPT
+    if knowledge_base:
+        prompt += "\n" + knowledge_base
+    return prompt
 
 
 async def build_reply_markup() -> ReplyKeyboardMarkup:
@@ -517,7 +521,8 @@ async def ask_openai(
     )
 
     history = await store.get_ai_context(CHANNEL, tid)
-    messages = [{"role": "system", "content": system_prompt()}] + history
+    knowledge = format_for_prompt(await store.list_knowledge_base())
+    messages = [{"role": "system", "content": system_prompt(knowledge)}] + history
 
     await update.message.reply_text("Думаю как местный 😎")
 
