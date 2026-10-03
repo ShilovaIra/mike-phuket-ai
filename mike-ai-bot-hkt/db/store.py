@@ -9,6 +9,7 @@ from uuid import UUID
 import asyncpg
 
 from db.migrate import apply_schema_pool
+from knowledge_base import KnowledgeBaseEntry
 from partners import Partner, PartnerType
 from place_catalog import Place, PlaceAsset, PlaceCategory
 
@@ -100,6 +101,41 @@ def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
         choice_phrase=choice_phrase or "",
         id=row["id"] if "id" in names else None,
     )
+
+
+def _knowledge_base_entry(row: asyncpg.Record) -> KnowledgeBaseEntry:
+    return KnowledgeBaseEntry(
+        id=row["id"],
+        name=row["name"],
+        partner_id=row["partner_id"],
+        place_id=row["place_id"],
+        referral_url=row["referral_url"] or "",
+        maps_url=row["maps_url"] or "",
+        blurb=row["blurb"] or "",
+        kind=row["kind"] or "",
+        is_visible=row["is_visible"],
+    )
+
+
+_KNOWLEDGE_BASE_ROWS = """
+SELECT knowledge_base.id,
+       knowledge_base.partner_id,
+       knowledge_base.place_id,
+       COALESCE(place.name, partner.name) AS name,
+       COALESCE(place_partner.referral_url, partner.referral_url) AS referral_url,
+       place.maps_url,
+       COALESCE(place.blurb, partner.blurb) AS blurb,
+       COALESCE(category.label, partner_type.topic_label, '') AS kind,
+       COALESCE(place.is_active, partner.is_active) AS is_visible
+FROM knowledge_base
+LEFT JOIN partners AS partner ON partner.id = knowledge_base.partner_id
+LEFT JOIN partner_types AS partner_type ON partner_type.id = partner.partner_type_id
+LEFT JOIN places AS place ON place.id = knowledge_base.place_id
+LEFT JOIN place_categories AS category ON category.id = place.category_id
+LEFT JOIN partners AS place_partner
+    ON place_partner.id = place.partner_id
+   AND place_partner.is_active
+"""
 
 
 def _partner_from_row(row: asyncpg.Record, *, is_active: bool | None = None) -> Partner:
@@ -1402,6 +1438,79 @@ class SessionStore:
             user_id,
             source,
         )
+
+    async def place_partner_is_in_knowledge_base(self, place_id: UUID) -> bool:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT 1
+                FROM places
+                JOIN knowledge_base ON knowledge_base.partner_id = places.partner_id
+                WHERE places.id = $1
+                """,
+                place_id,
+            )
+        return row is not None
+
+    async def partner_place_is_in_knowledge_base(self, partner_id: UUID) -> bool:
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT 1
+                FROM knowledge_base
+                JOIN places ON places.id = knowledge_base.place_id
+                WHERE places.partner_id = $1
+                """,
+                partner_id,
+            )
+        return row is not None
+
+    async def _knowledge_base_entry_by_id(
+        self, conn: asyncpg.Connection, entry_id: UUID
+    ) -> KnowledgeBaseEntry:
+        row = await conn.fetchrow(
+            _KNOWLEDGE_BASE_ROWS + " WHERE knowledge_base.id = $1",
+            entry_id,
+        )
+        return _knowledge_base_entry(row)
+
+    async def add_knowledge_base_partner(self, partner_id: UUID) -> KnowledgeBaseEntry:
+        async with self._pool.acquire() as conn:
+            entry_id = await conn.fetchval(
+                """
+                INSERT INTO knowledge_base (partner_id)
+                VALUES ($1)
+                RETURNING id
+                """,
+                partner_id,
+            )
+            return await self._knowledge_base_entry_by_id(conn, entry_id)
+
+    async def add_knowledge_base_place(self, place_id: UUID) -> KnowledgeBaseEntry:
+        async with self._pool.acquire() as conn:
+            entry_id = await conn.fetchval(
+                """
+                INSERT INTO knowledge_base (place_id)
+                VALUES ($1)
+                RETURNING id
+                """,
+                place_id,
+            )
+            return await self._knowledge_base_entry_by_id(conn, entry_id)
+
+    async def list_knowledge_base(self) -> list[KnowledgeBaseEntry]:
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                _KNOWLEDGE_BASE_ROWS + " ORDER BY name ASC"
+            )
+        return [_knowledge_base_entry(row) for row in rows]
+
+    async def delete_knowledge_base_entry(self, entry_id: UUID) -> None:
+        async with self._pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM knowledge_base WHERE id = $1",
+                entry_id,
+            )
 
     async def _fetch_active(
         self,

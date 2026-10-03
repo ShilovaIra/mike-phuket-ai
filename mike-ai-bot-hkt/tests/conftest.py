@@ -42,6 +42,7 @@ TRUNCATE TABLE
     partner_views,
     partner_access,
     partner_users,
+    knowledge_base,
     partners,
     admin_users
 RESTART IDENTITY CASCADE
@@ -93,6 +94,9 @@ async def store() -> SessionStore:
             """
             DO $$
             BEGIN
+                IF to_regclass('public.knowledge_base') IS NOT NULL THEN
+                    DELETE FROM knowledge_base;
+                END IF;
                 IF to_regclass('public.places') IS NOT NULL THEN
                     DELETE FROM place_assets;
                     DELETE FROM places;

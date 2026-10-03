@@ -133,12 +133,14 @@ async def send(
     _inflight.add(external_id)
     try:
         from bot import system_prompt
+        from knowledge_base import format_for_prompt
 
         ensure_place_search()
         history = await store.get_ai_context(TMA_CHANNEL, external_id)
+        knowledge = format_for_prompt(await store.list_knowledge_base())
         try:
             answer = await model(
-                [{"role": "system", "content": system_prompt()}]
+                [{"role": "system", "content": system_prompt(knowledge)}]
                 + history
                 + [{"role": "user", "content": text}]
             )

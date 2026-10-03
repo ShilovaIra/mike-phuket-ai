@@ -26,6 +26,9 @@ class FakeStore:
     async def list_partner_types(self):
         return []
 
+    async def list_knowledge_base(self):
+        return []
+
     async def record_inbound(self, channel, tid):
         self.inbound.append(tid)
 

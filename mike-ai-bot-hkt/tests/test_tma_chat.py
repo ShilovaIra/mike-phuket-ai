@@ -250,6 +250,111 @@ async def test_mike_hears_the_same_system_prompt_as_the_bot(store):
 
 @requires_db
 @pytest.mark.asyncio
+async def test_free_chat_hears_a_partner_referral_and_prefers_it_over_google(store):
+    partner = await store.create_partner(
+        name="Reef Divers",
+        type="excursions",
+        referral_url="https://example.com/reef",
+        blurb="Дайвинг у кораллов",
+        is_active=True,
+    )
+    await store.add_knowledge_base_partner(partner.id)
+    seen = []
+
+    async def model(messages):
+        seen.append(list(messages))
+        return "Ок"
+
+    async with tma_client(store, model) as client:
+        sent = await client.post(
+            "/api/tma/messages",
+            headers=tma_headers(),
+            json={"text": "Где дайвинг?"},
+        )
+
+    assert sent.status_code == 200
+    prompt = seen[0][0]["content"]
+    assert "Reef Divers" in prompt
+    assert "Экскурсии" in prompt
+    assert "Дайвинг у кораллов" in prompt
+    assert "https://example.com/reef" in prompt
+    assert "Не ищи в Google" in prompt
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_free_chat_omits_an_unlisted_partner(store):
+    partner = await store.create_partner(
+        name="Hidden Divers",
+        type="excursions",
+        referral_url="https://example.com/hidden",
+        blurb="",
+        is_active=False,
+    )
+    await store.add_knowledge_base_partner(partner.id)
+    seen = []
+
+    async def model(messages):
+        seen.append(list(messages))
+        return "Ок"
+
+    async with tma_client(store, model) as client:
+        await client.post(
+            "/api/tma/messages",
+            headers=tma_headers(),
+            json={"text": "Где дайвинг?"},
+        )
+
+    prompt = seen[0][0]["content"]
+    assert "Hidden Divers" not in prompt
+    assert "https://example.com/hidden" not in prompt
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_free_chat_keeps_an_active_place_when_its_partner_is_unlisted(store):
+    partner = await store.create_partner(
+        name="Hidden Divers",
+        type="excursions",
+        referral_url="https://example.com/hidden",
+        blurb="",
+        is_active=False,
+    )
+    category = next(
+        item for item in await store.list_place_categories() if item.slug == "shop"
+    )
+    place = await store.create_place(
+        name="Reef Divers Pier",
+        category_id=category.id,
+        google_place_id=None,
+        latitude=7.7622,
+        longitude=98.3055,
+        partner_id=partner.id,
+        maps_url="https://maps.example/reef",
+        is_active=True,
+    )
+    await store.add_knowledge_base_place(place.id)
+    seen = []
+
+    async def model(messages):
+        seen.append(list(messages))
+        return "Ок"
+
+    async with tma_client(store, model) as client:
+        await client.post(
+            "/api/tma/messages",
+            headers=tma_headers(),
+            json={"text": "Где дайвинг?"},
+        )
+
+    prompt = seen[0][0]["content"]
+    assert "Reef Divers Pier" in prompt
+    assert "https://maps.example/reef" in prompt
+    assert "https://example.com/hidden" not in prompt
+
+
+@requires_db
+@pytest.mark.asyncio
 async def test_mike_can_search_places_when_the_key_is_set(store, monkeypatch):
     import bot
 
