@@ -120,6 +120,7 @@ def _knowledge_base_payload(entry: KnowledgeBaseEntry) -> dict:
         "blurb": entry.blurb,
         "referral_url": entry.referral_url,
         "maps_url": entry.maps_url,
+        "in_chat": entry.is_visible,
     }
 
 

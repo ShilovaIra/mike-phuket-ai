@@ -52,6 +52,12 @@ export function RequireAuth() {
             Места
           </Link>
           <Link
+            to="/knowledge-base"
+            className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+          >
+            База знаний
+          </Link>
+          <Link
             to="/place-categories"
             className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900"
           >
