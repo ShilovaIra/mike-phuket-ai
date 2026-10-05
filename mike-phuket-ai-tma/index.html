@@ -5,6 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light" />
     <meta name="theme-color" content="#F4F7FB" />
+    <script>
+      (function () {
+        var saved = null;
+        try {
+          saved = localStorage.getItem("mike-theme");
+        } catch (error) {
+          saved = null;
+        }
+        var telegram = window.Telegram && window.Telegram.WebApp;
+        var scheme = telegram && telegram.colorScheme;
+        var choice = saved === "light" || saved === "dark" ? saved : scheme === "dark" ? "dark" : "light";
+        document.documentElement.dataset.theme = choice;
+        var themeColor = document.querySelector('meta[name="theme-color"]');
+        var colorScheme = document.querySelector('meta[name="color-scheme"]');
+        if (themeColor) themeColor.setAttribute("content", choice === "dark" ? "#0E1622" : "#F4F7FB");
+        if (colorScheme) colorScheme.setAttribute("content", choice);
+      })();
+    </script>
     <title>Mike Phuket AI · v2</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,7 +30,7 @@
       href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=46" />
+    <link rel="stylesheet" href="./styles.css?v=49" />
   </head>
   <body>
     <a class="skip" href="#home">К экранам</a>
@@ -279,6 +297,12 @@
             </div>
             <p class="profile-name">Гость</p>
             <p class="profile-meta">Пхукет</p>
+            <div class="theme-row">
+              <span class="theme-row-label" data-theme-label>Тёмная тема</span>
+              <button type="button" class="theme-switch" data-theme-switch aria-pressed="false" aria-label="Тёмная тема">
+                <span class="theme-switch-track" aria-hidden="true"><span class="theme-switch-knob"></span></span>
+              </button>
+            </div>
             <ul class="profile-rows">
               <li hidden>
                 <div class="row is-soon" aria-disabled="true">
@@ -345,9 +369,73 @@
     </div>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script type="module">
+      import { themeView } from "./theme.mjs";
+
+      var THEME_KEY = "mike-theme";
+
+      function savedTheme() {
+        try {
+          var value = localStorage.getItem(THEME_KEY);
+          return value === "light" || value === "dark" ? value : undefined;
+        } catch (error) {
+          return undefined;
+        }
+      }
+
+      function telegramScheme() {
+        var telegram = window.Telegram && window.Telegram.WebApp;
+        if (!telegram) return undefined;
+        return telegram.colorScheme === "light" || telegram.colorScheme === "dark" ? telegram.colorScheme : undefined;
+      }
+
+      function paintTheme(saved) {
+        var view = themeView({ saved: saved, telegramScheme: telegramScheme() });
+        var root = document.documentElement;
+        root.dataset.theme = view.choice;
+        var canvas = getComputedStyle(root).getPropertyValue("--canvas").trim();
+        var themeColor = document.querySelector('meta[name="theme-color"]');
+        var colorScheme = document.querySelector('meta[name="color-scheme"]');
+        if (themeColor && canvas) themeColor.setAttribute("content", canvas);
+        if (colorScheme) colorScheme.setAttribute("content", view.choice);
+        var telegram = window.Telegram && window.Telegram.WebApp;
+        if (telegram && canvas) {
+          if (typeof telegram.setHeaderColor === "function") telegram.setHeaderColor(canvas);
+          if (typeof telegram.setBackgroundColor === "function") telegram.setBackgroundColor(canvas);
+        }
+        var label = document.querySelector("[data-theme-label]");
+        if (label) label.textContent = view.label;
+        var button = document.querySelector("[data-theme-switch]");
+        if (!button) return;
+        button.setAttribute("aria-pressed", view.choice === "dark" ? "true" : "false");
+        button.setAttribute("aria-label", view.label);
+      }
+
+      paintTheme(savedTheme());
+
+      var themeSwitch = document.querySelector("[data-theme-switch]");
+      if (themeSwitch) {
+        themeSwitch.addEventListener("click", function () {
+          var current = themeView({ saved: savedTheme(), telegramScheme: telegramScheme() }).choice;
+          var next = current === "dark" ? "light" : "dark";
+          try {
+            localStorage.setItem(THEME_KEY, next);
+          } catch (error) {}
+          paintTheme(next);
+        });
+      }
+
+      var telegramApp = window.Telegram && window.Telegram.WebApp;
+      if (telegramApp && typeof telegramApp.onEvent === "function") {
+        telegramApp.onEvent("themeChanged", function () {
+          paintTheme(savedTheme());
+        });
+      }
+    </script>
+    <script type="module">
       import { homeView, partnerPage, placeView } from "./catalog.mjs";
       import { canSend, failureView, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
       import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
+      import { descriptionParts } from "./description.mjs";
       import { profileView } from "./profile.mjs";
 
       var telegram = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe;
@@ -424,6 +512,29 @@
         saveError.textContent = heartState.error;
       }
 
+      function fillDescription(el, text) {
+        el.replaceChildren();
+        descriptionParts(text || "").forEach(function (part) {
+          if (part.type !== "link") {
+            el.appendChild(document.createTextNode(part.value));
+            return;
+          }
+          var link = document.createElement("a");
+          link.href = part.href;
+          link.textContent = part.label;
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.addEventListener("click", function (event) {
+            var tg = window.Telegram && window.Telegram.WebApp;
+            if (tg && typeof tg.openLink === "function") {
+              event.preventDefault();
+              tg.openLink(part.href);
+            }
+          });
+          el.appendChild(link);
+        });
+      }
+
       function showPlace(place, back) {
         currentPlace = place;
         currentSaved = favouritePlaces.some(function (item) { return item.id === place.id; });
@@ -432,7 +543,7 @@
         cover.src = view.photoUrl;
         document.querySelector("[data-place-name]").textContent = view.name;
         document.querySelector("[data-place-category]").textContent = view.category;
-        document.querySelector("[data-place-blurb]").textContent = view.blurb;
+        fillDescription(document.querySelector("[data-place-blurb]"), view.blurb);
         var maps = document.querySelector("[data-place-maps]");
         maps.href = view.mapsUrl;
         maps.lastChild.textContent = view.mapsLabel;
@@ -593,7 +704,7 @@
         document.querySelector("[data-partner-type]").textContent = partner.type_label || "";
         var blurb = document.querySelector("[data-partner-blurb]");
         blurb.hidden = !partner.blurb;
-        blurb.textContent = partner.blurb || "";
+        fillDescription(blurb, partner.blurb);
         var logo = document.querySelector("[data-partner-logo]");
         logo.replaceChildren();
         if (partner.logo_url) {
