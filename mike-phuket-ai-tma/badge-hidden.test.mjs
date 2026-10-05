@@ -18,17 +18,17 @@ function chromePath() {
   return candidates[0];
 }
 
-test("a hidden recommend badge stays hidden when images are display:block", () => {
-  const dir = mkdtempSync(join(tmpdir(), "badge-hidden-"));
+function displayed(body) {
+  const dir = mkdtempSync(join(tmpdir(), "hidden-"));
   const page = join(dir, "page.html");
   writeFileSync(
     page,
     `<!doctype html>
 <link rel="stylesheet" href="${pathToFileURL(join(root, "styles.css")).href}">
-<img id="badge" class="recommend-badge" alt="MIKE рекомендует" hidden>
+${body}
 <script>
-  document.documentElement.dataset.badgeDisplay = getComputedStyle(
-    document.getElementById("badge"),
+  document.documentElement.dataset.shown = getComputedStyle(
+    document.getElementById("probe"),
   ).display;
 </script>
 `,
@@ -48,7 +48,21 @@ test("a hidden recommend badge stays hidden when images are display:block", () =
   );
 
   assert.equal(result.status, 0, result.stderr);
-  const match = result.stdout.match(/data-badge-display="([^"]*)"/);
+  const match = result.stdout.match(/data-shown="([^"]*)"/);
   assert.ok(match, result.stdout);
-  assert.equal(match[1], "none");
+  return match[1];
+}
+
+test("a hidden recommend badge stays hidden when images are display:block", () => {
+  assert.equal(
+    displayed(`<img id="probe" class="recommend-badge" alt="MIKE рекомендует" hidden>`),
+    "none",
+  );
+});
+
+test("a hidden profile letter stays hidden when the letter is display:grid", () => {
+  assert.equal(
+    displayed(`<span id="probe" class="profile-letter" hidden>Г</span>`),
+    "none",
+  );
 });

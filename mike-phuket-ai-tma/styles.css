@@ -1707,6 +1707,10 @@ button {
   place-items: center;
 }
 
+.profile-letter[hidden] {
+  display: none;
+}
+
 .profile-name {
   margin: 12px 0 0;
   font-size: 1.25rem;
