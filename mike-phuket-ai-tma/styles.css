@@ -10,6 +10,9 @@
   --open: #0e7a45;
   --danger: #d23b3b;
   --voice: #07111f;
+  --hover: #eef3f9;
+  --wash: #d9e6f5;
+  color-scheme: light;
   --font: "Golos Text", "Segoe UI", system-ui, sans-serif;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --tma-width: 390px;
@@ -17,6 +20,17 @@
   --chrome-top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
   --z-sticky: 20;
   --z-device: 10;
+}
+
+[data-theme="dark"] {
+  --canvas: #0e1622;
+  --surface: #182433;
+  --ink: #e7eef7;
+  --muted: #93a6c0;
+  --line: #2c3c52;
+  --hover: #223044;
+  --wash: #243044;
+  color-scheme: dark;
 }
 
 *,
@@ -197,7 +211,7 @@ button {
   padding: 6px 10px;
   border-radius: 12px 12px 12px 4px;
   background: rgba(255, 255, 255, 0.94);
-  color: var(--ink);
+  color: #102033;
   font-size: 0.75rem;
   line-height: 1.3;
 }
@@ -254,7 +268,7 @@ button {
 
 .filters:hover,
 .search:hover {
-  background: #eef3f9;
+  background: var(--hover);
 }
 
 .island {
@@ -293,6 +307,7 @@ button {
   padding: 3px 6px 4px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.94);
+  color: #102033;
   line-height: 1.15;
 }
 
@@ -371,7 +386,7 @@ button {
   place-items: center;
   overflow: hidden;
   border-radius: 50%;
-  background: #d9e6f5;
+  background: var(--wash);
   border: 1px solid var(--line);
   color: var(--ink);
   font-size: 1.25rem;
@@ -458,7 +473,7 @@ button {
 .rec .thumb {
   height: auto;
   aspect-ratio: 4 / 3;
-  background: #d9e6f5;
+  background: var(--wash);
 }
 
 .thumb-photo {
@@ -601,7 +616,7 @@ button {
   height: 88px;
   border-radius: 14px;
   overflow: hidden;
-  background: #d9e6f5;
+  background: var(--wash);
 }
 
 .office-photo img {
@@ -622,7 +637,7 @@ button {
   margin: 0;
   padding: 10px 16px;
   border-radius: 999px;
-  background: var(--ink);
+  background: #102033;
   color: #fff;
   font-size: 0.9375rem;
   font-weight: 700;
@@ -1013,7 +1028,7 @@ button {
   height: 248px;
   flex: none;
   color: #fff;
-  background: #d9e6f5;
+  background: var(--wash);
   overflow: hidden;
 }
 
@@ -1213,6 +1228,7 @@ button {
   padding: 10px 12px;
   border-radius: 12px;
   background: #fff6df;
+  color: #102033;
   font-size: 0.875rem;
 }
 
@@ -1298,7 +1314,7 @@ button {
 }
 
 .mode:hover:not(.is-on) {
-  background: #eef3f9;
+  background: var(--hover);
 }
 
 .screen-route {
@@ -1643,7 +1659,7 @@ button {
 }
 
 .saved:hover {
-  background: #eef3f9;
+  background: var(--hover);
 }
 
 .profile {
@@ -1660,7 +1676,7 @@ button {
   height: 72px;
   border-radius: 50%;
   overflow: hidden;
-  background: #d9e6f5;
+  background: var(--wash);
   color: var(--ink);
   font-size: 1.75rem;
   font-weight: 700;
@@ -1691,9 +1707,68 @@ button {
 }
 
 .profile-meta {
-  margin: 2px 0 16px;
+  margin: 2px 0 8px;
   color: var(--muted);
   font-size: 0.875rem;
+}
+
+.theme-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  margin: 8px 0 20px;
+  color: inherit;
+}
+
+.theme-switch:focus-visible {
+  outline: none;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px var(--canvas), 0 0 0 4px var(--blue);
+}
+
+.theme-switch-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+html:not([data-theme="dark"]) [data-theme-light-label],
+[data-theme="dark"] [data-theme-dark-label] {
+  color: var(--ink);
+}
+
+.theme-switch-track {
+  position: relative;
+  width: 72px;
+  height: 36px;
+  border-radius: 999px;
+  background: #3a4048;
+  flex: none;
+}
+
+[data-theme="dark"] .theme-switch-track {
+  background: #fff;
+}
+
+.theme-switch-knob {
+  position: absolute;
+  top: 4px;
+  left: 38px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.2s var(--ease), background 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+[data-theme="dark"] .theme-switch-knob {
+  left: 4px;
+  background: transparent;
+  box-shadow: inset -9px -2px 0 0 #2a3038;
 }
 
 .profile-rows {
@@ -1761,7 +1836,7 @@ a.row {
 }
 
 .about-back:hover {
-  background: #eef3f9;
+  background: var(--hover);
 }
 
 .about {
@@ -1807,7 +1882,7 @@ a.row {
 }
 
 .row:hover {
-  background: #eef3f9;
+  background: var(--hover);
 }
 
 .studio-spec {
