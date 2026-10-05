@@ -1707,18 +1707,31 @@ button {
 }
 
 .profile-meta {
-  margin: 2px 0 8px;
+  margin: 2px 0 16px;
   color: var(--muted);
   font-size: 0.875rem;
 }
 
-.theme-switch {
+.theme-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  width: 100%;
-  margin: 8px 0 20px;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  margin: 0 0 10px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.theme-row-label {
+  font-weight: 600;
+}
+
+.theme-switch {
+  display: flex;
+  flex: none;
   color: inherit;
 }
 
@@ -1726,19 +1739,6 @@ button {
   outline: none;
   border-radius: 999px;
   box-shadow: 0 0 0 2px var(--canvas), 0 0 0 4px var(--blue);
-}
-
-.theme-switch-label {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-html:not([data-theme="dark"]) [data-theme-light-label],
-[data-theme="dark"] [data-theme-dark-label] {
-  color: var(--ink);
 }
 
 .theme-switch-track {

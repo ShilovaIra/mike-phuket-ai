@@ -22,15 +22,13 @@ test("a saved choice wins over the current Telegram scheme", () => {
   assert.equal(themeView({ saved: "dark", telegramScheme: "light" }).choice, "dark");
 });
 
-test("the switch labels the dark side on the left and parks the knob on the active side", () => {
+test("the row names the theme the pill will turn on and parks the knob on the active side", () => {
   const dark = themeView({ saved: "dark", telegramScheme: "light" });
-  assert.equal(dark.darkLabel, "Тёмная");
-  assert.equal(dark.lightLabel, "Светлая");
+  assert.equal(dark.label, "Светлая тема");
   assert.equal(dark.knob, "dark");
 
   const light = themeView({ saved: "light", telegramScheme: "dark" });
-  assert.equal(light.darkLabel, "Тёмная");
-  assert.equal(light.lightLabel, "Светлая");
+  assert.equal(light.label, "Тёмная тема");
   assert.equal(light.knob, "light");
 });
 

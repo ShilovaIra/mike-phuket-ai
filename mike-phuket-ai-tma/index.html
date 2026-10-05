@@ -30,7 +30,7 @@
       href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=47" />
+    <link rel="stylesheet" href="./styles.css?v=48" />
   </head>
   <body>
     <a class="skip" href="#home">К экранам</a>
@@ -297,11 +297,12 @@
             </div>
             <p class="profile-name">Гость</p>
             <p class="profile-meta">Пхукет</p>
-            <button type="button" class="theme-switch" data-theme-switch aria-pressed="false" aria-label="Тема, Светлая">
-              <span class="theme-switch-label" data-theme-dark-label>Тёмная</span>
-              <span class="theme-switch-track" aria-hidden="true"><span class="theme-switch-knob"></span></span>
-              <span class="theme-switch-label" data-theme-light-label>Светлая</span>
-            </button>
+            <div class="theme-row">
+              <span class="theme-row-label" data-theme-label>Тёмная тема</span>
+              <button type="button" class="theme-switch" data-theme-switch aria-pressed="false" aria-label="Тёмная тема">
+                <span class="theme-switch-track" aria-hidden="true"><span class="theme-switch-knob"></span></span>
+              </button>
+            </div>
             <ul class="profile-rows">
               <li hidden>
                 <div class="row is-soon" aria-disabled="true">
@@ -401,13 +402,12 @@
           if (typeof telegram.setHeaderColor === "function") telegram.setHeaderColor(canvas);
           if (typeof telegram.setBackgroundColor === "function") telegram.setBackgroundColor(canvas);
         }
+        var label = document.querySelector("[data-theme-label]");
+        if (label) label.textContent = view.label;
         var button = document.querySelector("[data-theme-switch]");
         if (!button) return;
-        var activeLabel = view.choice === "dark" ? view.darkLabel : view.lightLabel;
         button.setAttribute("aria-pressed", view.choice === "dark" ? "true" : "false");
-        button.setAttribute("aria-label", "Тема, " + activeLabel);
-        button.querySelector("[data-theme-dark-label]").textContent = view.darkLabel;
-        button.querySelector("[data-theme-light-label]").textContent = view.lightLabel;
+        button.setAttribute("aria-label", view.label);
       }
 
       paintTheme(savedTheme());
