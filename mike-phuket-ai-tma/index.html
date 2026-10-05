@@ -30,7 +30,7 @@
       href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=48" />
+    <link rel="stylesheet" href="./styles.css?v=49" />
   </head>
   <body>
     <a class="skip" href="#home">К экранам</a>
@@ -435,6 +435,7 @@
       import { homeView, partnerPage, placeView } from "./catalog.mjs";
       import { canSend, failureView, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
       import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
+      import { descriptionParts } from "./description.mjs";
       import { profileView } from "./profile.mjs";
 
       var telegram = window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe;
@@ -511,6 +512,29 @@
         saveError.textContent = heartState.error;
       }
 
+      function fillDescription(el, text) {
+        el.replaceChildren();
+        descriptionParts(text || "").forEach(function (part) {
+          if (part.type !== "link") {
+            el.appendChild(document.createTextNode(part.value));
+            return;
+          }
+          var link = document.createElement("a");
+          link.href = part.href;
+          link.textContent = part.label;
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.addEventListener("click", function (event) {
+            var tg = window.Telegram && window.Telegram.WebApp;
+            if (tg && typeof tg.openLink === "function") {
+              event.preventDefault();
+              tg.openLink(part.href);
+            }
+          });
+          el.appendChild(link);
+        });
+      }
+
       function showPlace(place, back) {
         currentPlace = place;
         currentSaved = favouritePlaces.some(function (item) { return item.id === place.id; });
@@ -519,7 +543,7 @@
         cover.src = view.photoUrl;
         document.querySelector("[data-place-name]").textContent = view.name;
         document.querySelector("[data-place-category]").textContent = view.category;
-        document.querySelector("[data-place-blurb]").textContent = view.blurb;
+        fillDescription(document.querySelector("[data-place-blurb]"), view.blurb);
         var maps = document.querySelector("[data-place-maps]");
         maps.href = view.mapsUrl;
         maps.lastChild.textContent = view.mapsLabel;
@@ -680,7 +704,7 @@
         document.querySelector("[data-partner-type]").textContent = partner.type_label || "";
         var blurb = document.querySelector("[data-partner-blurb]");
         blurb.hidden = !partner.blurb;
-        blurb.textContent = partner.blurb || "";
+        fillDescription(blurb, partner.blurb);
         var logo = document.querySelector("[data-partner-logo]");
         logo.replaceChildren();
         if (partner.logo_url) {

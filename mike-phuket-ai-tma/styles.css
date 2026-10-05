@@ -1177,6 +1177,14 @@ button {
   max-width: 42ch;
   font-size: 0.9375rem;
   text-wrap: pretty;
+  white-space: pre-wrap;
+  tab-size: 4;
+  overflow-wrap: anywhere;
+}
+
+.prose a {
+  color: var(--blue);
+  font-weight: 600;
 }
 
 .cta {
