@@ -2,6 +2,22 @@ from tests.conftest import requires_db
 
 
 @requires_db
+async def test_bot_and_mini_app_count_as_one_user(store):
+    await store.start_conversation("telegram", "42", source="instagram")
+    await store.ensure_identity("tma", "42", source="tma")
+    await store.record_inbound("telegram", "42")
+    await store.record_inbound("tma", "42")
+
+    stats = await store.get_bot_stats()
+
+    assert stats.total_users == 1
+    assert stats.new_users_today == 1
+    assert stats.new_users_7d == 1
+    assert stats.active_today == 1
+    assert stats.users_by_first_source == {"instagram": 1}
+
+
+@requires_db
 async def test_record_topic_event_counts_unique_users_and_taps_all_time(store):
     await store.start_conversation("telegram", "800", source="unknown")
     await store.record_topic_event("telegram", "800", topic="beaches")
