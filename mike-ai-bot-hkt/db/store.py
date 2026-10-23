@@ -16,6 +16,8 @@ from place_catalog import Place, PlaceAsset, PlaceCategory
 PARTNER_FOLLOW_UP_DELAY = timedelta(hours=24)
 WIN_BACK_DELAY = timedelta(days=7)
 PARTNER_FOLLOW_UP_COOLDOWN = timedelta(days=7)
+# Bot chat and the mini app store the same Telegram user id on different channels.
+TELEGRAM_CHANNELS = ("telegram", "tma")
 WIN_BACK_TEXT = (
     "Привет! Как дела? Что-то давно тебя не было! Хочешь узнать что-то новенькое?😊"
 )
@@ -732,12 +734,23 @@ class SessionStore:
                     )
 
     async def get_user_stats(self, *, timezone: str = "Asia/Bangkok") -> UserStats:
+        channels = list(TELEGRAM_CHANNELS)
         async with self._pool.acquire() as conn:
-            total_users = await conn.fetchval("SELECT count(*) FROM users")
+            total_users = await conn.fetchval(
+                """
+                SELECT count(DISTINCT external_id)
+                FROM identities
+                WHERE channel = ANY($1::text[])
+                """,
+                channels,
+            )
             active_today = await conn.fetchval(
                 """
-                SELECT count(*) FROM (
-                    SELECT c.user_id AS user_id
+                SELECT count(DISTINCT i.external_id)
+                FROM identities i
+                WHERE i.channel = ANY($2::text[])
+                  AND i.user_id IN (
+                    SELECT c.user_id
                     FROM messages m
                     JOIN conversations c ON c.id = m.conversation_id
                     WHERE m.role = 'user'
@@ -754,25 +767,40 @@ class SessionStore:
                     FROM topic_events
                     WHERE (created_at AT TIME ZONE $1)::date
                           = (now() AT TIME ZONE $1)::date
-                ) active
+                  )
                 """,
                 timezone,
+                channels,
             )
             new_users_today = await conn.fetchval(
                 """
                 SELECT count(*)
-                FROM users
-                WHERE (created_at AT TIME ZONE $1)::date
-                      = (now() AT TIME ZONE $1)::date
+                FROM (
+                    SELECT i.external_id
+                    FROM identities i
+                    JOIN users u ON u.id = i.user_id
+                    WHERE i.channel = ANY($2::text[])
+                    GROUP BY i.external_id
+                    HAVING (min(u.created_at) AT TIME ZONE $1)::date
+                           = (now() AT TIME ZONE $1)::date
+                ) people
                 """,
                 timezone,
+                channels,
             )
             new_users_7d = await conn.fetchval(
                 """
                 SELECT count(*)
-                FROM users
-                WHERE created_at >= now() - interval '7 days'
-                """
+                FROM (
+                    SELECT i.external_id
+                    FROM identities i
+                    JOIN users u ON u.id = i.user_id
+                    WHERE i.channel = ANY($1::text[])
+                    GROUP BY i.external_id
+                    HAVING min(u.created_at) >= now() - interval '7 days'
+                ) people
+                """,
+                channels,
             )
             return UserStats(
                 total_users=int(total_users or 0),
@@ -800,10 +828,17 @@ class SessionStore:
             source_rows = await conn.fetch(
                 """
                 SELECT first_source, count(*)::int AS count
-                FROM users
+                FROM (
+                    SELECT DISTINCT ON (i.external_id) u.first_source
+                    FROM identities i
+                    JOIN users u ON u.id = i.user_id
+                    WHERE i.channel = ANY($1::text[])
+                    ORDER BY i.external_id, u.created_at ASC, u.id ASC
+                ) people
                 GROUP BY first_source
                 ORDER BY count DESC, first_source ASC
-                """
+                """,
+                list(TELEGRAM_CHANNELS),
             )
         return BotStats(
             total_users=user_stats.total_users,

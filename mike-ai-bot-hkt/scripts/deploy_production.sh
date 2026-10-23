@@ -4,6 +4,9 @@
 # Usage (on the Droplet, from repo root or mike-ai-bot-hkt):
 #   ./mike-ai-bot-hkt/scripts/deploy_production.sh
 #
+# GitHub Actions builds the images on the runner and runs:
+#   SKIP_GIT_PULL=1 SKIP_IMAGE_BUILD=1 ./mike-ai-bot-hkt/scripts/deploy_production.sh
+#
 set -euo pipefail
 
 PRODUCTION_BRANCH="main"
@@ -18,16 +21,19 @@ docker compose --profile tls stop || true
 
 cd "$REPO_ROOT"
 
-current="$(git rev-parse --abbrev-ref HEAD)"
-if [[ "$current" != "$PRODUCTION_BRANCH" ]]; then
-  echo "Refusing to deploy: current branch is '$current', expected '$PRODUCTION_BRANCH'."
-  echo "Run: git fetch origin && git checkout $PRODUCTION_BRANCH"
-  exit 1
-fi
+if [[ "${SKIP_GIT_PULL:-}" != "1" ]]; then
+  git config --global --add safe.directory "$REPO_ROOT" || true
+  current="$(git rev-parse --abbrev-ref HEAD)"
+  if [[ "$current" != "$PRODUCTION_BRANCH" ]]; then
+    echo "Refusing to deploy: current branch is '$current', expected '$PRODUCTION_BRANCH'."
+    echo "Run: git fetch origin && git checkout $PRODUCTION_BRANCH"
+    exit 1
+  fi
 
-echo "→ Fetching origin/$PRODUCTION_BRANCH"
-git fetch origin "$PRODUCTION_BRANCH"
-git pull --ff-only origin "$PRODUCTION_BRANCH"
+  echo "→ Fetching origin/$PRODUCTION_BRANCH"
+  git fetch origin "$PRODUCTION_BRANCH"
+  git pull --ff-only origin "$PRODUCTION_BRANCH"
+fi
 
 cd "$APP_DIR"
 
@@ -46,6 +52,8 @@ fi
 
 PARTNER_WEB_PORT="$(awk -F= '/^PARTNER_WEB_PORT=/{v=substr($0, index($0,$2))} END{print v}' .env)"
 PARTNER_WEB_PORT="${PARTNER_WEB_PORT:-8081}"
+TMA_WEB_PORT="$(awk -F= '/^TMA_WEB_PORT=/{v=substr($0, index($0,$2))} END{print v}' .env)"
+TMA_WEB_PORT="${TMA_WEB_PORT:-8082}"
 PARTNER_PUBLIC_HOST="$(awk -F= '/^PARTNER_PUBLIC_HOST=/{v=substr($0, index($0,$2))} END{print v}' .env)"
 PARTNER_PUBLIC_HOST="${PARTNER_PUBLIC_HOST:-partners.mikephuketai.com}"
 ADMIN_PUBLIC_HOST="$(awk -F= '/^ADMIN_PUBLIC_HOST=/{v=substr($0, index($0,$2))} END{print v}' .env)"
@@ -85,16 +93,47 @@ if ! grep -qE '^COMPOSE_PROFILES=' .env; then
   echo 'COMPOSE_PROFILES=tls' >> .env
 fi
 
-# One image at a time: pip + two npm builds in parallel OOMs a 1 GB Droplet.
-echo "→ Building images (bot, admin-web, partner-web, tma-web)"
-docker compose build bot
-docker compose build admin-web
-docker compose build partner-web
-docker compose build tma-web
+if [[ "${SKIP_IMAGE_BUILD:-}" != "1" ]]; then
+  if [[ "$(id -u)" -eq 0 ]]; then
+    if [[ -z "$(swapon --show 2>/dev/null || true)" ]]; then
+      echo "→ Adding 1G swap so image builds do not OOM systemd-resolved"
+      if [[ ! -f /swapfile ]]; then
+        fallocate -l 1G /swapfile
+        chmod 600 /swapfile
+        mkswap /swapfile
+      fi
+      swapon /swapfile || true
+    fi
+    echo "→ Repairing DNS"
+    systemctl restart systemd-resolved 2>/dev/null || true
+    sleep 2
+    if ! getent hosts registry-1.docker.io >/dev/null 2>&1; then
+      echo "Docker Hub still does not resolve; writing public nameservers"
+      if [[ -L /etc/resolv.conf ]]; then
+        rm -f /etc/resolv.conf
+      fi
+      printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' >/etc/resolv.conf
+    fi
+  fi
+
+  # One image at a time: pip + two npm builds in parallel OOMs a 1 GB Droplet.
+  echo "→ Building images (bot, admin-web, partner-web, tma-web)"
+  docker compose build bot
+  docker compose build admin-web
+  docker compose build partner-web
+  docker compose build tma-web
+fi
 echo "→ Starting containers"
-docker compose --profile tls up -d
+if ! docker compose --profile tls up -d; then
+  echo "docker compose up failed."
+  docker compose --profile tls ps || true
+  exit 2
+fi
 if [[ "${PARTNER_OFFER_BASE_WRITTEN}" == 1 ]]; then
-  docker compose --profile tls up -d --force-recreate bot
+  if ! docker compose --profile tls up -d --force-recreate bot; then
+    echo "docker compose up failed."
+    exit 2
+  fi
 fi
 
 echo "→ Waiting for admin panel"
@@ -110,12 +149,16 @@ for _ in $(seq 1 45); do
 done
 
 echo "→ Health checks"
-curl -fsS "http://127.0.0.1:${ADMIN_WEB_PORT}/" >/dev/null
+if ! curl -fsS "http://127.0.0.1:${ADMIN_WEB_PORT}/" >/dev/null; then
+  echo "Expected admin / to respond"
+  docker compose logs --tail=80 admin-api admin-web
+  exit 2
+fi
 stats_code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${ADMIN_WEB_PORT}/api/stats" || true)"
 if [[ "$stats_code" != "401" ]]; then
   echo "Expected /api/stats → 401, got ${stats_code}"
   docker compose logs --tail=80 admin-api admin-web
-  exit 1
+  exit 2
 fi
 wrap_code=""
 for _ in $(seq 1 15); do
@@ -128,15 +171,37 @@ done
 if [[ "$wrap_code" != "404" ]]; then
   echo "Expected /r/missing-token → 404, got ${wrap_code}"
   docker compose logs --tail=80 admin-api partner-web
-  exit 1
+  exit 2
+fi
+tma_code=""
+for _ in $(seq 1 15); do
+  tma_code="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${TMA_WEB_PORT}/" || true)"
+  if [[ "$tma_code" == "200" ]]; then
+    break
+  fi
+  sleep 2
+done
+if [[ "$tma_code" != "200" ]]; then
+  echo "Expected Mini App / → 200, got ${tma_code}"
+  docker compose logs --tail=80 tma-web
+  exit 2
 fi
 if curl -fsS --max-time 8 "https://${PARTNER_PUBLIC_HOST}/" >/dev/null 2>&1; then
   echo "→ Partner Dashboard https://${PARTNER_PUBLIC_HOST}/ is up"
 else
   echo "→ https://${PARTNER_PUBLIC_HOST}/ not reachable yet (add the A record and open firewall TCP 80/443)"
 fi
+if curl -fsS --max-time 8 "https://${TMA_PUBLIC_HOST}/" >/dev/null 2>&1; then
+  echo "→ Mini App https://${TMA_PUBLIC_HOST}/ is up"
+else
+  echo "→ https://${TMA_PUBLIC_HOST}/ not reachable yet (add the app A record)"
+fi
 
-echo "→ Branch: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
+if [[ "${SKIP_GIT_PULL:-}" != "1" ]]; then
+  echo "→ Branch: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
+else
+  echo "→ CI pack deploy (git skipped)"
+fi
 docker compose --profile tls ps
 echo "Done."
 echo "  Bot logs:        docker compose logs -f bot"
