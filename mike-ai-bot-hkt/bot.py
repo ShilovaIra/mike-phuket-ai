@@ -77,7 +77,7 @@ tgtrack = TgTrack(os.getenv("TGTRACK_API_KEY"))
 
 CHANNEL = "telegram"
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=OPENAI_API_KEY or "not-set")
 store: SessionStore | None = None
 places: PlacesClient | None = None
 storage = AssetStorage.from_env(os.environ)
