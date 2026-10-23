@@ -52,6 +52,7 @@ async def test_signed_user_saves_a_visible_place_and_reads_it_back(store):
             "maps_url": "https://maps.example/promthep",
             "photo_url": "media/places/placeholder.jpg",
             "mike_recommends": True,
+            "partner": None,
         }
     ]
 
