@@ -71,14 +71,17 @@ Operator admin (staging): `https://admin-staging.mikephuketai.com/`
 
 ## Production (Docker + DigitalOcean)
 
-Production runs from the **`main` Git branch only**. Promote by merging `staging` → `main`, then redeploy.
+Production runs from the **`main` Git branch only**. Promote by merging `staging` → `main`. A push does not deploy. Run **Deploy production** by hand from `main` after pytest is green.
+
+On the Droplet, from a `main` checkout, this still pulls and rebuilds. It refuses other branches:
 
 ```bash
 cp .env.production.example .env   # fill in production tokens
-./scripts/deploy_production.sh    # pulls main + rebuilds (refuses other branches)
+./scripts/deploy_production.sh
 ```
 
-Full setup guide (including domain and firewall): **[docs/PRODUCTION.md](docs/PRODUCTION.md)**
+Full setup guide (including domain, CI secrets, and firewall): **[docs/PRODUCTION.md](docs/PRODUCTION.md)**
 
 Partner Dashboard (production): `https://partners.mikephuketai.com/`
 Operator admin (production): `https://admin.mikephuketai.com/`
+Mini App (production): `https://app.mikephuketai.com/`
