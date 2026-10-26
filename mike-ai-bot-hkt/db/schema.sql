@@ -462,6 +462,16 @@ CREATE TABLE IF NOT EXISTS place_favourites (
 CREATE INDEX IF NOT EXISTS place_favourites_user_created
     ON place_favourites (user_id, created_at DESC);
 
+CREATE TABLE IF NOT EXISTS partner_favourites (
+    user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    partner_id UUID NOT NULL REFERENCES partners (id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, partner_id)
+);
+
+CREATE INDEX IF NOT EXISTS partner_favourites_user_created
+    ON partner_favourites (user_id, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS knowledge_base (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     partner_id UUID REFERENCES partners (id) ON DELETE CASCADE,

@@ -30,7 +30,7 @@
       href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=49" />
+    <link rel="stylesheet" href="./styles.css?v=50" />
   </head>
   <body>
     <a class="skip" href="#home">К экранам</a>
@@ -66,23 +66,93 @@
 
             <div class="row-head" data-recommendations-head hidden>
               <h2>Рекомендации для вас</h2>
-              <button class="text-link" type="button" data-see="recommendations">Смотреть все</button>
+              <a class="text-link" href="#recommendations">Смотреть все</a>
             </div>
             <div class="rec-row" data-recommendations tabindex="0"></div>
             <div class="row-head" data-places-head hidden>
               <h2>Места</h2>
-              <button class="text-link" type="button" data-see="places">Смотреть все</button>
+              <a class="text-link" href="#places">Смотреть все</a>
             </div>
             <div class="rec-row" data-home-places tabindex="0"></div>
             <p class="recs-empty" data-recs-empty hidden>Пока нет мест</p>
           </div>
-          <div class="peek" data-peek hidden>
-            <button class="peek-backdrop" type="button" data-peek-close aria-label="Закрыть"></button>
-            <div class="peek-panel" role="dialog" aria-modal="true" aria-labelledby="peek-title">
-              <div class="peek-grab" data-peek-grab></div>
-              <h2 id="peek-title" data-peek-title></h2>
-              <div class="stack" data-peek-list></div>
-            </div>
+          <div class="dock">
+            <button class="ask stub" type="button">Спросите Майка о Пхукете</button>
+            <nav class="tabs tabs-bar" aria-label="Разделы">
+              <a class="tab is-on" href="#home" aria-current="page">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>
+                Главная
+              </a>
+              <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро">
+                <span class="tab-mark">
+                  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>
+                  <span class="soon">скоро</span>
+                </span>
+                Карта
+              </span>
+              <a class="tab" href="#chat">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
+                Чат
+              </a>
+              <a class="tab" href="#saved">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
+                Избранное
+              </a>
+              <a class="tab" href="#profile">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+                Профиль
+              </a>
+            </nav>
+          </div>
+        </section>
+
+        <section class="screen screen-directory" id="recommendations" aria-label="Рекомендации">
+          <div class="directory-scroll">
+            <a class="directory-back" href="#home">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              На главную
+            </a>
+            <h1>Рекомендации</h1>
+            <div class="directory" data-directory="recommendations"></div>
+          </div>
+          <div class="dock">
+            <button class="ask stub" type="button">Спросите Майка о Пхукете</button>
+            <nav class="tabs tabs-bar" aria-label="Разделы">
+              <a class="tab is-on" href="#home" aria-current="page">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>
+                Главная
+              </a>
+              <span class="tab is-soon" aria-disabled="true" aria-label="Карта, скоро">
+                <span class="tab-mark">
+                  <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>
+                  <span class="soon">скоро</span>
+                </span>
+                Карта
+              </span>
+              <a class="tab" href="#chat">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v7A2.5 2.5 0 0 1 16.5 16H9l-4 3.2V6.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
+                Чат
+              </a>
+              <a class="tab" href="#saved">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>
+                Избранное
+              </a>
+              <a class="tab" href="#profile">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="M5.5 19.2c1.2-3 3.5-4.4 6.5-4.4s5.3 1.4 6.5 4.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+                Профиль
+              </a>
+            </nav>
+          </div>
+        </section>
+
+        <section class="screen screen-directory" id="places" aria-label="Места">
+          <div class="directory-scroll">
+            <a class="directory-back" href="#home">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              На главную
+            </a>
+            <h1>Места</h1>
+            <div class="directory" data-directory="places"></div>
           </div>
           <div class="dock">
             <button class="ask stub" type="button">Спросите Майка о Пхукете</button>
@@ -163,14 +233,18 @@
         <section class="screen screen-partner" id="partner" aria-label="Партнёр">
           <article class="place">
             <header class="partner-hero">
-              <a class="icon-btn icon-ghost" href="#home" aria-label="Назад">
+              <a class="icon-btn icon-ghost" href="#home" data-partner-back aria-label="Назад">
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14.5 6 8.5 12l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
               </a>
+              <button class="icon-btn icon-ghost" type="button" data-partner-save aria-pressed="false" aria-label="В избранное">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>
+              </button>
             </header>
             <div class="partner-logo" data-partner-logo></div>
             <div class="place-body">
               <h1 data-partner-name></h1>
               <p class="sub" data-partner-type></p>
+              <p class="place-save-error" data-partner-save-error hidden></p>
               <p class="prose" data-partner-blurb hidden></p>
               <a class="cta" data-partner-offer href="" target="_blank" rel="noopener" hidden></a>
               <h2 class="offices-title" data-offices-title hidden></h2>
@@ -276,7 +350,7 @@
 
         <section class="screen screen-tab" id="saved" aria-label="Избранное">
           <header class="tab-head"><h1>Избранное</h1></header>
-          <div class="saved-grid" data-saved>
+          <div class="directory-scroll saved-directory" data-saved>
             <p class="saved-empty" data-saved-empty>Пока ничего не сохранено</p>
           </div>
           <nav class="tabs tabs-bar" aria-label="Разделы">
@@ -351,6 +425,8 @@
         <p>Нижние вкладки открывают чат, избранное и профиль. Чат отвечает Майком. Карта отмечена «скоро» и не открывается. «О приложении» открывает описание.</p>
         <nav class="rail" aria-label="Экраны макета">
           <a href="#home">Главная</a>
+          <a href="#recommendations">Рекомендации</a>
+          <a href="#places">Места</a>
           <a href="#map">Карта</a>
           <a href="#chat">Чат</a>
           <a href="#saved">Избранное</a>
@@ -432,7 +508,7 @@
       }
     </script>
     <script type="module">
-      import { homeView, partnerPage, placeView } from "./catalog.mjs";
+      import { directoryView, homeView, partnerPage, placeView } from "./catalog.mjs";
       import { canSend, failureView, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
       import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
       import { descriptionParts } from "./description.mjs";
@@ -477,17 +553,20 @@
       var placesHead = document.querySelector("[data-places-head]");
       var placesRow = document.querySelector("[data-home-places]");
       var recsEmpty = document.querySelector("[data-recs-empty]");
-      var peek = document.querySelector("[data-peek]");
-      var peekTitle = document.querySelector("[data-peek-title]");
-      var peekList = document.querySelector("[data-peek-list]");
-      var peekPanel = peek.querySelector(".peek-panel");
+      var recommendationsDirectory = document.querySelector("[data-directory=recommendations]");
+      var placesDirectory = document.querySelector("[data-directory=places]");
       var catalogPlaces = [];
       var catalogPartners = [];
       var home = null;
+      var favouriteItems = [];
       var favouritePlaces = [];
+      var favouritePartners = [];
       var currentPlace = null;
+      var currentPartner = null;
       var currentSaved = false;
+      var currentPartnerSaved = false;
       var saveFailed = false;
+      var partnerSaveFailed = false;
       var saveBusy = false;
       var initData = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) || "";
 
@@ -495,7 +574,10 @@
       var backLink = document.querySelector("[data-place-back]");
       var heart = document.querySelector("[data-place-save]");
       var saveError = document.querySelector("[data-place-save-error]");
-      var savedGrid = document.querySelector("[data-saved]");
+      var partnerBack = document.querySelector("[data-partner-back]");
+      var partnerHeart = document.querySelector("[data-partner-save]");
+      var partnerSaveError = document.querySelector("[data-partner-save-error]");
+      var savedList = document.querySelector("[data-saved]");
       var savedEmpty = document.querySelector("[data-saved-empty]");
       cover.addEventListener("error", function () {
         if (!cover.src.endsWith("empty_picture_placeholder.jpg")) {
@@ -510,6 +592,15 @@
         heart.setAttribute("aria-label", heartState.filled ? "Убрать из избранного" : "В избранное");
         saveError.hidden = !heartState.error;
         saveError.textContent = heartState.error;
+      }
+
+      function paintPartnerHeart() {
+        var heartState = heartView({ saved: currentPartnerSaved, failed: partnerSaveFailed });
+        partnerHeart.classList.toggle("is-saved", heartState.filled);
+        partnerHeart.setAttribute("aria-pressed", heartState.filled ? "true" : "false");
+        partnerHeart.setAttribute("aria-label", heartState.filled ? "Убрать из избранного" : "В избранное");
+        partnerSaveError.hidden = !heartState.error;
+        partnerSaveError.textContent = heartState.error;
       }
 
       function fillDescription(el, text) {
@@ -641,7 +732,6 @@
           return item.name === card.name && item.category === card.category;
         });
         if (place) showPlace(place, back || "#home");
-        closePeek();
       }
 
       function partnerInitial(name) {
@@ -654,8 +744,7 @@
         link.href = "#partner";
         link.addEventListener("click", function () {
           var source = catalogPartners.find(function (item) { return item.id === partner.id; });
-          if (source) showPartner(source);
-          closePeek();
+          if (source) showPartner(source, "#home");
         });
 
         var mark = document.createElement("span");
@@ -697,7 +786,12 @@
 
       var offerPartnerId = null;
 
-      function showPartner(partner) {
+      function showPartner(partner, back) {
+        currentPartner = partner;
+        partnerBack.href = back || "#home";
+        currentPartnerSaved = favouritePartners.some(function (item) { return item.id === partner.id; });
+        partnerSaveFailed = false;
+        paintPartnerHeart();
         offerPartnerId = partner.id;
         var page = partnerPage(partner, catalogPlaces);
         document.querySelector("[data-partner-name]").textContent = partner.name;
@@ -748,16 +842,147 @@
           .catch(function () {});
       }
 
-      function closePeek() {
-        peek.hidden = true;
-        peekPanel.style.transform = "";
+      function heartIcon() {
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("width", "22");
+        svg.setAttribute("height", "22");
+        svg.setAttribute("aria-hidden", "true");
+        var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", "M12 19.4 4.8 12.6A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.2 5.4L12 19.4Z");
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", "currentColor");
+        path.setAttribute("stroke-width", "1.7");
+        path.setAttribute("stroke-linejoin", "round");
+        svg.appendChild(path);
+        return svg;
       }
 
-      function openPeek(title, partners, places) {
-        peekTitle.textContent = title;
-        fillRow(peekList, partners, places);
-        peek.hidden = false;
-        peekPanel.style.transform = "";
+      function savedIds() {
+        return {
+          places: favouritePlaces.map(function (item) { return item.id; }),
+          partners: favouritePartners.map(function (item) { return item.id; }),
+        };
+      }
+
+      function paintRowHeart(button, saved) {
+        button.classList.toggle("is-saved", saved);
+        button.setAttribute("aria-pressed", saved ? "true" : "false");
+        button.setAttribute("aria-label", saved ? "Убрать из избранного" : "В избранное");
+      }
+
+      function toggleRowSaved(row, button, error) {
+        if (saveBusy) return;
+        var saved = button.getAttribute("aria-pressed") === "true";
+        if (!initData) {
+          error.hidden = false;
+          error.textContent = heartView({ saved: saved, failed: true }).error;
+          return;
+        }
+        var next = !saved;
+        saveBusy = true;
+        error.hidden = true;
+        paintRowHeart(button, next);
+        setSaved({
+          kind: row.kind,
+          id: row.id,
+          saved: next,
+          initData: initData,
+          fetch: window.fetch.bind(window),
+        })
+          .then(function () {
+            return loadFavourites({ initData: initData, fetch: window.fetch.bind(window) });
+          })
+          .then(applyFavourites)
+          .catch(function () {
+            paintRowHeart(button, saved);
+            error.hidden = false;
+            error.textContent = heartView({ saved: saved, failed: true }).error;
+          })
+          .then(function () {
+            saveBusy = false;
+          });
+      }
+
+      function createDirectoryRow(row, back) {
+        var item = document.createElement("div");
+        item.className = "directory-row";
+
+        var link = document.createElement("a");
+        link.className = "directory-link";
+        link.href = row.kind === "partner" ? "#partner" : "#place";
+        link.addEventListener("click", function () {
+          if (row.kind === "partner") {
+            var source = catalogPartners.find(function (partner) { return partner.id === row.id; });
+            if (source) showPartner(source, back);
+            return;
+          }
+          var place = catalogPlaces.find(function (candidate) { return candidate.id === row.id; });
+          if (place) showPlace(place, back);
+        });
+
+        var mark = document.createElement("span");
+        mark.className = "directory-mark";
+        mark.setAttribute("aria-hidden", "true");
+        if (row.imageUrl) {
+          var image = document.createElement("img");
+          image.alt = "";
+          if (row.kind === "partner") image.className = "is-logo";
+          image.addEventListener("error", function () {
+            mark.textContent = partnerInitial(row.name);
+            image.remove();
+          });
+          image.src = row.imageUrl;
+          mark.appendChild(image);
+        } else {
+          mark.textContent = partnerInitial(row.name);
+        }
+        link.appendChild(mark);
+
+        var copy = document.createElement("span");
+        copy.className = "directory-copy";
+        var title = document.createElement("b");
+        title.textContent = row.name;
+        copy.appendChild(title);
+        if (row.subtitle) {
+          var subtitle = document.createElement("small");
+          subtitle.textContent = row.subtitle;
+          copy.appendChild(subtitle);
+        }
+        if (row.blurb) {
+          var blurb = document.createElement("p");
+          blurb.textContent = row.blurb;
+          copy.appendChild(blurb);
+        }
+        link.appendChild(copy);
+        item.appendChild(link);
+
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "directory-heart";
+        paintRowHeart(button, row.saved);
+        button.appendChild(heartIcon());
+        var error = document.createElement("p");
+        error.className = "directory-error";
+        error.hidden = true;
+        button.addEventListener("click", function () {
+          toggleRowSaved(row, button, error);
+        });
+        item.appendChild(button);
+        item.appendChild(error);
+        return item;
+      }
+
+      function fillDirectory(list, rows, back) {
+        list.replaceChildren();
+        rows.forEach(function (row) { list.appendChild(createDirectoryRow(row, back)); });
+      }
+
+      function renderDirectories() {
+        if (!home) return;
+        var view = directoryView(catalogPartners, catalogPlaces, savedIds());
+        fillDirectory(recommendationsDirectory, view.recommendations, "#recommendations");
+        fillDirectory(placesDirectory, view.places, "#places");
       }
 
       function renderHome() {
@@ -771,54 +996,32 @@
         recsEmpty.textContent = "Пока нет мест";
         fillRow(recommendationsRow, home.recommendations.partners, home.recommendations.places);
         fillRow(placesRow, [], home.places.places);
+        renderDirectories();
       }
-
-      document.querySelectorAll("[data-see]").forEach(function (button) {
-        button.addEventListener("click", function () {
-          if (!home) return;
-          if (button.getAttribute("data-see") === "recommendations") {
-            openPeek("Рекомендации для вас", home.recommendations.partners, home.recommendations.places);
-          } else {
-            openPeek("Места", [], home.places.places);
-          }
-        });
-      });
-      peek.querySelector("[data-peek-close]").addEventListener("click", closePeek);
-      var grabStart = null;
-      peek.querySelector("[data-peek-grab]").addEventListener("pointerdown", function (event) {
-        grabStart = event.clientY;
-        event.currentTarget.setPointerCapture(event.pointerId);
-      });
-      peek.querySelector("[data-peek-grab]").addEventListener("pointermove", function (event) {
-        if (grabStart === null) return;
-        var delta = Math.max(0, event.clientY - grabStart);
-        peekPanel.style.transform = "translateY(" + delta + "px)";
-      });
-      peek.querySelector("[data-peek-grab]").addEventListener("pointerup", function (event) {
-        if (grabStart !== null && event.clientY - grabStart > 80) closePeek();
-        else peekPanel.style.transform = "";
-        grabStart = null;
-      });
 
       function renderSaved() {
-        var view = favouritesView(favouritePlaces);
+        var view = favouritesView(favouriteItems);
         savedEmpty.hidden = !view.empty;
         savedEmpty.textContent = "Пока ничего не сохранено";
-        savedGrid.querySelectorAll(".rec").forEach(function (node) { node.remove(); });
-        view.cards.forEach(function (card, index) {
-          var place = favouritePlaces[index];
-          savedGrid.appendChild(createPlaceCard(card, function () {
-            showPlace(place, "#saved");
-          }));
+        savedList.querySelectorAll(".directory-row").forEach(function (node) { node.remove(); });
+        view.rows.forEach(function (row) {
+          savedList.appendChild(createDirectoryRow(row, "#saved"));
         });
       }
 
-      function applyFavourites(places) {
-        favouritePlaces = places;
+      function applyFavourites(items) {
+        favouriteItems = items;
+        favouritePlaces = items.filter(function (item) { return item.kind !== "partner"; });
+        favouritePartners = items.filter(function (item) { return item.kind === "partner"; });
         renderSaved();
+        renderDirectories();
         if (currentPlace && !saveBusy && !saveFailed) {
           currentSaved = favouritePlaces.some(function (item) { return item.id === currentPlace.id; });
           paintHeart();
+        }
+        if (currentPartner && !saveBusy && !partnerSaveFailed) {
+          currentPartnerSaved = favouritePartners.some(function (item) { return item.id === currentPartner.id; });
+          paintPartnerHeart();
         }
       }
 
@@ -882,6 +1085,42 @@
           .catch(function () {
             saveFailed = true;
             paintHeart();
+          })
+          .then(function () {
+            saveBusy = false;
+          });
+      });
+
+      partnerHeart.addEventListener("click", function () {
+        if (!currentPartner || saveBusy) return;
+        if (!initData) {
+          partnerSaveFailed = true;
+          paintPartnerHeart();
+          return;
+        }
+        var next = !currentPartnerSaved;
+        saveBusy = true;
+        setSaved({
+          kind: "partner",
+          id: currentPartner.id,
+          saved: next,
+          initData: initData,
+          fetch: window.fetch.bind(window),
+        })
+          .then(function (saved) {
+            currentPartnerSaved = saved;
+            partnerSaveFailed = false;
+            paintPartnerHeart();
+            return loadFavourites({ initData: initData, fetch: window.fetch.bind(window) }).catch(function () {
+              return null;
+            });
+          })
+          .then(function (items) {
+            if (items) applyFavourites(items);
+          })
+          .catch(function () {
+            partnerSaveFailed = true;
+            paintPartnerHeart();
           })
           .then(function () {
             saveBusy = false;

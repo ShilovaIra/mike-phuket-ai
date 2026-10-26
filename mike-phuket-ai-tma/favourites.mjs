@@ -1,4 +1,4 @@
-import { catalogView } from "./catalog.mjs";
+import { EMPTY_PHOTO } from "./catalog.mjs";
 
 const SAVE_ERROR = "Не удалось сохранить";
 
@@ -20,8 +20,9 @@ export async function loadFavourites({ initData, fetch }) {
   return response.json();
 }
 
-export async function setSaved({ id, saved, initData, fetch }) {
-  const response = await fetch(`/api/tma/favourites/${id}`, {
+export async function setSaved({ kind, id, saved, initData, fetch }) {
+  const path = kind === "partner" ? `/api/tma/favourites/partners/${id}` : `/api/tma/favourites/${id}`;
+  const response = await fetch(path, {
     method: "PUT",
     headers: { ...tmaHeaders(initData), "Content-Type": "application/json" },
     body: JSON.stringify({ saved }),
@@ -38,16 +39,34 @@ export function heartView({ saved, failed }) {
   };
 }
 
-export function favouritesView(places) {
-  const view = catalogView(places);
+function favouritePhoto(url) {
+  if (!url || url.endsWith("media/places/placeholder.jpg")) return EMPTY_PHOTO;
+  return url;
+}
+
+export function favouritesView(items) {
   return {
-    empty: view.empty,
-    cards: view.cards.map((card, index) => ({
-      id: places[index].id,
-      name: card.name,
-      category: card.category,
-      photoUrl: card.photoUrl,
-      badge: card.badge,
-    })),
+    empty: items.length === 0,
+    rows: items.map((item) =>
+      item.kind === "partner"
+        ? {
+            kind: "partner",
+            id: item.id,
+            name: item.name,
+            subtitle: item.type_label || "",
+            blurb: item.blurb || "",
+            imageUrl: item.logo_url || "",
+            saved: true,
+          }
+        : {
+            kind: "place",
+            id: item.id,
+            name: item.name,
+            subtitle: item.category,
+            blurb: item.blurb || "",
+            imageUrl: favouritePhoto(item.photo_url),
+            saved: true,
+          },
+    ),
   };
 }

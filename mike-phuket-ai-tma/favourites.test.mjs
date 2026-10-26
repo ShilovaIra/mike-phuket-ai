@@ -7,42 +7,49 @@ test("an empty favourites list is an empty state", () => {
   const view = favouritesView([]);
 
   assert.equal(view.empty, true);
-  assert.deepEqual(view.cards, []);
+  assert.deepEqual(view.rows, []);
 });
 
-test("favourites cards keep api order and the home card fields", () => {
+test("favourites keep mixed api order as directory rows", () => {
   const view = favouritesView([
     {
-      id: "newer",
-      name: "Анапа",
-      category: "Магазин",
-      photo_url: "https://cdn.example/kata.jpg",
-      mike_recommends: false,
+      kind: "partner",
+      id: "p-money",
+      name: "Money Shop",
+      type_label: "Обмен",
+      blurb: "Обмен на Бали",
+      logo_url: "https://cdn.example/logo.png",
     },
     {
+      kind: "place",
       id: "older",
       name: "Якорная",
       category: "Пляж",
+      blurb: "Закат",
       photo_url: "https://cdn.example/media/places/placeholder.jpg",
       mike_recommends: true,
     },
   ]);
 
   assert.equal(view.empty, false);
-  assert.deepEqual(view.cards, [
+  assert.deepEqual(view.rows, [
     {
-      id: "newer",
-      name: "Анапа",
-      category: "Магазин",
-      photoUrl: "https://cdn.example/kata.jpg",
-      badge: false,
+      kind: "partner",
+      id: "p-money",
+      name: "Money Shop",
+      subtitle: "Обмен",
+      blurb: "Обмен на Бали",
+      imageUrl: "https://cdn.example/logo.png",
+      saved: true,
     },
     {
+      kind: "place",
       id: "older",
       name: "Якорная",
-      category: "Пляж",
-      photoUrl: EMPTY_PHOTO,
-      badge: true,
+      subtitle: "Пляж",
+      blurb: "Закат",
+      imageUrl: EMPTY_PHOTO,
+      saved: true,
     },
   ]);
 });
@@ -79,6 +86,26 @@ test("saving sends the signed choice and returns it", async () => {
   });
 
   assert.equal(called.url, "/api/tma/favourites/place-1");
+  assert.equal(called.options.method, "PUT");
+  assert.equal(called.options.headers.Authorization, "tma signed");
+  assert.deepEqual(JSON.parse(called.options.body), { saved: true });
+  assert.equal(saved, true);
+});
+
+test("saving a partner hits the partner url and returns the heart", async () => {
+  let called;
+  const saved = await setSaved({
+    kind: "partner",
+    id: "partner-1",
+    saved: true,
+    initData: "signed",
+    fetch: async (url, options) => {
+      called = { url, options };
+      return { ok: true, json: async () => ({ saved: true }) };
+    },
+  });
+
+  assert.equal(called.url, "/api/tma/favourites/partners/partner-1");
   assert.equal(called.options.method, "PUT");
   assert.equal(called.options.headers.Authorization, "tma signed");
   assert.deepEqual(JSON.parse(called.options.body), { saved: true });
