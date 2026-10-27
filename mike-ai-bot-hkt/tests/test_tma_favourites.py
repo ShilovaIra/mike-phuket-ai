@@ -45,6 +45,7 @@ async def test_signed_user_saves_a_visible_place_and_reads_it_back(store):
     assert listed.status_code == 200
     assert listed.json() == [
         {
+            "kind": "place",
             "id": str(place.id),
             "name": "Якорная",
             "category": "Пляж",
@@ -55,6 +56,118 @@ async def test_signed_user_saves_a_visible_place_and_reads_it_back(store):
             "partner": None,
         }
     ]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_signed_user_saves_a_partner_ahead_of_an_older_place_and_can_remove_it(store):
+    beach = next(
+        category for category in await store.list_place_categories() if category.slug == "beach"
+    )
+    place = await store.create_place(
+        name="Якорная",
+        category_id=beach.id,
+        google_place_id="ChIJ_partner_fav_place",
+        latitude=7.76,
+        longitude=98.30,
+        blurb="Закат",
+        maps_url="https://maps.example/partner-fav-place",
+        mike_recommends=True,
+    )
+    partner = await store.create_partner(
+        name="Money Shop",
+        type="money_exchange",
+        referral_url="https://example.test/money",
+        blurb="Обмен на Бали",
+    )
+
+    async def model(_messages):
+        raise AssertionError("model should not run")
+
+    async with tma_client(store, model) as client:
+        headers = tma_headers()
+        await client.put(
+            f"/api/tma/favourites/{place.id}",
+            headers=headers,
+            json={"saved": True},
+        )
+        saved = await client.put(
+            f"/api/tma/favourites/partners/{partner.id}",
+            headers=headers,
+            json={"saved": True},
+        )
+        listed = await client.get("/api/tma/favourites", headers=headers)
+        removed = await client.put(
+            f"/api/tma/favourites/partners/{partner.id}",
+            headers=headers,
+            json={"saved": False},
+        )
+        after = await client.get("/api/tma/favourites", headers=headers)
+
+    assert saved.status_code == 200
+    assert saved.json() == {"saved": True}
+    body = listed.json()
+    assert body[0] == {
+        "kind": "partner",
+        "id": str(partner.id),
+        "name": "Money Shop",
+        "type_label": "Обмен",
+        "blurb": "Обмен на Бали",
+        "logo_url": "",
+    }
+    assert body[1]["kind"] == "place"
+    assert body[1]["id"] == str(place.id)
+    assert body[1]["name"] == "Якорная"
+    assert removed.status_code == 200
+    assert removed.json() == {"saved": False}
+    assert [item["kind"] for item in after.json()] == ["place"]
+    assert [item["id"] for item in after.json()] == [str(place.id)]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_inactive_partner_is_left_out_of_favourites_until_it_returns(store):
+    partner = await store.create_partner(
+        name="Money Shop",
+        type="money_exchange",
+        referral_url="https://example.test/money-hidden",
+        blurb="Обмен на Бали",
+    )
+
+    async def model(_messages):
+        raise AssertionError("model should not run")
+
+    async with tma_client(store, model) as client:
+        headers = tma_headers()
+        await client.put(
+            f"/api/tma/favourites/partners/{partner.id}",
+            headers=headers,
+            json={"saved": True},
+        )
+        await store.update_partner(
+            partner.id,
+            name=partner.name,
+            type=partner.type,
+            referral_url=partner.referral_url,
+            blurb=partner.blurb or "",
+            is_active=False,
+            sort_order=partner.sort_order,
+        )
+        hidden = await client.get("/api/tma/favourites", headers=headers)
+        await store.update_partner(
+            partner.id,
+            name=partner.name,
+            type=partner.type,
+            referral_url=partner.referral_url,
+            blurb=partner.blurb or "",
+            is_active=True,
+            sort_order=partner.sort_order,
+        )
+        restored = await client.get("/api/tma/favourites", headers=headers)
+
+    assert hidden.json() == []
+    assert [item["id"] for item in restored.json()] == [str(partner.id)]
+    assert restored.json()[0]["kind"] == "partner"
 
 
 @requires_db

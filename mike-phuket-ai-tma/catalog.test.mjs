@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   catalogView,
+  directoryView,
   EMPTY_PHOTO,
   homeView,
   partnerPage,
@@ -50,6 +51,108 @@ test("an empty catalog is an empty state", () => {
 
   assert.equal(view.empty, true);
   assert.deepEqual(view.cards, []);
+});
+
+test("recommendations rows show each partner, then unbound Mike picks, with a heart only when saved", () => {
+  const partners = [
+    {
+      id: "p-esim",
+      name: "Mike eSIM",
+      blurb: "Связь в любой стране",
+      logo_url: "",
+      sort_order: 2,
+      type_label: "eSIM",
+    },
+    {
+      id: "p-money",
+      name: "Money Shop",
+      blurb: "Обмен на Бали",
+      logo_url: "https://cdn.example/logo.png",
+      sort_order: 1,
+      type_label: "Обмен",
+    },
+  ];
+  const places = [
+    {
+      ...recommended,
+      id: "kassa",
+      name: "Касса",
+      partner: { id: "p-money", name: "Money Shop" },
+    },
+    { ...recommended, id: "yakornaya", name: "Якорная", partner: null },
+    { ...plain, id: "anapa", name: "Анапа", partner: null },
+  ];
+
+  const view = directoryView(partners, places, {
+    places: ["yakornaya"],
+    partners: ["p-money"],
+  });
+
+  assert.deepEqual(view.recommendations, [
+    {
+      kind: "partner",
+      id: "p-money",
+      name: "Money Shop",
+      subtitle: "Обмен",
+      blurb: "Обмен на Бали",
+      imageUrl: "https://cdn.example/logo.png",
+      saved: true,
+    },
+    {
+      kind: "partner",
+      id: "p-esim",
+      name: "Mike eSIM",
+      subtitle: "eSIM",
+      blurb: "Связь в любой стране",
+      imageUrl: "",
+      saved: false,
+    },
+    {
+      kind: "place",
+      id: "yakornaya",
+      name: "Якорная",
+      subtitle: "Пляж",
+      blurb: "Закат",
+      imageUrl: "https://cdn.example/promthep.jpg",
+      saved: true,
+    },
+  ]);
+});
+
+test("the places list is unbound places only, recommended first", () => {
+  const places = [
+    { ...plain, id: "anapa", name: "Анапа", partner: null },
+    {
+      ...plain,
+      id: "kassa",
+      name: "Касса",
+      partner: { id: "p-money", name: "Money Shop" },
+    },
+    { ...recommended, id: "yakornaya", name: "Якорная", partner: null },
+  ];
+
+  const view = directoryView([], places, { places: ["anapa"], partners: [] });
+
+  assert.deepEqual(view.places, [
+    {
+      kind: "place",
+      id: "yakornaya",
+      name: "Якорная",
+      subtitle: "Пляж",
+      blurb: "Закат",
+      imageUrl: "https://cdn.example/promthep.jpg",
+      saved: false,
+    },
+    {
+      kind: "place",
+      id: "anapa",
+      name: "Анапа",
+      subtitle: "Магазин",
+      blurb: "",
+      imageUrl: "https://cdn.example/kata.jpg",
+      saved: true,
+    },
+  ]);
 });
 
 test("home recommendations list every partner, then only unbound Mike picks", () => {

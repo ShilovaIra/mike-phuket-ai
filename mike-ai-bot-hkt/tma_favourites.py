@@ -14,6 +14,29 @@ async def open_session(store: Any, *, init_data: str, bot_token: str) -> None:
     await store.ensure_identity(TMA_CHANNEL, external_id, source="tma")
 
 
+async def save_partner(
+    store: Any,
+    *,
+    init_data: str,
+    bot_token: str,
+    partner_id: UUID,
+    saved: bool,
+) -> bool:
+    external_id = telegram_user_id(init_data, bot_token)
+    await store.set_partner_favourite(TMA_CHANNEL, external_id, partner_id, saved=saved)
+    return saved
+
+
+async def list_saved(
+    store: Any,
+    *,
+    init_data: str,
+    bot_token: str,
+) -> list[tuple[str, UUID]]:
+    external_id = telegram_user_id(init_data, bot_token)
+    return await store.list_favourite_refs(TMA_CHANNEL, external_id)
+
+
 async def save_place(
     store: Any,
     *,

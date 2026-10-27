@@ -36,6 +36,46 @@ function byRecommendThenName(a, b) {
   return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
 }
 
+export function directoryView(partners, places, saved) {
+  const savedPlaces = new Set(saved.places);
+  const savedPartners = new Set(saved.partners);
+  const listed = [...partners].sort(
+    (a, b) =>
+      a.sort_order - b.sort_order || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
+  );
+  const partnerRows = listed.map((partner) => ({
+    kind: "partner",
+    id: partner.id,
+    name: partner.name,
+    subtitle: partner.type_label || "",
+    blurb: partner.blurb || "",
+    imageUrl: partner.logo_url || "",
+    saved: savedPartners.has(partner.id),
+  }));
+  const unbound = places
+    .filter((place) => !place.partner)
+    .sort((a, b) => {
+      if (a.mike_recommends !== b.mike_recommends) return a.mike_recommends ? -1 : 1;
+      return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+    });
+  const placeRow = (place) => ({
+    kind: "place",
+    id: place.id,
+    name: place.name,
+    subtitle: place.category,
+    blurb: place.blurb || "",
+    imageUrl: photoUrl(place.photo_url),
+    saved: savedPlaces.has(place.id),
+  });
+  return {
+    recommendations: [
+      ...partnerRows,
+      ...unbound.filter((place) => place.mike_recommends).map(placeRow),
+    ],
+    places: unbound.map(placeRow),
+  };
+}
+
 export function homeView(partners, places) {
   const listed = [...partners].sort(
     (a, b) =>

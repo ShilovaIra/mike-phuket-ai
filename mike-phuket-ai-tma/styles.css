@@ -348,6 +348,7 @@ button {
   font-size: 0.875rem;
   font-weight: 600;
   min-height: 32px;
+  text-decoration: none;
 }
 
 .text-link:hover {
@@ -549,6 +550,7 @@ button {
 .partner-hero {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex: none;
   padding: calc(16px + var(--chrome-top)) 12px 12px;
 }
@@ -676,58 +678,136 @@ button {
   width: 53px;
 }
 
-.peek {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  display: flex;
-  align-items: flex-end;
+.screen-directory {
+  background: var(--canvas);
 }
 
-.peek[hidden] {
-  display: none;
+.directory-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: calc(12px + var(--chrome-top)) 16px 16px;
 }
 
-.peek-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(16, 32, 51, 0.4);
+.saved-directory {
+  padding-top: 8px;
 }
 
-.peek-panel {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-height: 78%;
-  padding: 8px 16px 24px;
-  border-radius: 20px 20px 0 0;
+.directory-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 32px;
+  color: var(--blue);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.directory-back:hover {
+  color: var(--blue-press);
+}
+
+.directory-scroll h1 {
+  margin: 14px 0 4px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.directory-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
+  gap: 4px 8px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.directory-link {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.directory-mark {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
   background: var(--surface);
-}
-
-.peek-grab {
-  width: 36px;
-  height: 4px;
-  margin: 4px auto 12px;
-  border-radius: 999px;
-  background: var(--line);
-  touch-action: none;
-}
-
-.peek-panel h2 {
-  margin: 0 0 12px;
-  font-size: 1.125rem;
+  color: var(--ink);
+  font-size: 1.25rem;
   font-weight: 700;
 }
 
-.peek-panel .stack {
-  min-height: 0;
-  overflow: auto;
-  margin-top: 0;
-  padding-bottom: 8px;
+.directory-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
-  margin: 8px 16px 0;
+
+.directory-mark img.is-logo {
+  object-fit: contain;
+  padding: 6px;
+}
+
+.directory-copy {
+  min-width: 0;
+}
+
+.directory-copy b {
+  display: block;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+.directory-copy small {
+  display: block;
+  margin-top: 2px;
   color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+}
+
+.directory-copy p {
+  display: -webkit-box;
+  margin: 2px 0 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.directory-heart {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  color: var(--ink);
+}
+
+.directory-heart.is-saved path {
+  fill: currentColor;
+}
+
+.directory-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
 }
 
 .thumb-food {
@@ -1951,7 +2031,8 @@ a.row {
   .screen-voice,
   .place,
   .screen-route,
-  .screen-tab {
+  .screen-tab,
+  .screen-directory {
     min-height: calc(100dvh - 56px);
   }
 
@@ -1962,7 +2043,8 @@ a.row {
   }
 
   .screen-home,
-  .screen-tab {
+  .screen-tab,
+  .screen-directory {
     height: var(--app-height, 100dvh);
     max-height: var(--app-height, 100dvh);
     min-height: 0;
@@ -1996,7 +2078,8 @@ a.row {
   .place,
   .screen-voice,
   .screen-route,
-  .screen-tab {
+  .screen-tab,
+  .screen-directory {
     height: 100%;
     min-height: 0;
   }
