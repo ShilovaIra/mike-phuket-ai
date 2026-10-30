@@ -3,6 +3,20 @@ import { MemoryRouter } from 'react-router-dom'
 import App from '../App'
 import { authApi } from '../auth/authApi'
 
+test('stats page shows tourists who saved the current partner above category users', async () => {
+  await authApi.login({ email: 'shop@example.com', password: 'shop-secret' })
+  render(
+    <MemoryRouter initialEntries={['/stats']}>
+      <App />
+    </MemoryRouter>,
+  )
+
+  const saved = await screen.findByText('В избранном')
+  const category = screen.getByText('Пользователей, выбравших обмен рублей (всё время)')
+  expect(saved.compareDocumentPosition(category) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(screen.getByText('9')).toBeInTheDocument()
+})
+
 test('stats page shows users who chose the partner category above views', async () => {
   await authApi.login({ email: 'shop@example.com', password: 'shop-secret' })
   render(
