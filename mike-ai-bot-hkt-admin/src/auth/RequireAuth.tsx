@@ -33,6 +33,9 @@ export function RequireAuth() {
           <Link to="/stats" className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900">
             Статистика
           </Link>
+          <Link to="/broadcasts" className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900">
+            Рассылка
+          </Link>
           <Link
             to="/partners"
             className="rounded px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900"

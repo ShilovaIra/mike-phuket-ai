@@ -357,7 +357,7 @@ ALTER TABLE users
 CREATE TABLE IF NOT EXISTS follow_up_jobs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    kind TEXT NOT NULL CHECK (kind IN ('partner_topic', 'win_back')),
+    kind TEXT NOT NULL CHECK (kind IN ('partner_topic', 'win_back', 'broadcast')),
     topic TEXT,
     scheduled_at TIMESTAMPTZ NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending'
@@ -378,6 +378,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS one_pending_win_back_per_user
 CREATE INDEX IF NOT EXISTS follow_up_jobs_due
     ON follow_up_jobs (status, scheduled_at)
     WHERE status = 'pending';
+
+ALTER TABLE follow_up_jobs DROP CONSTRAINT IF EXISTS follow_up_jobs_kind_check;
+ALTER TABLE follow_up_jobs ADD CONSTRAINT follow_up_jobs_kind_check
+    CHECK (kind IN ('partner_topic', 'win_back', 'broadcast'));
 
 CREATE TABLE IF NOT EXISTS partner_users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -502,3 +506,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS knowledge_base_partner_id_key
 
 CREATE UNIQUE INDEX IF NOT EXISTS knowledge_base_place_id_key
     ON knowledge_base (place_id);
+
+CREATE TABLE IF NOT EXISTS broadcasts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    text TEXT NOT NULL,
+    scheduled_at TIMESTAMPTZ NOT NULL,
+    status TEXT NOT NULL DEFAULT 'scheduled'
+        CHECK (status IN ('scheduled', 'sent')),
+    button_url TEXT,
+    button_label TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

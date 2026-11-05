@@ -254,6 +254,14 @@ function seedKnowledgeBase(): KnowledgeBaseRow[] {
 }
 
 let knowledgeBase: KnowledgeBaseRow[] = seedKnowledgeBase()
+let broadcasts: {
+  id: string
+  text: string
+  scheduled_at: string
+  status: 'scheduled' | 'sent'
+  button_url: string | null
+  button_label: string | null
+}[] = []
 let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
 let partnerTypesListFailure: { status: number; detail: string } | null = null
 let logoUploads = new Map<string, string>()
@@ -279,6 +287,7 @@ export function resetMockBackend(): void {
   places = seedPlaces()
   partners = structuredClone(seedPartners)
   knowledgeBase = seedKnowledgeBase()
+  broadcasts = []
   partnerUsers = []
   partnerTypesListFailure = null
   logoUploads = new Map()
@@ -306,6 +315,19 @@ export function failPlacePhotoSave(): void {
 
 export function restorePlacePhotoSave(): void {
   placePhotoSaveDown = false
+}
+
+export function seedBroadcasts(
+  items: {
+    id: string
+    text: string
+    scheduled_at: string
+    status: 'scheduled' | 'sent'
+    button_url: string | null
+    button_label: string | null
+  }[],
+): void {
+  broadcasts = items
 }
 
 export function mockPartnerByName(name: string): Partner | undefined {
@@ -419,6 +441,44 @@ export function installFetchMock(): void {
       const used = places.some((place) => place.category === slug)
       if (used) return json({ detail: 'Категорию используют места' }, 409)
       placeCategories = placeCategories.filter((category) => category.slug !== slug)
+      return new Response(null, { status: 204 })
+    }
+
+    if (path === '/api/broadcasts' && method === 'GET') {
+      return json(broadcasts)
+    }
+
+    if (path === '/api/broadcasts' && method === 'POST') {
+      const created = {
+        id: crypto.randomUUID(),
+        text: String(body.text).trim(),
+        scheduled_at: body.scheduled_at as string,
+        status: 'scheduled' as const,
+        button_url: (body.button_url as string | null) || null,
+        button_label: (body.button_label as string | null) || null,
+      }
+      broadcasts.push(created)
+      return json(created, 201)
+    }
+
+    const broadcastMatch = path.match(/^\/api\/broadcasts\/([^/]+)$/)
+    if (broadcastMatch && method === 'PATCH') {
+      const id = decodeURIComponent(broadcastMatch[1])
+      const index = broadcasts.findIndex((item) => item.id === id)
+      if (index < 0) return json({ detail: 'not found' }, 404)
+      broadcasts[index] = {
+        ...broadcasts[index],
+        text: String(body.text).trim(),
+        scheduled_at: body.scheduled_at as string,
+        button_url: (body.button_url as string | null) || null,
+        button_label: (body.button_label as string | null) || null,
+      }
+      return json(broadcasts[index])
+    }
+
+    if (broadcastMatch && method === 'DELETE') {
+      const id = decodeURIComponent(broadcastMatch[1])
+      broadcasts = broadcasts.filter((item) => item.id !== id)
       return new Response(null, { status: 204 })
     }
 

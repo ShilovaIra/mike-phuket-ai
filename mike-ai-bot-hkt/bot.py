@@ -613,15 +613,22 @@ async def send_lead_to_admin(update: Update, context: ContextTypes.DEFAULT_TYPE,
     await lead_contact.forward_to_admins(context.bot, ADMIN_IDS, update.message)
 
 
-async def process_due_follow_ups(bot) -> None:
-    jobs = await store.claim_due_jobs(limit=20)
+async def process_due_follow_ups(bot, *, now=None) -> None:
+    jobs = await store.claim_due_jobs(now=now, limit=20)
     for job in jobs:
         try:
-            await bot.send_message(chat_id=int(job.external_id), text=job.message_text)
+            kwargs = {"chat_id": int(job.external_id), "text": job.message_text}
+            if job.button_url:
+                kwargs["reply_markup"] = InlineKeyboardMarkup(
+                    [[InlineKeyboardButton(job.button_label, url=job.button_url)]]
+                )
+            await bot.send_message(**kwargs)
             await store.mark_job_sent(job.id, message_text=job.message_text)
         except Forbidden as exc:
             await store.mark_job_failed(
-                job.id, permanent=True, error=str(exc)
+                job.id,
+                permanent=job.kind != "broadcast",
+                error=str(exc),
             )
         except (TelegramError, ValueError) as exc:
             await store.mark_job_failed(
