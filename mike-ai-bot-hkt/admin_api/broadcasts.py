@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Optional
+from urllib.parse import urlparse
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
@@ -31,16 +32,25 @@ from broadcasts import (
     update_interval_broadcast,
 )
 from db.store import AdminUser, SessionStore
-from maps_pin import resolve_maps_link
 
 router = APIRouter()
 
-ROUTE_BUTTON_LABEL = "Проложить маршрут"
 BANGKOK = ZoneInfo("Asia/Bangkok")
+OPEN_BUTTON_LABEL = "Открыть"
 
 
 def broadcast_scheduled_at(value: datetime) -> str:
     return value.astimezone(BANGKOK).isoformat(timespec="seconds")
+
+
+def _button_link(url: str | None, label: str | None) -> tuple[str | None, str | None]:
+    cleaned = (url or "").strip()
+    if not cleaned:
+        return None, None
+    parsed = urlparse(cleaned)
+    if parsed.scheme.lower() not in {"http", "https"} or not parsed.hostname:
+        raise HTTPException(status_code=400, detail="Укажите ссылку http или https")
+    return cleaned, (label or "").strip() or OPEN_BUTTON_LABEL
 
 
 class BroadcastIn(BaseModel):
@@ -91,21 +101,15 @@ def _broadcast_payload(broadcast: Broadcast) -> dict:
 
 
 def _broadcast_write(
-    body: BroadcastIn, maps_fetch
+    body: BroadcastIn,
 ) -> tuple[str, datetime, Optional[str], Optional[str]]:
     text = body.text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="Введите текст сообщения")
     if body.scheduled_at.tzinfo is None or body.scheduled_at <= datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Укажите будущее время по Бангкоку")
-    button_url = (body.button_url or "").strip()
-    if not button_url:
-        return text, body.scheduled_at, None, None
-    resolved = resolve_maps_link(button_url, maps_fetch)
-    if resolved is None:
-        raise HTTPException(status_code=400, detail="В ссылке нет координат")
-    label = (body.button_label or "").strip() or ROUTE_BUTTON_LABEL
-    return text, body.scheduled_at, resolved[0], label
+    button_url, button_label = _button_link(body.button_url, body.button_label)
+    return text, body.scheduled_at, button_url, button_label
 
 
 @router.get("/api/broadcasts")
@@ -125,9 +129,7 @@ async def create_broadcast(
     admin: AdminUser = Depends(require_admin),
 ) -> dict:
     _ = admin
-    text, scheduled_at, button_url, button_label = _broadcast_write(
-        body, request.app.state.maps_fetch
-    )
+    text, scheduled_at, button_url, button_label = _broadcast_write(body)
     created = await save_broadcast(
         _store(request).pool,
         text=text,
@@ -146,9 +148,7 @@ async def update_broadcast(
     admin: AdminUser = Depends(require_admin),
 ) -> dict:
     _ = admin
-    text, scheduled_at, button_url, button_label = _broadcast_write(
-        body, request.app.state.maps_fetch
-    )
+    text, scheduled_at, button_url, button_label = _broadcast_write(body)
     try:
         updated = await save_broadcast_update(
             _store(request).pool,
@@ -226,16 +226,7 @@ async def create_list_message(
     text = body.text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="Введите текст сообщения")
-    button_url = (body.button_url or "").strip()
-    button_label = None
-    if button_url:
-        resolved = resolve_maps_link(button_url, request.app.state.maps_fetch)
-        if resolved is None:
-            raise HTTPException(status_code=400, detail="В ссылке нет координат")
-        button_url = resolved[0]
-        button_label = (body.button_label or "").strip() or ROUTE_BUTTON_LABEL
-    else:
-        button_url = None
+    button_url, button_label = _button_link(body.button_url, body.button_label)
     created = await add_broadcast_list_message(
         _store(request).pool,
         list_id,

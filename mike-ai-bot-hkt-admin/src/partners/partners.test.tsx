@@ -52,6 +52,13 @@ function pngFile(name = 'logo.png'): File {
   return new File([PNG_BYTES], name, { type: 'image/png' })
 }
 
+async function openPartnerEdit(user: ReturnType<typeof userEvent.setup>, name: string) {
+  const row = (await screen.findByText(name)).closest('tr')!
+  await user.click(within(row).getByRole('button', { name: /действия/i }))
+  await user.click(screen.getByRole('menuitem', { name: /изменить/i }))
+  return row
+}
+
 async function fillNewPartner(user: ReturnType<typeof userEvent.setup>, dialog: HTMLElement) {
   await user.type(within(dialog).getByLabelText(/^имя$/i), 'Test Dive')
   await user.selectOptions(within(dialog).getByLabelText(/^тип$/i), 'excursions')
@@ -142,7 +149,7 @@ test('edit dialog shows the current logo and can remove it', async () => {
   const row = (await screen.findByText('Test Dive')).closest('tr')!
   const listed = within(row).getByRole('img', { name: /логотип test dive/i }).getAttribute('src')
 
-  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+  await openPartnerEdit(user, 'Test Dive')
   const editDialog = await screen.findByRole('dialog')
   const current = await within(editDialog).findByRole('img', { name: /предпросмотр логотипа/i })
   expect(current.getAttribute('src')).toBe(listed)
@@ -181,8 +188,7 @@ test('admin can edit a partner in a modal and see updates on the list', async ()
   const user = userEvent.setup()
   await renderAuthed('/partners')
 
-  const row = (await screen.findByText('Money Shop')).closest('tr')!
-  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+  await openPartnerEdit(user, 'Money Shop')
 
   const dialog = await screen.findByRole('dialog')
   const name = within(dialog).getByLabelText(/^имя$/i)
@@ -198,13 +204,41 @@ test('admin can deactivate a partner via modal', async () => {
   const user = userEvent.setup()
   await renderAuthed('/partners')
 
-  const row = (await screen.findByText('Money Shop')).closest('tr')!
-  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+  await openPartnerEdit(user, 'Money Shop')
 
   const dialog = await screen.findByRole('dialog')
   await user.click(within(dialog).getByLabelText(/^активен$/i))
   await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
   expect(await screen.findByText('Money Shop')).toBeInTheDocument()
-  expect(screen.getByText('Money Shop').closest('tr')).toHaveTextContent('нет')
+  expect(screen.getByText('Money Shop').closest('tr')).toHaveTextContent('Нет')
+})
+
+test('partner list pages eight rows at a time', async () => {
+  const user = userEvent.setup()
+  await renderAuthed('/partners')
+
+  expect(await screen.findByText('5 партнёров')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /предыдущая страница/i })).toBeDisabled()
+  expect(screen.getByRole('button', { name: /следующая страница/i })).toBeDisabled()
+
+  for (let index = 1; index <= 4; index += 1) {
+    await user.click(screen.getByRole('button', { name: /добавить партнёра/i }))
+    const dialog = await screen.findByRole('dialog')
+    await user.type(within(dialog).getByLabelText(/^имя$/i), `Pager ${index}`)
+    await user.selectOptions(within(dialog).getByLabelText(/^тип$/i), 'excursions')
+    await user.type(within(dialog).getByLabelText(/referral/i), `https://example.com/p${index}`)
+    await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
+    expect(await screen.findByText(`Pager ${index}`)).toBeInTheDocument()
+  }
+
+  expect(screen.getByText('9 партнёров')).toBeInTheDocument()
+  expect(screen.getByText('Pager 4')).toBeInTheDocument()
+  expect(screen.queryByText('Money Shop')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /следующая страница/i })).toBeDisabled()
+
+  await user.click(screen.getByRole('button', { name: /предыдущая страница/i }))
+
+  expect(await screen.findByText('Money Shop')).toBeInTheDocument()
+  expect(screen.queryByText('Pager 4')).not.toBeInTheDocument()
 })

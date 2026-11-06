@@ -7,6 +7,20 @@ export type TopicStat = {
   taps: number
 }
 
+export type ActivityPoint = {
+  date: string
+  active_users: number
+}
+
+export type StatDeltas = {
+  total_users: number
+  new_users_today: number
+  active_today: number
+  leads_all_time: number
+  new_users_7d: number
+  leads_7d: number
+}
+
 export type BotStats = {
   total_users: number
   new_users_today: number
@@ -17,6 +31,8 @@ export type BotStats = {
   leads_all_time: number
   leads_7d: number
   users_by_first_source: Record<string, number>
+  deltas: StatDeltas
+  activity: ActivityPoint[]
 }
 
 export const statsApi = {

@@ -7,10 +7,8 @@ const LINKS = [
   { to: '/stats', label: 'Статистика', icon: 'chart' },
   { to: '/broadcasts', label: 'Рассылка', icon: 'send' },
   { to: '/partners', label: 'Партнёры', icon: 'users' },
-  { to: '/partner-types', label: 'Типы партнёров', icon: 'tag' },
   { to: '/places', label: 'Места', icon: 'pin' },
   { to: '/knowledge-base', label: 'База знаний', icon: 'book' },
-  { to: '/place-categories', label: 'Категории мест', icon: 'layers' },
   { to: '/partner-users', label: 'Пользователи партнёров', icon: 'idcard' },
 ] as const
 

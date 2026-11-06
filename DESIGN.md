@@ -106,7 +106,7 @@ components:
 
 A tourist on a bright Phuket street, Telegram in one hand, sun on the glass. The Mini App is a white desk: readable in daylight, fast to tap, one person on the other side. Mike's face and short Russian copy carry the warmth. Navy type and a single yellow plate do the wayfinding. Tropical photography stays inside that circle, and in marketing. It never becomes wallpaper.
 
-This is one product with two voices. Tourists get Mike: friendly, clear, local. Operators get a quiet desk in the same palette: navy actions, almost no yellow, no character cosplay. The Mini App home maps 1:1 to the bot keyboard (where to eat, beaches, nearby, property, ask Mike). Labels name the action. Personality lives in the portrait and the greeting, not in decoration.
+This is one product with two voices. Tourists get Mike: friendly, clear, local, on the light desk. Operators get the dark night panel: violet actions, no yellow, no character cosplay. The Mini App home maps 1:1 to the bot keyboard (where to eat, beaches, nearby, property, ask Mike). Labels name the action. Personality lives in the portrait and the greeting, not in decoration.
 
 The system rejects cringy consumer apps (over-cute copy, mascot spam, emoji walls, gamified fluff), loud travel-agency Telegram spam and hard-sell real-estate brochure tone, and generic flashy SaaS dashboards that prioritize chrome over task completion. It also rejects the customer's dark "night map" phone mock as the tourist default: we locked **light concierge** instead.
 
@@ -129,8 +129,8 @@ Daylight desk: navy-tinted off-white, not cream. Accent is the yellow PHUKET pla
 - **Plate Yellow** (`#FDCB1A`): sampled from the PHUKET bar. The brand object. Primary tourist CTA, selected chips, the outer hairline around Mike's portrait. Never a page background, never a gradient, never a 40% wash.
 
 ### Neutral
-- **Canvas** (`#F4F7FB`): Mini App and admin page ground. Chroma tilts toward navy (oklch ~0.975 0.006 255), not toward sand.
-- **Surface** (`#FFFFFF`): topic rows, fields, admin tables.
+- **Canvas** (`#F4F7FB`): Mini App page ground. Chroma tilts toward navy (oklch ~0.975 0.006 255), not toward sand.
+- **Surface** (`#FFFFFF`): topic rows and fields in the Mini App.
 - **Ink** (`#0A1B36`): default text on canvas/surface. Contrast ≥15:1 on canvas.
 - **Ink Muted** (`#3D5270`): supporting copy only. Contrast ≥7:1 on canvas. Forbidden as primary body color.
 - **Line** (`#D5DEEA`): 1px borders. Full border, never a thick side stripe.
@@ -141,7 +141,7 @@ Daylight desk: navy-tinted off-white, not cream. Accent is the yellow PHUKET pla
 
 **The Plate Rule.** Plate yellow occupies ≤10% of any tourist screen, and almost 0% of ops screens. If yellow is filling a card, a chart, or a header bar, it is wrong. Put it back on the plate-shaped CTA.
 
-**The Quiet Tools Rule.** Admin and partner dashboards use Harbor Navy for primary actions (replacing the older `#053e7a` approximation). Plate yellow does not appear on ops chrome. Do not ship the dark-navy SaaS sidebar from the sales PDF.
+**The Quiet Tools Rule.** The admin desk is the dark night panel: ground `#0B0E1A`, cards `#14182C`, violet `#6D4DFF` for the current nav item and primary actions. Plate yellow does not appear on ops chrome. The partner site stays on its own surface until it is redesigned. The light concierge rules above apply to the Mini App.
 
 ## 3. Typography
 
@@ -179,14 +179,14 @@ Flat by default. Depth is a 1px Line border and a tonal well, not a drop shadow.
 - **Shape:** Tourist primary is a plate (pill, 999px), 56px tall, matching the PHUKET bar. Ops primary is 8px radius, 40px tall. Do not mix those shapes on one surface.
 - **Primary (tourist):** Plate Yellow fill, Harbor Deep text, 16px 24px, weight 700. Hover `#F0C010`. Active `#E0B40A` plus inset press. Disabled 40% opacity, cursor not-allowed.
 - **Topic tile:** Surface fill, 16px radius, 96px min height, 12px 10px 14px, hairline Line border. Packed two per row, same order as the bot keyboard. 40px circle with the bot emoji (no SVG, no chevron). Well tint can shift by topic; hover Icon Well fill. Active slightly deeper tint.
-- **Ops primary:** Harbor Navy fill, white text. Hover Harbor Deep. This is the replacement for `bg-[#053e7a]`.
+- **Ops primary:** Violet `#6D4DFF` fill, white text. Hover `#7D62FF`. Plate yellow stays off this surface.
 - **Hover / Focus:** 180ms `cubic-bezier(0.16, 1, 0.3, 1)`. Focus ring as Elevation. No scale bounce.
 
 ### Chips
 Unused on home. If a partner type needs a selected state later: Plate Yellow fill, Harbor Deep text, pill, 32px height. Unselected: Line border, Ink text, canvas fill.
 
 ### Cards / Containers
-- **Corner Style:** 16px for tourist rows; 8px for admin panels.
+- **Corner Style:** 16px for tourist rows; 18px for admin panels.
 - **Background:** Surface on Canvas. Never nested cards.
 - **Shadow Strategy:** none at rest.
 - **Border:** 1px Line, full perimeter.
@@ -198,7 +198,7 @@ Unused on home. If a partner type needs a selected state later: Plate Yellow fil
 - **Error / Disabled:** 1px Danger border and inline error text in Danger. Disabled canvas fill, 50% ink.
 
 ### Navigation
-Mini App: no hamburger. Compact stacked wordmark in the top bar (52px height), canvas ground, 1px Line on the bottom edge. Telegram owns the OS chrome. Admin: leftover text nav for now; when it grows, a left rail on Canvas with Harbor Navy current-item text, not a dark sidebar.
+Mini App: no hamburger. Compact stacked wordmark in the top bar (52px height), canvas ground, 1px Line on the bottom edge. Telegram owns the OS chrome. Admin: a dark left rail. The current item is a violet pill. The Mini App does not borrow that rail.
 
 ### Signature: Mike portrait
 Circular crop, 168px on home (136px on short viewports). CSS circle clips the lockup's overlapping yellow bar (`object-position: 32% 40%`, image scaled to ~118%). 3px Harbor Navy ring, 3px Plate Yellow outer hairline, 4px gap of canvas between them. This is the only photoreal image in the Mini App. The wordmark file is for headers, not stacked under the face (the full lockup is marketing).
@@ -216,13 +216,13 @@ Visuals are Telegram's. Labels stay short and specific, same nouns as the Mini A
 - **Do** put Mike's circular portrait on the home hero and the wordmark PNG in the header.
 - **Do** use 2-up topic tiles that match the bot keyboard, 96px min height, 44px+ hit targets, one emoji per circle.
 - **Do** set live type in Golos Text; 16px body; sentence case; `text-wrap: pretty` on the greeting.
-- **Do** keep ops UI task-dense: Harbor Navy buttons, 8px radius, no portrait, no plate yellow chrome.
+- **Do** keep the admin desk on the dark night panel: violet actions, 18px cards, no portrait, no plate yellow chrome.
 - **Do** honor `prefers-reduced-motion`: instant color shifts, no transform.
 
 ### Don't:
 - **Don't** build cringy consumer apps: over-cute copy, mascot spam, emoji walls, gamified fluff that undercuts trust.
 - **Don't** use loud travel-agency Telegram spam or hard-sell real-estate brochure tone.
-- **Don't** ship generic flashy SaaS dashboards that prioritize chrome over task completion (including the dark-navy advertiser mock from the sales PDF).
+- **Don't** put the admin night panel on the Mini App. The dark desk is the operator surface only.
 - **Don't** put beach photography, palms, or sunsets behind the UI. The Desk Rule.
 - **Don't** use cream, sand, beige, or warm-paper body backgrounds.
 - **Don't** use gradient text, glassmorphism, thick side-stripe borders, or identical icon+heading+text card grids.

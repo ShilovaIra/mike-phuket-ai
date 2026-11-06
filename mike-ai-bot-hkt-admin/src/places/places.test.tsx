@@ -32,9 +32,9 @@ test('admin can create a place and see it on the list', async () => {
   await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  expect(await screen.findByText('Мыс Промтеп')).toBeInTheDocument()
-  expect(screen.getByText('Закат')).toBeInTheDocument()
-  expect(screen.getByText('Пляж')).toBeInTheDocument()
+  const row = (await screen.findByText('Мыс Промтеп')).closest('tr')!
+  expect(within(row).getByText('Закат')).toBeInTheDocument()
+  expect(within(row).getByText('Пляж')).toBeInTheDocument()
 })
 
 const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0])
@@ -237,6 +237,17 @@ test('a failed photo replace keeps the new text and the previous photo', async (
   )
 })
 
+test('status filter hides places that are not active', async () => {
+  const user = userEvent.setup()
+  await renderAuthed('/places')
+
+  expect(await screen.findByText('Офис Острова')).toBeInTheDocument()
+  await user.selectOptions(screen.getByRole('combobox', { name: 'Статус' }), 'inactive')
+
+  expect(screen.queryByText('Офис Острова')).not.toBeInTheDocument()
+  expect(screen.getByText(/ничего не найдено/i)).toBeInTheDocument()
+})
+
 test('admin marks a place as recommended and the list shows yes', async () => {
   const user = userEvent.setup()
   await renderAuthed('/places')
@@ -252,7 +263,7 @@ test('admin marks a place as recommended and the list shows yes', async () => {
   await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
   const row = () => screen.getByText('Мыс Промтеп').closest('tr')!
-  expect(row()).toHaveTextContent('нет')
+  expect(row()).toHaveTextContent(/нет/i)
 
   await user.click(within(row()).getByRole('button', { name: /изменить/i }))
   const edit = await screen.findByRole('dialog', { name: /изменить место/i })
@@ -260,6 +271,6 @@ test('admin marks a place as recommended and the list shows yes', async () => {
   await user.click(within(edit).getByRole('button', { name: /сохранить/i }))
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  expect(row()).not.toHaveTextContent('нет')
-  expect(row()).toHaveTextContent('да')
+  expect(row()).not.toHaveTextContent(/нет/i)
+  expect(row()).toHaveTextContent(/да/i)
 })

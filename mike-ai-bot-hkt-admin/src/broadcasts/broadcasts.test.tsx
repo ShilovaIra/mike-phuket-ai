@@ -119,6 +119,25 @@ test('admin can edit a scheduled broadcast from the list', async () => {
   expect(screen.queryByText('Ещё впереди')).not.toBeInTheDocument()
 })
 
+test('both broadcast forms label the button link as a link', async () => {
+  const user = userEvent.setup()
+  await renderAuthed('/broadcasts')
+
+  expect(await screen.findByLabelText(/^ссылка$/i)).toBeInTheDocument()
+  await user.click(screen.getByRole('tab', { name: /интервал/i }))
+  expect(screen.getByLabelText(/^ссылка$/i)).toBeInTheDocument()
+})
+
+test('interval preview shows open when a link has no button text', async () => {
+  const user = userEvent.setup()
+  await renderAuthed('/broadcasts')
+  await user.click(await screen.findByRole('tab', { name: /интервал/i }))
+  await user.type(screen.getByLabelText(/^ссылка$/i), 'https://t.me/credodiving')
+
+  const preview = screen.getByRole('complementary', { name: /предпросмотр telegram/i })
+  expect(within(preview).getByText('Открыть')).toBeInTheDocument()
+})
+
 test('interval bookmark shows a list and a schedule with the next message', async () => {
   const user = userEvent.setup()
   seedBroadcasts([

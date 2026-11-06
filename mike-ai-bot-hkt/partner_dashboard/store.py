@@ -245,7 +245,7 @@ async def list_partner_users(pool: asyncpg.Pool) -> list[dict]:
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             """
-            SELECT u.id, u.email, p.id AS partner_id, p.name AS partner_name
+            SELECT u.id, u.email, u.created_at, p.id AS partner_id, p.name AS partner_name
             FROM partner_users u
             LEFT JOIN partner_access a ON a.partner_user_id = u.id
             LEFT JOIN partners p ON p.id = a.partner_id
@@ -256,7 +256,12 @@ async def list_partner_users(pool: asyncpg.Pool) -> list[dict]:
     for row in rows:
         entry = users.setdefault(
             str(row["id"]),
-            {"id": str(row["id"]), "email": row["email"], "partners": []},
+            {
+                "id": str(row["id"]),
+                "email": row["email"],
+                "created_at": row["created_at"].isoformat(),
+                "partners": [],
+            },
         )
         if row["partner_id"] is not None:
             entry["partners"].append(

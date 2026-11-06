@@ -213,7 +213,7 @@ export function PartnerFormModal({
             <label className="flex flex-col gap-1 text-sm">
               Тип
               {typeOptions.length === 0 ? (
-                <p role="alert">{error ?? 'Нет типов партнёров. Откройте «Типы партнёров» или обновите страницу.'}</p>
+                <p role="alert">{error ?? 'Нет типов партнёров. Добавьте тип на этой странице или обновите её.'}</p>
               ) : (
                 <select
                   value={form.type}

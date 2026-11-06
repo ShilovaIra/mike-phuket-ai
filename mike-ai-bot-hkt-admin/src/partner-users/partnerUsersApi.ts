@@ -3,7 +3,13 @@ import { apiFetch } from '../auth/authApi'
 export type PartnerUserRow = {
   id: string
   email: string
+  created_at: string
   partners: { id: string; name: string }[]
+}
+
+export type PartnerUserPatch = {
+  password?: string
+  partner_ids: string[]
 }
 
 export type PartnerUserInput = {
@@ -26,6 +32,14 @@ export const partnerUsersApi = {
     })
     if (!response.ok) throw new Error('Не удалось создать пользователя')
     return response.json()
+  },
+
+  async update(id: string, input: PartnerUserPatch): Promise<void> {
+    const response = await apiFetch(`/api/partner-users/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    })
+    if (!response.ok) throw new Error('Не удалось сохранить пользователя')
   },
 
   async remove(id: string): Promise<void> {

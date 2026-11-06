@@ -82,7 +82,7 @@ test('authenticated visit to /login redirects to stats', async () => {
   expect(screen.queryByRole('button', { name: /войти/i })).not.toBeInTheDocument()
 })
 
-test('authenticated shell shows sidebar nav with partner types link', async () => {
+test('authenticated shell shows sidebar nav without a separate partner types link', async () => {
   await authApi.login({ email: 'admin@example.com', password: 'admin123' })
 
   render(
@@ -95,7 +95,9 @@ test('authenticated shell shows sidebar nav with partner types link', async () =
   expect(nav.className).toMatch(/flex-col/)
   expect(within(nav).getByRole('link', { name: /статистика/i })).toBeInTheDocument()
   expect(within(nav).getByRole('link', { name: /партнёры/i })).toBeInTheDocument()
-  expect(within(nav).getByRole('link', { name: /типы партнёров/i })).toBeInTheDocument()
+  expect(within(nav).queryByRole('link', { name: /типы партнёров/i })).not.toBeInTheDocument()
+  expect(within(nav).getByRole('link', { name: /^места$/i })).toBeInTheDocument()
+  expect(within(nav).queryByRole('link', { name: /категории мест/i })).not.toBeInTheDocument()
   expect(within(nav).getByRole('link', { name: /пользователи партнёров/i })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /выйти/i })).toBeInTheDocument()
 })

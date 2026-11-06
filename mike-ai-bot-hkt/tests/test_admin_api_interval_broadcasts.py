@@ -61,7 +61,8 @@ async def test_admin_cannot_add_a_blank_message_to_a_list(store):
 
 @requires_db
 @pytest.mark.asyncio
-async def test_admin_cannot_add_a_message_whose_maps_link_has_no_pin(store):
+async def test_admin_can_add_a_list_message_with_a_partner_link(store):
+    partner_url = "https://t.me/credodiving"
     async with authed_client(store) as client:
         created = await client.post("/api/broadcast-lists", json={"name": "Прогрев"})
         list_id = created.json()["id"]
@@ -69,11 +70,58 @@ async def test_admin_cannot_add_a_message_whose_maps_link_has_no_pin(store):
         added = await client.post(
             f"/api/broadcast-lists/{list_id}/messages",
             json={
-                "text": "Смотри место",
-                "button_url": "https://www.google.com/maps/search/?api=1&query=Phuket",
+                "text": "Загляни на дайвинг",
+                "button_url": partner_url,
+                "button_label": "Посетить дайвинг",
+            },
+        )
+        assert added.status_code == 201
+        assert added.json()["button_url"] == partner_url
+        assert added.json()["button_label"] == "Посетить дайвинг"
+
+        listed = await client.get("/api/broadcast-lists")
+        match = next(item for item in listed.json() if item["id"] == list_id)
+        assert match["messages"][0]["button_url"] == partner_url
+        assert match["messages"][0]["button_label"] == "Посетить дайвинг"
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_admin_can_add_a_list_message_with_a_google_link_that_has_no_pin(store):
+    maps_url = "https://www.google.com/maps/search/?api=1&query=Phuket"
+    async with authed_client(store) as client:
+        created = await client.post("/api/broadcast-lists", json={"name": "Прогрев"})
+        list_id = created.json()["id"]
+
+        added = await client.post(
+            f"/api/broadcast-lists/{list_id}/messages",
+            json={"text": "Смотри место", "button_url": maps_url},
+        )
+        assert added.status_code == 201
+        assert added.json()["button_url"] == maps_url
+
+        listed = await client.get("/api/broadcast-lists")
+        match = next(item for item in listed.json() if item["id"] == list_id)
+        assert match["messages"][0]["button_url"] == maps_url
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_admin_cannot_add_a_list_message_with_a_non_http_link(store):
+    async with authed_client(store) as client:
+        created = await client.post("/api/broadcast-lists", json={"name": "Прогрев"})
+        list_id = created.json()["id"]
+
+        added = await client.post(
+            f"/api/broadcast-lists/{list_id}/messages",
+            json={
+                "text": "Загляни на дайвинг",
+                "button_url": "t.me/credodiving",
+                "button_label": "Посетить дайвинг",
             },
         )
         assert added.status_code == 400
+        assert added.json()["detail"] == "Укажите ссылку http или https"
 
         listed = await client.get("/api/broadcast-lists")
         match = next(item for item in listed.json() if item["id"] == list_id)
@@ -103,7 +151,7 @@ async def test_list_message_without_a_link_has_no_button(store):
 
 @requires_db
 @pytest.mark.asyncio
-async def test_empty_button_label_with_a_valid_link_uses_the_route_label(store):
+async def test_empty_button_label_with_a_valid_link_uses_the_open_label(store):
     async with authed_client(store) as client:
         created = await client.post("/api/broadcast-lists", json={"name": "Прогрев"})
         list_id = created.json()["id"]
@@ -114,12 +162,12 @@ async def test_empty_button_label_with_a_valid_link_uses_the_route_label(store):
         )
         assert added.status_code == 201
         assert added.json()["button_url"] == PROMTEP_MAPS
-        assert added.json()["button_label"] == "Проложить маршрут"
+        assert added.json()["button_label"] == "Открыть"
 
         listed = await client.get("/api/broadcast-lists")
         match = next(item for item in listed.json() if item["id"] == list_id)
         assert match["messages"][0]["button_url"] == PROMTEP_MAPS
-        assert match["messages"][0]["button_label"] == "Проложить маршрут"
+        assert match["messages"][0]["button_label"] == "Открыть"
 
 
 @requires_db
