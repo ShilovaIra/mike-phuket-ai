@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -460,6 +461,7 @@ async def test_operator_lists_partner_users(store):
     assert len(rows) == 1
     assert rows[0]["id"] == created.json()["id"]
     assert rows[0]["email"] == "shop@example.com"
+    assert datetime.fromisoformat(rows[0]["created_at"]).tzinfo is not None
     assert rows[0]["partners"][0]["id"] == str(partner.id)
     assert rows[0]["partners"][0]["name"] == "Money Shop"
 

@@ -285,7 +285,14 @@ let intervalBroadcasts: {
     button_label: string | null
   } | null
 }[] = []
-let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
+export const MOCK_PARTNER_USER_CREATED_AT = '2026-11-06T09:53:00+07:00'
+
+let partnerUsers: {
+  id: string
+  email: string
+  created_at: string
+  partners: { id: string; name: string }[]
+}[] = []
 let partnerTypesListFailure: { status: number; detail: string } | null = null
 let logoUploads = new Map<string, string>()
 let photoUploads = new Map<string, string>()
@@ -302,6 +309,17 @@ function json(data: unknown, status = 200): Response {
     status,
     headers: { 'Content-Type': 'application/json' },
   })
+}
+
+export function setPartnerLogoUrl(id: string, url: string): void {
+  const partner = partners.find((item) => item.id === id)
+  if (partner) partner.logo_url = url
+}
+
+export function setPlacePhoto(id: string, url: string): void {
+  const place = places.find((item) => item.id === id)
+  if (!place) return
+  place.photos = [{ id: 'photo-test', path: 'places/test.jpg', url }]
 }
 
 export function resetMockBackend(): void {
@@ -810,6 +828,7 @@ export function installFetchMock(): void {
       const row = {
         id: crypto.randomUUID(),
         email: body.email as string,
+        created_at: MOCK_PARTNER_USER_CREATED_AT,
         partners: selected.map((p) => ({ id: p.id, name: p.name })),
       }
       partnerUsers.push(row)
@@ -817,6 +836,21 @@ export function installFetchMock(): void {
     }
 
     const partnerUserMatch = path.match(/^\/api\/partner-users\/([^/]+)$/)
+    if (partnerUserMatch && method === 'PATCH') {
+      const id = decodeURIComponent(partnerUserMatch[1])
+      const index = partnerUsers.findIndex((user) => user.id === id)
+      if (index < 0) return json({ detail: 'Пользователь не найден' }, 404)
+      const current = partnerUsers[index]
+      if (Array.isArray(body.partner_ids)) {
+        const selected = partners.filter((partner) =>
+          (body.partner_ids as string[]).includes(partner.id),
+        )
+        current.partners = selected.map((partner) => ({ id: partner.id, name: partner.name }))
+      }
+      partnerUsers[index] = current
+      return json({ id, partners: current.partners })
+    }
+
     if (partnerUserMatch && method === 'DELETE') {
       const id = decodeURIComponent(partnerUserMatch[1])
       partnerUsers = partnerUsers.filter((u) => u.id !== id)

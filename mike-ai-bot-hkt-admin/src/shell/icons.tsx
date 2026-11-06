@@ -15,6 +15,9 @@ type IconName =
   | 'check'
   | 'link'
   | 'plus'
+  | 'search'
+  | 'pencil'
+  | 'trash'
   | 'play'
   | 'chevronUp'
   | 'chevronDown'
@@ -109,6 +112,25 @@ const paths: Record<Exclude<IconName, 'spark'>, ReactNode> = {
     <>
       <path d="M12 5v14" />
       <path d="M5 12h14" />
+    </>
+  ),
+  search: (
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4 4" />
+    </>
+  ),
+  pencil: (
+    <>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16" />
+      <path d="M9 7V5h6v2" />
+      <path d="M7 7l1 13h8l1-13" />
     </>
   ),
   play: <path d="m8 6 10 6-10 6V6Z" />,
