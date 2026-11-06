@@ -1,9 +1,45 @@
 import { useEffect, useState } from 'react'
+import { ActivityChart } from './ActivityChart'
 import { buildDonutSlices } from './buildDonutSlices'
 import { ShareDonut } from './ShareDonut'
 import { statsApi, type BotStats } from './statsApi'
 import { sourceLabel } from './sourceLabel'
 import { stripLeadingEmoji } from './stripLeadingEmoji'
+import { Icon, type IconName } from '../shell/icons'
+
+const CARDS: Array<{
+  key: keyof BotStats['deltas']
+  label: string
+  icon: IconName
+  value: (stats: BotStats) => number
+}> = [
+  { key: 'total_users', label: 'Всего пользователей', icon: 'users', value: (stats) => stats.total_users },
+  { key: 'new_users_today', label: 'Новые сегодня', icon: 'user', value: (stats) => stats.new_users_today },
+  { key: 'active_today', label: 'Активные сегодня', icon: 'pulse', value: (stats) => stats.active_today },
+  { key: 'leads_all_time', label: 'Лиды (всего)', icon: 'funnel', value: (stats) => stats.leads_all_time },
+  { key: 'new_users_7d', label: 'Новые за 7 дней', icon: 'calendar', value: (stats) => stats.new_users_7d },
+  { key: 'leads_7d', label: 'Лиды (7 дней)', icon: 'users', value: (stats) => stats.leads_7d },
+]
+
+function deltaText(value: number): string {
+  if (value > 0) return `+${value}%`
+  return `${value}%`
+}
+
+function deltaTone(value: number): string {
+  if (value > 0) return 'is-up'
+  if (value < 0) return 'is-down'
+  return 'is-flat'
+}
+
+function usersWord(count: number): string {
+  const n = Math.abs(count) % 100
+  const last = n % 10
+  if (n > 10 && n < 20) return 'пользователей'
+  if (last === 1) return 'пользователь'
+  if (last >= 2 && last <= 4) return 'пользователя'
+  return 'пользователей'
+}
 
 export function StatsPage() {
   const [stats, setStats] = useState<BotStats | null>(null)
@@ -26,8 +62,10 @@ export function StatsPage() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <h1 className="mb-6 text-2xl font-semibold tracking-tight">Статистика</h1>
+      <main className="stat-page">
+        <header className="stat-head">
+          <h1>Статистика</h1>
+        </header>
         <p role="alert">{error}</p>
       </main>
     )
@@ -35,8 +73,10 @@ export function StatsPage() {
 
   if (!stats) {
     return (
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <h1 className="mb-6 text-2xl font-semibold tracking-tight">Статистика</h1>
+      <main className="stat-page">
+        <header className="stat-head">
+          <h1>Статистика</h1>
+        </header>
         <p>Загрузка…</p>
       </main>
     )
@@ -56,47 +96,64 @@ export function StatsPage() {
       value,
     })),
   )
+  const sourceTotal = sourceSlices.reduce((sum, slice) => sum + slice.value, 0)
 
   return (
-    <main className="mx-auto max-w-5xl space-y-10 px-4 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Статистика</h1>
+    <main className="stat-page">
+      <header className="stat-head">
+        <h1>Статистика</h1>
+        <p>Обзор активности пользователей и ключевых показателей</p>
+      </header>
 
-      <section aria-label="Ключевые показатели" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <article className="rounded border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-600">Всего пользователей</p>
-          <p className="text-2xl font-semibold">{stats.total_users}</p>
-        </article>
-        <article className="rounded border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-600">Новые сегодня</p>
-          <p className="text-2xl font-semibold">{stats.new_users_today}</p>
-        </article>
-        <article className="rounded border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-600">Активны сегодня</p>
-          <p className="text-2xl font-semibold">{stats.active_today}</p>
-        </article>
-        <article className="rounded border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-600">Лиды (всего)</p>
-          <p className="text-2xl font-semibold">{stats.leads_all_time}</p>
-        </article>
-        <article className="rounded border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-600">Новые за 7 дней</p>
-          <p className="text-2xl font-semibold">{stats.new_users_7d}</p>
-        </article>
-        <article className="rounded border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-600">Лиды (7 дней)</p>
-          <p className="text-2xl font-semibold">{stats.leads_7d}</p>
-        </article>
+      <section aria-label="Ключевые показатели" className="stat-kpis">
+        {CARDS.map((card) => {
+          const change = stats.deltas?.[card.key] ?? 0
+          return (
+            <article key={card.key} className="stat-card">
+              <div className="stat-card-top">
+                <span className="stat-icon">
+                  <Icon name={card.icon} />
+                </span>
+                <p className="stat-label">{card.label}</p>
+              </div>
+              <div className="stat-card-bottom">
+                <p className="stat-value">{card.value(stats)}</p>
+                <p className={`delta ${deltaTone(change)}`}>
+                  {change !== 0 && (
+                    <svg viewBox="0 0 12 12" aria-hidden="true">
+                      <path d={change > 0 ? 'M6 2.2 10.2 8H1.8Z' : 'M6 9.8 1.8 4h8.4Z'} fill="currentColor" />
+                    </svg>
+                  )}
+                  {deltaText(change)}
+                </p>
+              </div>
+            </article>
+          )
+        })}
       </section>
 
-      <section className="grid gap-8 lg:grid-cols-2">
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">Популярные темы</h2>
-          <ShareDonut slices={topicSlices} />
+      <section className="stat-panels">
+        <div className="stat-panel">
+          <h2>Популярные темы</h2>
+          <ShareDonut
+            slices={topicSlices}
+            centerValue={topicSlices.length > 0 ? '100%' : undefined}
+            centerLabel="запросов"
+          />
         </div>
-        <div>
-          <h2 className="mb-3 text-lg font-semibold">Источники пользователей</h2>
-          <ShareDonut slices={sourceSlices} />
+        <div className="stat-panel">
+          <h2>Источники пользователей</h2>
+          <ShareDonut
+            slices={sourceSlices}
+            centerValue={sourceSlices.length > 0 ? String(sourceTotal) : undefined}
+            centerLabel={usersWord(sourceTotal)}
+          />
         </div>
+      </section>
+
+      <section className="stat-panel" aria-label="Динамика активности">
+        <h2>Динамика активности</h2>
+        <ActivityChart points={stats.activity ?? []} />
       </section>
     </main>
   )

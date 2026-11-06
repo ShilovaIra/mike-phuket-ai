@@ -1,10 +1,13 @@
 import type { ReactNode } from 'react'
 
-type IconName =
+export type IconName =
   | 'spark'
   | 'chart'
   | 'send'
   | 'users'
+  | 'user'
+  | 'pulse'
+  | 'funnel'
   | 'tag'
   | 'pin'
   | 'book'
@@ -49,6 +52,14 @@ const paths: Record<Exclude<IconName, 'spark'>, ReactNode> = {
       <path d="M16.2 15.2c1.8.3 3.2 1.4 3.8 3.3" />
     </>
   ),
+  user: (
+    <>
+      <circle cx="12" cy="8.5" r="3" />
+      <path d="M5.5 19.5c.8-3 3.2-4.5 6.5-4.5s5.7 1.5 6.5 4.5" />
+    </>
+  ),
+  pulse: <path d="M3 12h3.5l2.2-5 4.2 10 2.3-5H21" />,
+  funnel: <path d="M4 4.5h16l-6.2 7.2V19l-3.6 1.6v-8.9L4 4.5Z" />,
   tag: (
     <>
       <path d="M20 13.2 12.8 20a2 2 0 0 1-2.8 0L3 13V3h10l7 7.2a2 2 0 0 1 0 2.8Z" />

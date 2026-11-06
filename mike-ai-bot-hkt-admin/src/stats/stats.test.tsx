@@ -16,9 +16,9 @@ test('authenticated admin sees KPI totals on stats page', async () => {
   await renderAuthed('/stats')
 
   expect(screen.getByRole('heading', { name: /статистика/i })).toBeInTheDocument()
-  expect(await screen.findByText(/всего пользователей/i)).toBeInTheDocument()
-  expect(screen.getByText('128')).toBeInTheDocument()
-  expect(screen.getByText(/активны сегодня/i)).toBeInTheDocument()
+  const users = (await screen.findByText(/всего пользователей/i)).closest('article')!
+  expect(within(users).getByText('128')).toBeInTheDocument()
+  expect(screen.getByText(/активные сегодня/i)).toBeInTheDocument()
   expect(screen.getByText(/лиды \(всего\)/i)).toBeInTheDocument()
 })
 
@@ -56,4 +56,28 @@ test('user sources legend uses Russian labels for known sources', async () => {
   expect(within(section).queryByText('unknown')).not.toBeInTheDocument()
   expect(within(section).queryByText('instagram')).not.toBeInTheDocument()
   expect(within(section).getByText('70%')).toBeInTheDocument()
+})
+
+test('stats page shows signed delta pills and the seven activity days', async () => {
+  await renderAuthed('/stats')
+
+  const users = (await screen.findByText(/всего пользователей/i)).closest('article')!
+  expect(within(users).getByText('+12%')).toBeInTheDocument()
+
+  const leads = screen.getByText(/лиды \(всего\)/i).closest('article')!
+  expect(within(leads).getByText('-50%')).toBeInTheDocument()
+
+  const weekLeads = screen.getByText(/лиды \(7 дней\)/i).closest('article')!
+  expect(within(weekLeads).getByText('-25%')).toBeInTheDocument()
+
+  const today = screen.getByText(/новые сегодня/i).closest('article')!
+  expect(within(today).getByText('0%')).toBeInTheDocument()
+
+  const active = screen.getByText(/активные сегодня/i).closest('article')!
+  expect(within(active).getByText('+100%')).toBeInTheDocument()
+
+  const activity = screen.getByRole('region', { name: /динамика активности/i })
+  expect(within(activity).getByText('31 окт')).toBeInTheDocument()
+  expect(within(activity).getByText('6 ноя')).toBeInTheDocument()
+  expect(within(activity).getByText('3')).toBeInTheDocument()
 })

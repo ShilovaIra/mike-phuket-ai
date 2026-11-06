@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
@@ -47,6 +47,12 @@ class TopicCount:
 
 
 @dataclass(frozen=True)
+class ActivityDay:
+    date: str
+    active_users: int
+
+
+@dataclass(frozen=True)
 class BotStats:
     total_users: int
     new_users_today: int
@@ -57,6 +63,17 @@ class BotStats:
     leads_all_time: int
     leads_7d: int
     users_by_first_source: dict[str, int]
+    activity: tuple[ActivityDay, ...] = ()
+    deltas: dict[str, int] = field(default_factory=dict)
+
+
+def _percent_change(current: int, previous: int) -> int:
+    if previous <= 0:
+        return 100 if current > 0 else 0
+    scaled = (current - previous) * 100 / previous
+    if scaled >= 0:
+        return int(scaled + 0.5)
+    return int(scaled - 0.5)
 
 
 @dataclass(frozen=True)
@@ -846,6 +863,89 @@ class SessionStore:
                 """,
                 list(TELEGRAM_CHANNELS),
             )
+            new_users_yesterday = await conn.fetchval(
+                """
+                SELECT count(*)
+                FROM (
+                    SELECT i.external_id
+                    FROM identities i
+                    JOIN users u ON u.id = i.user_id
+                    WHERE i.channel = ANY($2::text[])
+                    GROUP BY i.external_id
+                    HAVING (min(u.created_at) AT TIME ZONE $1)::date
+                           = (now() AT TIME ZONE $1)::date - 1
+                ) people
+                """,
+                timezone,
+                list(TELEGRAM_CHANNELS),
+            )
+            new_users_prior_7d = await conn.fetchval(
+                """
+                SELECT count(*)
+                FROM (
+                    SELECT i.external_id
+                    FROM identities i
+                    JOIN users u ON u.id = i.user_id
+                    WHERE i.channel = ANY($1::text[])
+                    GROUP BY i.external_id
+                    HAVING min(u.created_at) >= now() - interval '14 days'
+                       AND min(u.created_at) < now() - interval '7 days'
+                ) people
+                """,
+                list(TELEGRAM_CHANNELS),
+            )
+            leads_prior_7d = await conn.fetchval(
+                """
+                SELECT count(*)
+                FROM leads
+                WHERE created_at >= now() - interval '14 days'
+                  AND created_at < now() - interval '7 days'
+                """
+            )
+            activity_rows = await conn.fetch(
+                """
+                WITH days AS (
+                    SELECT generate_series(
+                        (now() AT TIME ZONE $1)::date - 6,
+                        (now() AT TIME ZONE $1)::date,
+                        interval '1 day'
+                    )::date AS day
+                ),
+                active_users AS (
+                    SELECT (m.created_at AT TIME ZONE $1)::date AS day, c.user_id
+                    FROM messages m
+                    JOIN conversations c ON c.id = m.conversation_id
+                    WHERE m.role = 'user'
+                      AND (m.created_at AT TIME ZONE $1)::date
+                          >= (now() AT TIME ZONE $1)::date - 6
+                    UNION
+                    SELECT (u.last_inbound_at AT TIME ZONE $1)::date, u.id
+                    FROM users u
+                    WHERE u.last_inbound_at IS NOT NULL
+                      AND (u.last_inbound_at AT TIME ZONE $1)::date
+                          >= (now() AT TIME ZONE $1)::date - 6
+                    UNION
+                    SELECT (t.created_at AT TIME ZONE $1)::date, t.user_id
+                    FROM topic_events t
+                    WHERE (t.created_at AT TIME ZONE $1)::date
+                          >= (now() AT TIME ZONE $1)::date - 6
+                )
+                SELECT d.day, count(DISTINCT i.external_id)::int AS active_users
+                FROM days d
+                LEFT JOIN active_users a ON a.day = d.day
+                LEFT JOIN identities i
+                  ON i.user_id = a.user_id
+                 AND i.channel = ANY($2::text[])
+                GROUP BY d.day
+                ORDER BY d.day
+                """,
+                timezone,
+                list(TELEGRAM_CHANNELS),
+            )
+        activity = tuple(
+            ActivityDay(date=row["day"].isoformat(), active_users=int(row["active_users"]))
+            for row in activity_rows
+        )
         return BotStats(
             total_users=user_stats.total_users,
             new_users_today=user_stats.new_users_today,
@@ -856,6 +956,33 @@ class SessionStore:
             leads_all_time=int(leads_all_time or 0),
             leads_7d=int(leads_7d or 0),
             users_by_first_source={row["first_source"]: int(row["count"]) for row in source_rows},
+            activity=activity,
+            deltas={
+                "total_users": _percent_change(
+                    user_stats.total_users,
+                    user_stats.total_users - user_stats.new_users_7d,
+                ),
+                "new_users_today": _percent_change(
+                    user_stats.new_users_today,
+                    int(new_users_yesterday or 0),
+                ),
+                "active_today": _percent_change(
+                    user_stats.active_today,
+                    activity[-2].active_users if len(activity) >= 2 else 0,
+                ),
+                "leads_all_time": _percent_change(
+                    int(leads_all_time or 0),
+                    int(leads_all_time or 0) - int(leads_7d or 0),
+                ),
+                "new_users_7d": _percent_change(
+                    user_stats.new_users_7d,
+                    int(new_users_prior_7d or 0),
+                ),
+                "leads_7d": _percent_change(
+                    int(leads_7d or 0),
+                    int(leads_prior_7d or 0),
+                ),
+            },
         )
 
     async def list_place_categories(self) -> list[PlaceCategory]:

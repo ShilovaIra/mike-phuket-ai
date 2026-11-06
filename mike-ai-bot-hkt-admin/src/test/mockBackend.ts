@@ -462,6 +462,23 @@ export function installFetchMock(): void {
         leads_all_time: 9,
         leads_7d: 2,
         users_by_first_source: { unknown: 90, instagram: 25, facebook: 13 },
+        deltas: {
+          total_users: 12,
+          new_users_today: 0,
+          active_today: 100,
+          leads_all_time: -50,
+          new_users_7d: 0,
+          leads_7d: -25,
+        },
+        activity: [
+          { date: '2026-10-31', active_users: 1 },
+          { date: '2026-11-01', active_users: 0 },
+          { date: '2026-11-02', active_users: 1 },
+          { date: '2026-11-03', active_users: 1 },
+          { date: '2026-11-04', active_users: 3 },
+          { date: '2026-11-05', active_users: 1 },
+          { date: '2026-11-06', active_users: 1 },
+        ],
       })
     }
 

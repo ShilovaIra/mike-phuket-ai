@@ -6,6 +6,8 @@ const OTHER_COLOR = '#F59E0B'
 
 type ShareDonutProps = {
   slices: DonutSlice[]
+  centerValue?: string
+  centerLabel?: string
 }
 
 function sliceColor(slice: DonutSlice, index: number): string {
@@ -23,13 +25,13 @@ function ShareTooltip({
   if (!active || !payload?.[0]) return null
   const slice = payload[0].payload
   return (
-    <div className="rounded border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
+    <div className="share-tip">
       {slice.label}: {slice.value}
     </div>
   )
 }
 
-export function ShareDonut({ slices }: ShareDonutProps) {
+export function ShareDonut({ slices, centerValue, centerLabel }: ShareDonutProps) {
   if (slices.length === 0) {
     return <p className="text-sm text-slate-600">Пока нет данных</p>
   }
@@ -41,7 +43,7 @@ export function ShareDonut({ slices }: ShareDonutProps) {
 
   return (
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-      <div className="h-44 w-44 shrink-0">
+      <div className="share-plot">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -50,9 +52,9 @@ export function ShareDonut({ slices }: ShareDonutProps) {
               nameKey="label"
               cx="50%"
               cy="50%"
-              innerRadius="58%"
+              innerRadius="62%"
               outerRadius="88%"
-              paddingAngle={1}
+              paddingAngle={2}
               stroke="none"
             >
               {colored.map((slice) => (
@@ -62,8 +64,14 @@ export function ShareDonut({ slices }: ShareDonutProps) {
             <Tooltip content={<ShareTooltip />} />
           </PieChart>
         </ResponsiveContainer>
+        {centerValue && (
+          <div className="share-center">
+            <strong>{centerValue}</strong>
+            {centerLabel && <span>{centerLabel}</span>}
+          </div>
+        )}
       </div>
-      <ul className="w-full min-w-0 space-y-2 text-sm">
+      <ul className="share-legend">
         {colored.map((slice) => (
           <li key={slice.key} className="flex items-center justify-between gap-3">
             <span className="flex min-w-0 items-center gap-2">
