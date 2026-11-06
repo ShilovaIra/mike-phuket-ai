@@ -173,7 +173,7 @@ export function BroadcastsPage() {
                 />
               </label>
               <label className="cast-row">
-                <span>Ссылка на карты</span>
+                <span>Ссылка</span>
                 <span className="cast-input-wrap">
                   <span className="cast-input-icon">
                     <Icon name="link" size={16} />

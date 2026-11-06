@@ -289,7 +289,7 @@ export function IntervalBroadcastsPanel() {
               </label>
               <div className="field-pair">
                 <label className="cast-label">
-                  Ссылка на карты
+                  Ссылка
                   <span className="cast-input-wrap">
                     <span className="cast-input-icon">
                       <Icon name="link" size={16} />
@@ -325,7 +325,9 @@ export function IntervalBroadcastsPanel() {
               <p>Предпросмотр (Telegram)</p>
               <div className="tg-bubble">
                 <strong>{editorText.trim() || 'Текст появится здесь'}</strong>
-                {editorLabel.trim() ? <span>{editorLabel.trim()}</span> : null}
+                {editorLabel.trim() || editorUrl.trim() ? (
+                  <span>{editorLabel.trim() || 'Открыть'}</span>
+                ) : null}
               </div>
             </aside>
           </div>

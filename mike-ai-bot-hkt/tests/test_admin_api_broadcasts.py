@@ -92,17 +92,66 @@ async def test_admin_cannot_schedule_a_broadcast_without_text(store):
 
 @requires_db
 @pytest.mark.asyncio
-async def test_admin_cannot_schedule_a_broadcast_with_a_maps_link_without_a_pin(store):
+async def test_admin_can_schedule_a_broadcast_with_a_partner_link(store):
+    partner_url = "https://t.me/credodiving"
+    async with authed_client(store) as client:
+        created = await client.post(
+            "/api/broadcasts",
+            json={
+                "text": "Загляни на дайвинг",
+                "scheduled_at": "2026-12-01T10:00:00+07:00",
+                "button_url": partner_url,
+                "button_label": "Посетить дайвинг",
+            },
+        )
+        assert created.status_code == 201
+        body = created.json()
+        assert body["button_url"] == partner_url
+        assert body["button_label"] == "Посетить дайвинг"
+
+        listed = await client.get("/api/broadcasts")
+        match = next(item for item in listed.json() if item["id"] == body["id"])
+        assert match["button_url"] == partner_url
+        assert match["button_label"] == "Посетить дайвинг"
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_admin_can_schedule_a_broadcast_with_a_google_link_that_has_no_pin(store):
+    maps_url = "https://www.google.com/maps/search/?api=1&query=Phuket"
     async with authed_client(store) as client:
         created = await client.post(
             "/api/broadcasts",
             json={
                 "text": "Смотри место",
                 "scheduled_at": "2026-12-01T10:00:00+07:00",
-                "button_url": "https://www.google.com/maps/search/?api=1&query=Phuket",
+                "button_url": maps_url,
+            },
+        )
+        assert created.status_code == 201
+        body = created.json()
+        assert body["button_url"] == maps_url
+
+        listed = await client.get("/api/broadcasts")
+        match = next(item for item in listed.json() if item["id"] == body["id"])
+        assert match["button_url"] == maps_url
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_admin_cannot_schedule_a_broadcast_with_a_non_http_link(store):
+    async with authed_client(store) as client:
+        created = await client.post(
+            "/api/broadcasts",
+            json={
+                "text": "Загляни на дайвинг",
+                "scheduled_at": "2026-12-01T10:00:00+07:00",
+                "button_url": "t.me/credodiving",
+                "button_label": "Посетить дайвинг",
             },
         )
         assert created.status_code == 400
+        assert created.json()["detail"] == "Укажите ссылку http или https"
 
         listed = await client.get("/api/broadcasts")
         assert listed.status_code == 200
@@ -130,7 +179,7 @@ async def test_broadcast_without_a_link_has_no_button(store):
 
 @requires_db
 @pytest.mark.asyncio
-async def test_blank_button_label_defaults_to_route_label(store):
+async def test_blank_button_label_defaults_to_open_label(store):
     async with authed_client(store) as client:
         created = await client.post(
             "/api/broadcasts",
@@ -144,7 +193,7 @@ async def test_blank_button_label_defaults_to_route_label(store):
         assert created.status_code == 201
         body = created.json()
         assert body["button_url"] == PROMTEP_MAPS
-        assert body["button_label"] == "Проложить маршрут"
+        assert body["button_label"] == "Открыть"
 
 
 @requires_db
