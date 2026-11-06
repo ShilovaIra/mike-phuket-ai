@@ -49,6 +49,14 @@ test('admin can rename a place category label and the slug stays', async () => {
   expect(screen.getByText('beach')).toBeInTheDocument()
 })
 
+test('a category used by a place has no delete control', async () => {
+  await renderAuthed('/places?tab=categories')
+
+  const row = (await screen.findByText('shop')).closest('tr')!
+  expect(within(row).queryByRole('button', { name: /удалить/i })).not.toBeInTheDocument()
+  expect(within(row).getByRole('button', { name: /изменить/i })).toBeInTheDocument()
+})
+
 test('admin can delete a place category that no place uses', async () => {
   const user = userEvent.setup()
   await renderAuthed('/place-categories')

@@ -96,6 +96,8 @@ test('authenticated shell shows sidebar nav without a separate partner types lin
   expect(within(nav).getByRole('link', { name: /статистика/i })).toBeInTheDocument()
   expect(within(nav).getByRole('link', { name: /партнёры/i })).toBeInTheDocument()
   expect(within(nav).queryByRole('link', { name: /типы партнёров/i })).not.toBeInTheDocument()
+  expect(within(nav).getByRole('link', { name: /^места$/i })).toBeInTheDocument()
+  expect(within(nav).queryByRole('link', { name: /категории мест/i })).not.toBeInTheDocument()
   expect(within(nav).getByRole('link', { name: /пользователи партнёров/i })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: /выйти/i })).toBeInTheDocument()
 })

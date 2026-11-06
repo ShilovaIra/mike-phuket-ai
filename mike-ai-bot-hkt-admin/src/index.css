@@ -854,6 +854,7 @@ textarea.glass-field {
   .ice-button,
   .ghost-button,
   .cast-tab,
+  .place-tab,
   .glass-field,
   .chain-row,
   .desk-rail,
@@ -1587,13 +1588,121 @@ textarea.glass-field {
   white-space: nowrap;
 }
 
-.roster-actions.is-pair {
-  width: auto;
+.place-switch {
+  display: inline-flex;
+  gap: 4px;
+  margin: 0 0 16px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(8, 12, 24, 0.45);
+}
+
+.place-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.place-tab:hover:not(.is-active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+}
+
+.place-tab.is-active {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(20, 52, 130, 0.32);
+}
+
+.place-thumb {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.place-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px 0 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
   white-space: nowrap;
 }
 
-.roster-actions.is-pair .icon-button + .icon-button {
-  margin-left: 6px;
+.place-chip svg {
+  color: #c5d4ee;
+}
+
+.place-blurb {
+  display: -webkit-box;
+  max-width: 36rem;
+  overflow: hidden;
+  color: var(--muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.place-table {
+  min-width: 960px;
+}
+
+.status-pill.has-mark {
+  gap: 6px;
+}
+
+.status-pill.is-quiet {
+  background: #2a3348;
+  color: var(--ink);
+}
+
+.status-mark {
+  width: 14px;
+  height: 14px;
+  box-sizing: border-box;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
+.roster-page {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.roster-actions.is-pair {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  width: auto;
+  white-space: nowrap;
 }
 
 .icon-button.is-danger:hover:not(:disabled) {
