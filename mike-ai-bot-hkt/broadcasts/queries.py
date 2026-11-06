@@ -22,9 +22,7 @@ WHERE id = $1 AND status = 'scheduled'
 RETURNING id, text, scheduled_at, status, button_url, button_label
 """
 
-DELETE_SCHEDULED_BROADCAST = (
-    "DELETE FROM broadcasts WHERE id = $1 AND status = 'scheduled'"
-)
+DELETE_BROADCAST_BY_ID = "DELETE FROM broadcasts WHERE id = $1"
 
 MARK_DUE_SCHEDULED_BROADCASTS_SENT = """
 UPDATE broadcasts

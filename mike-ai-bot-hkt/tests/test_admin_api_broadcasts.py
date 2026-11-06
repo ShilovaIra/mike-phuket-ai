@@ -218,15 +218,11 @@ async def test_started_broadcast_is_sent_and_cannot_be_changed(store):
             json={"text": "Другой текст", "scheduled_at": "2026-12-03T10:00:00+07:00"},
         )
         assert edited.status_code == 409
-        deleted = await client.delete(f"/api/broadcasts/{broadcast_id}")
-        assert deleted.status_code == 409
 
+        deleted = await client.delete(f"/api/broadcasts/{broadcast_id}")
+        assert deleted.status_code == 204
         listed_again = await client.get("/api/broadcasts")
-        match_again = next(
-            item for item in listed_again.json() if item["id"] == broadcast_id
-        )
-        assert match_again["status"] == "sent"
-        assert match_again["text"] == "Как вам Пхукет?"
+        assert listed_again.json() == []
 
 
 @requires_db

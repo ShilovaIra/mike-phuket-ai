@@ -170,10 +170,7 @@ async def delete_broadcast(
     admin: AdminUser = Depends(require_admin),
 ) -> None:
     _ = admin
-    try:
-        deleted = await remove_broadcast(_store(request).pool, broadcast_id)
-    except BroadcastLocked:
-        raise HTTPException(status_code=409, detail="Рассылка уже отправляется") from None
+    deleted = await remove_broadcast(_store(request).pool, broadcast_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Рассылка не найдена")
 

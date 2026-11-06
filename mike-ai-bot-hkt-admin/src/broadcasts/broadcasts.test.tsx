@@ -27,7 +27,7 @@ test('admin can schedule a broadcast and see it in the list', async () => {
   expect(await screen.findByText('Как вам Пхукет?')).toBeInTheDocument()
 })
 
-test('a sent broadcast is grey and cannot be edited or deleted', async () => {
+test('a sent broadcast is grey and cannot be edited', async () => {
   seedBroadcasts([
     {
       id: 'sent-1',
@@ -51,11 +51,28 @@ test('a sent broadcast is grey and cannot be edited or deleted', async () => {
   const sent = (await screen.findByText('Уже ушло')).closest('li')
   expect(sent).toHaveClass('text-slate-400')
   expect(within(sent!).queryByRole('button', { name: /изменить/i })).not.toBeInTheDocument()
-  expect(within(sent!).queryByRole('button', { name: /удалить/i })).not.toBeInTheDocument()
+  expect(within(sent!).getByRole('button', { name: /удалить/i })).toBeInTheDocument()
 
   const scheduled = screen.getByText('Ещё впереди').closest('li')
   expect(within(scheduled!).getByRole('button', { name: /изменить/i })).toBeInTheDocument()
   expect(within(scheduled!).getByRole('button', { name: /удалить/i })).toBeInTheDocument()
+})
+
+test('admin can delete a sent broadcast from the list', async () => {
+  const user = userEvent.setup()
+  seedBroadcasts([
+    {
+      id: 'sent-1',
+      text: 'Уже ушло',
+      scheduled_at: '2026-11-01T10:00:00+07:00',
+      status: 'sent',
+      button_url: null,
+      button_label: null,
+    },
+  ])
+  await renderAuthed('/broadcasts')
+  await user.click(await screen.findByRole('button', { name: /удалить/i }))
+  expect(screen.queryByText('Уже ушло')).not.toBeInTheDocument()
 })
 
 test('admin can delete a scheduled broadcast from the list', async () => {

@@ -146,8 +146,8 @@ export function BroadcastsPage() {
                 <span>{item.scheduled_at}</span>
                 <span className="ml-3">{item.text}</span>
                 {item.button_label ? <span className="ml-2">{item.button_label}</span> : null}
-                {item.status === 'scheduled' ? (
-                  <span className="ml-3">
+                <span className="ml-3">
+                  {item.status === 'scheduled' ? (
                     <button
                       type="button"
                       className="text-sm underline"
@@ -161,19 +161,19 @@ export function BroadcastsPage() {
                     >
                       Изменить
                     </button>
-                    <button
-                      type="button"
-                      className="ml-2 text-sm underline"
-                      onClick={() => {
-                        void broadcastsApi.remove(item.id).then(reload).catch((err: Error) => {
-                          setError(err.message)
-                        })
-                      }}
-                    >
-                      Удалить
-                    </button>
-                  </span>
-                ) : null}
+                  ) : null}
+                  <button
+                    type="button"
+                    className={`text-sm underline ${item.status === 'scheduled' ? 'ml-2' : ''}`}
+                    onClick={() => {
+                      void broadcastsApi.remove(item.id).then(reload).catch((err: Error) => {
+                        setError(err.message)
+                      })
+                    }}
+                  >
+                    Удалить
+                  </button>
+                </span>
               </li>
             ))}
           </ul>

@@ -89,12 +89,7 @@ async def update_broadcast(
 
 async def delete_broadcast(pool: asyncpg.Pool, broadcast_id: UUID) -> bool:
     async with pool.acquire() as conn:
-        existing = await conn.fetchrow(queries.SELECT_BROADCAST_STATUS_BY_ID, broadcast_id)
-        if existing is None:
-            return False
-        if existing["status"] != "scheduled":
-            raise BroadcastLocked
-        result = await conn.execute(queries.DELETE_SCHEDULED_BROADCAST, broadcast_id)
+        result = await conn.execute(queries.DELETE_BROADCAST_BY_ID, broadcast_id)
     return result == "DELETE 1"
 
 
