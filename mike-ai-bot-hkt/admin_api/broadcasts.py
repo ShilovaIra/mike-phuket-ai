@@ -13,6 +13,7 @@ from broadcasts import (
     Broadcast,
     BroadcastList,
     BroadcastListMessage,
+    BroadcastListInUse,
     BroadcastLocked,
     add_broadcast_list_message,
     create_broadcast as save_broadcast,
@@ -20,6 +21,7 @@ from broadcasts import (
     create_broadcast_list,
     create_interval_broadcast,
     delete_broadcast as remove_broadcast,
+    delete_broadcast_list,
     delete_interval_broadcast,
     list_broadcast_lists,
     list_interval_broadcasts,
@@ -266,6 +268,21 @@ async def move_list_message(
     if not moved:
         raise HTTPException(status_code=404, detail="Сообщение не найдено")
     return {"ok": True}
+
+
+@router.delete("/api/broadcast-lists/{list_id}", status_code=204)
+async def delete_list(
+    request: Request,
+    list_id: UUID,
+    admin: AdminUser = Depends(require_admin),
+) -> None:
+    _ = admin
+    try:
+        deleted = await delete_broadcast_list(_store(request).pool, list_id)
+    except BroadcastListInUse:
+        raise HTTPException(status_code=409, detail="Список используют рассылки") from None
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Список не найден")
 
 
 def _interval_payload(item: IntervalBroadcast) -> dict:

@@ -13,6 +13,10 @@ class BroadcastLocked(Exception):
     pass
 
 
+class BroadcastListInUse(Exception):
+    pass
+
+
 @dataclass(frozen=True)
 class Broadcast:
     id: UUID
@@ -169,6 +173,18 @@ async def add_broadcast_list_message(
         button_url=row["button_url"],
         button_label=row["button_label"],
     )
+
+
+async def delete_broadcast_list(pool: asyncpg.Pool, list_id: UUID) -> bool:
+    async with pool.acquire() as conn:
+        exists = await conn.fetchval(queries.SELECT_BROADCAST_LIST_EXISTS, list_id)
+        if exists is None:
+            return False
+        in_use = await conn.fetchval(queries.SELECT_INTERVAL_BROADCAST_FOR_LIST, list_id)
+        if in_use is not None:
+            raise BroadcastListInUse
+        result = await conn.execute(queries.DELETE_BROADCAST_LIST_BY_ID, list_id)
+    return result == "DELETE 1"
 
 
 async def list_broadcast_lists(pool: asyncpg.Pool) -> list[BroadcastList]:

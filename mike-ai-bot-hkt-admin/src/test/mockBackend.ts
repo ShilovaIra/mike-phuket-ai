@@ -554,6 +554,18 @@ export function installFetchMock(): void {
       return json(created, 201)
     }
 
+    const listMatch = path.match(/^\/api\/broadcast-lists\/([^/]+)$/)
+    if (listMatch && method === 'DELETE') {
+      const id = decodeURIComponent(listMatch[1])
+      if (intervalBroadcasts.some((item) => item.list_id === id)) {
+        return json({ detail: 'Список используют рассылки' }, 409)
+      }
+      const exists = broadcastLists.some((item) => item.id === id)
+      if (!exists) return json({ detail: 'not found' }, 404)
+      broadcastLists = broadcastLists.filter((item) => item.id !== id)
+      return new Response(null, { status: 204 })
+    }
+
     const listMessageMatch = path.match(/^\/api\/broadcast-lists\/([^/]+)\/messages$/)
     if (listMessageMatch && method === 'POST') {
       const listId = decodeURIComponent(listMessageMatch[1])

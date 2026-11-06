@@ -72,6 +72,13 @@ export const broadcastListsApi = {
     return response.json()
   },
 
+  async remove(id: string): Promise<void> {
+    const response = await apiFetch(`/api/broadcast-lists/${id}`, { method: 'DELETE' })
+    if (!response.ok) {
+      throw new Error(await apiErrorMessage(response, 'Не удалось удалить список'))
+    }
+  },
+
   async moveMessage(listId: string, messageId: string, direction: 'up' | 'down'): Promise<void> {
     const response = await apiFetch(
       `/api/broadcast-lists/${listId}/messages/${messageId}/move`,

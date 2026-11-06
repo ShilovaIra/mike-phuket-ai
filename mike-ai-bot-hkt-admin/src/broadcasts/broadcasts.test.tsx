@@ -167,3 +167,25 @@ test('interval bookmark shows a list and a schedule with the next message', asyn
   await user.click(screen.getByRole('tab', { name: /разовые/i }))
   expect(await screen.findByText('Разовая')).toBeInTheDocument()
 })
+
+test('admin can delete an unused interval message list', async () => {
+  const user = userEvent.setup()
+  seedBroadcastLists([
+    {
+      id: 'list-1',
+      name: 'Прогрев',
+      messages: [
+        {
+          id: 'msg-1',
+          text: 'Первое',
+          button_url: null,
+          button_label: null,
+        },
+      ],
+    },
+  ])
+  await renderAuthed('/broadcasts')
+  await user.click(await screen.findByRole('tab', { name: /интервал/i }))
+  await user.click(await screen.findByRole('button', { name: /удалить/i }))
+  expect(screen.queryByText('Прогрев')).not.toBeInTheDocument()
+})

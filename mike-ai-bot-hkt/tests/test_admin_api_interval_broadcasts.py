@@ -356,3 +356,44 @@ async def test_after_the_last_message_the_schedule_returns_to_the_first(store):
         listed = await client.get("/api/interval-broadcasts")
         match = next(item for item in listed.json() if item["id"] == broadcast_id)
         assert match["next_message"]["text"] == "Первое"
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_admin_can_delete_an_unused_message_list(store):
+    async with authed_client(store) as client:
+        created = await client.post("/api/broadcast-lists", json={"name": "Прогрев"})
+        list_id = created.json()["id"]
+        await client.post(
+            f"/api/broadcast-lists/{list_id}/messages",
+            json={"text": "Первое"},
+        )
+
+        deleted = await client.delete(f"/api/broadcast-lists/{list_id}")
+        assert deleted.status_code == 204
+
+        listed = await client.get("/api/broadcast-lists")
+        assert listed.json() == []
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_admin_cannot_delete_a_list_used_by_a_schedule(store):
+    async with authed_client(store) as client:
+        created_list = await client.post("/api/broadcast-lists", json={"name": "Прогрев"})
+        list_id = created_list.json()["id"]
+        await client.post(
+            "/api/interval-broadcasts",
+            json={
+                "list_id": list_id,
+                "scheduled_at": "2026-12-01T10:00:00+07:00",
+                "interval_days": 3,
+            },
+        )
+
+        deleted = await client.delete(f"/api/broadcast-lists/{list_id}")
+        assert deleted.status_code == 409
+
+        listed = await client.get("/api/broadcast-lists")
+        match = next(item for item in listed.json() if item["id"] == list_id)
+        assert match["name"] == "Прогрев"

@@ -120,7 +120,21 @@ export function IntervalBroadcastsPanel() {
       <ul className="mb-10 flex flex-col gap-6">
         {lists.map((list) => (
           <li key={list.id}>
-            <h2 className="mb-2 text-lg font-medium">{list.name}</h2>
+            <h2 className="mb-2 text-lg font-medium">
+              {list.name}
+              <button
+                type="button"
+                className="ml-3 text-sm font-normal underline"
+                onClick={() => {
+                  void broadcastListsApi
+                    .remove(list.id)
+                    .then(reload)
+                    .catch((err: Error) => setError(err.message))
+                }}
+              >
+                Удалить
+              </button>
+            </h2>
             <ul className="mb-3 flex flex-col gap-2">
               {list.messages.map((message, index) => (
                 <li key={message.id}>

@@ -56,6 +56,12 @@ RETURNING id, name
 
 SELECT_BROADCAST_LIST_EXISTS = "SELECT 1 FROM broadcast_lists WHERE id = $1"
 
+SELECT_INTERVAL_BROADCAST_FOR_LIST = (
+    "SELECT 1 FROM interval_broadcasts WHERE list_id = $1 LIMIT 1"
+)
+
+DELETE_BROADCAST_LIST_BY_ID = "DELETE FROM broadcast_lists WHERE id = $1"
+
 INSERT_BROADCAST_LIST_MESSAGE_AT_END = """
 INSERT INTO broadcast_list_messages (
     list_id, text, position, button_url, button_label
