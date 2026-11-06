@@ -18,6 +18,9 @@ type IconName =
   | 'play'
   | 'chevronUp'
   | 'chevronDown'
+  | 'chevronLeft'
+  | 'chevronRight'
+  | 'dots'
 
 const paths: Record<Exclude<IconName, 'spark'>, ReactNode> = {
   chart: (
@@ -111,6 +114,15 @@ const paths: Record<Exclude<IconName, 'spark'>, ReactNode> = {
   play: <path d="m8 6 10 6-10 6V6Z" />,
   chevronUp: <path d="m6 14 6-6 6 6" />,
   chevronDown: <path d="m6 10 6 6 6-6" />,
+  chevronLeft: <path d="m14 6-6 6 6 6" />,
+  chevronRight: <path d="m10 6 6 6-6 6" />,
+  dots: (
+    <>
+      <circle cx="6" cy="12" r="1.25" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none" />
+      <circle cx="18" cy="12" r="1.25" fill="currentColor" stroke="none" />
+    </>
+  ),
 }
 
 export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {

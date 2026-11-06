@@ -14,19 +14,34 @@ async function renderAuthed(path: string) {
   )
 }
 
-test('authenticated admin sees seeded partner types on the list', async () => {
+async function typeItem(topic: string) {
+  const panel = await screen.findByRole('complementary', { name: /типы партнёров/i })
+  const item = within(panel).getByText(topic).closest('li')
+  if (!item) throw new Error(`no type row for ${topic}`)
+  return item
+}
+
+async function openType(user: ReturnType<typeof userEvent.setup>, topic: string) {
+  const item = await typeItem(topic)
+  await user.click(within(item).getByRole('button', { name: /действия/i }))
+  await user.click(screen.getByRole('menuitem', { name: /изменить/i }))
+}
+
+test('old partner types url opens the partners page with the types column', async () => {
   await renderAuthed('/partner-types')
 
-  expect(screen.getByRole('heading', { name: /типы партнёров/i })).toBeInTheDocument()
-  expect(await screen.findByText('money_exchange')).toBeInTheDocument()
-  expect(screen.getByText('vehicle_rental')).toBeInTheDocument()
-  expect(screen.getByText('excursions')).toBeInTheDocument()
-  expect(screen.getByText('esim')).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: /^партнёры$/i })).toBeInTheDocument()
+  const panel = await screen.findByRole('complementary', { name: /типы партнёров/i })
+  expect(within(panel).getByRole('heading', { name: /типы партнёров/i })).toBeInTheDocument()
+  expect(within(panel).getByText('💰 Обмен')).toBeInTheDocument()
+  expect(within(panel).getByText('🛵 Аренда транспорта')).toBeInTheDocument()
+  expect(within(panel).getByText('🇹🇭 Экскурсии')).toBeInTheDocument()
+  expect(within(panel).getByText('📱 eSIM')).toBeInTheDocument()
 })
 
 test('shows HTTP status when partner types fail to load', async () => {
   failPartnerTypesList(500, 'column "follow_up_text" does not exist')
-  await renderAuthed('/partner-types')
+  await renderAuthed('/partners')
 
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Не удалось загрузить типы партнёров (500: column "follow_up_text" does not exist)',
@@ -35,7 +50,7 @@ test('shows HTTP status when partner types fail to load', async () => {
 
 test('invalid token while loading partner types sends the admin back to login', async () => {
   failPartnerTypesList(401, 'Invalid token')
-  await renderAuthed('/partner-types')
+  await renderAuthed('/partners')
 
   expect(await screen.findByRole('button', { name: /войти/i })).toBeInTheDocument()
   expect(screen.queryByRole('heading', { name: /типы партнёров/i })).not.toBeInTheDocument()
@@ -43,7 +58,7 @@ test('invalid token while loading partner types sends the admin back to login', 
 
 test('admin can create a partner type in a modal and see it on the list', async () => {
   const user = userEvent.setup()
-  await renderAuthed('/partner-types')
+  await renderAuthed('/partners')
 
   await user.click(await screen.findByRole('button', { name: /добавить тип/i }))
 
@@ -62,15 +77,15 @@ test('admin can create a partner type in a modal and see it on the list', async 
   await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  expect(await screen.findByText('diving')).toBeInTheDocument()
+  const panel = await screen.findByRole('complementary', { name: /типы партнёров/i })
+  expect(await within(panel).findByText('🤿 Дайвинг')).toBeInTheDocument()
 })
 
 test('admin can set the phrase that finishes “users who chose”', async () => {
   const user = userEvent.setup()
-  await renderAuthed('/partner-types')
+  await renderAuthed('/partners')
 
-  const row = (await screen.findByText('money_exchange')).closest('tr')!
-  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+  await openType(user, '💰 Обмен')
 
   const dialog = await screen.findByRole('dialog')
   const phrase = within(dialog).getByLabelText(/фраза «выбравших»/i)
@@ -80,7 +95,7 @@ test('admin can set the phrase that finishes “users who chose”', async () =>
   await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+  await openType(user, '💰 Обмен')
   expect(within(await screen.findByRole('dialog')).getByLabelText(/фраза «выбравших»/i)).toHaveValue(
     'обмен валюты',
   )
@@ -88,10 +103,9 @@ test('admin can set the phrase that finishes “users who chose”', async () =>
 
 test('admin can edit partner type copy in a modal and see updates on the list', async () => {
   const user = userEvent.setup()
-  await renderAuthed('/partner-types')
+  await renderAuthed('/partners')
 
-  const row = (await screen.findByText('money_exchange')).closest('tr')!
-  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+  await openType(user, '💰 Обмен')
 
   const dialog = await screen.findByRole('dialog')
   const topic = within(dialog).getByLabelText(/тема в статистике/i)
@@ -100,15 +114,15 @@ test('admin can edit partner type copy in a modal and see updates on the list', 
   await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  expect(await screen.findByText('💰 Обмен NEW')).toBeInTheDocument()
+  const panel = await screen.findByRole('complementary', { name: /типы партнёров/i })
+  expect(await within(panel).findByText('💰 Обмен NEW')).toBeInTheDocument()
 })
 
-test('admin can rename partner type slug in a modal and see the new slug on the list', async () => {
+test('admin can rename partner type slug from the types column', async () => {
   const user = userEvent.setup()
-  await renderAuthed('/partner-types')
+  await renderAuthed('/partners')
 
-  const row = (await screen.findByText('money_exchange')).closest('tr')!
-  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+  await openType(user, '💰 Обмен')
 
   const dialog = await screen.findByRole('dialog')
   const slug = within(dialog).getByLabelText(/^slug$/i)
@@ -116,22 +130,23 @@ test('admin can rename partner type slug in a modal and see the new slug on the 
   await user.type(slug, 'fx_exchange')
   await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
-  expect(await screen.findByText('fx_exchange')).toBeInTheDocument()
-  expect(screen.queryByText('money_exchange')).not.toBeInTheDocument()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  await openType(user, '💰 Обмен')
+  expect(within(await screen.findByRole('dialog')).getByLabelText(/^slug$/i)).toHaveValue('fx_exchange')
 })
 
 test('admin can toggle is_menu_visible for a partner type in a modal', async () => {
   const user = userEvent.setup()
-  await renderAuthed('/partner-types')
+  await renderAuthed('/partners')
 
-  const row = (await screen.findByText('vehicle_rental')).closest('tr')!
-  await user.click(within(row).getByRole('button', { name: /изменить/i }))
+  await openType(user, '🛵 Аренда транспорта')
 
   const dialog = await screen.findByRole('dialog')
   expect(within(dialog).getByLabelText(/видно в меню/i)).toBeChecked()
   await user.click(within(dialog).getByLabelText(/видно в меню/i))
   await user.click(within(dialog).getByRole('button', { name: /сохранить/i }))
 
-  expect(await screen.findByText('vehicle_rental')).toBeInTheDocument()
-  expect(screen.getByText('vehicle_rental').closest('tr')).toHaveTextContent('нет')
+  const item = await typeItem('🛵 Аренда транспорта')
+  expect(item).toHaveTextContent('Скрыт')
+  expect(item).not.toHaveTextContent('В меню')
 })
