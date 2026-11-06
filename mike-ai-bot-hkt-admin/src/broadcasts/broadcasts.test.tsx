@@ -5,6 +5,10 @@ import App from '../App'
 import { authApi } from '../auth/authApi'
 import { seedBroadcastLists, seedBroadcasts, seedIntervalBroadcasts } from '../test/mockBackend'
 
+function textsOutsideTabs(text: string) {
+  return screen.queryAllByText(text).filter((node) => !node.closest('[role="tab"]'))
+}
+
 async function renderAuthed(path: string) {
   await authApi.login({ email: 'admin@example.com', password: 'admin123' })
   return render(
@@ -162,10 +166,10 @@ test('interval bookmark shows a list and a schedule with the next message', asyn
   await user.click(screen.getByRole('tab', { name: /интервал/i }))
   expect(await screen.findAllByText('Прогрев')).not.toHaveLength(0)
   expect(screen.getAllByText('Первое')).not.toHaveLength(0)
-  expect(screen.queryByText('Разовая')).not.toBeInTheDocument()
+  expect(textsOutsideTabs('Разовая')).toHaveLength(0)
 
-  await user.click(screen.getByRole('tab', { name: /разовые/i }))
-  expect(await screen.findByText('Разовая')).toBeInTheDocument()
+  await user.click(screen.getByRole('tab', { name: /разовая/i }))
+  expect(textsOutsideTabs('Разовая').length).toBeGreaterThan(0)
 })
 
 test('admin can delete an unused interval message list', async () => {

@@ -28,41 +28,43 @@ export function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
-      <img src={logo} alt="Mike Phuket AI" width={480} height={240} className="mb-6 h-auto w-full" />
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Вход</h1>
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm">
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="rounded border border-slate-300 bg-white px-3 py-2"
-            autoComplete="username"
-            required
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Пароль
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="rounded border border-slate-300 bg-white px-3 py-2"
-            autoComplete="current-password"
-            required
-          />
-        </label>
-        {error ? <p role="alert">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded bg-[#053e7a] px-4 py-2 text-white hover:bg-[#042f5c] disabled:opacity-60"
-        >
-          Войти
-        </button>
-      </form>
+    <main className="login-scene">
+      <div className="glass-pane login-card">
+        <img src={logo} alt="Mike Phuket AI" width={480} height={240} className="login-logo" />
+        <h1>Вход</h1>
+        <form onSubmit={onSubmit}>
+          <label className="cast-label">
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="glass-field"
+              autoComplete="username"
+              required
+            />
+          </label>
+          <label className="cast-label">
+            Пароль
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="glass-field"
+              autoComplete="current-password"
+              required
+            />
+          </label>
+          {error ? (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <button type="submit" disabled={pending} className="ice-button">
+            Войти
+          </button>
+        </form>
+      </div>
     </main>
   )
 }
