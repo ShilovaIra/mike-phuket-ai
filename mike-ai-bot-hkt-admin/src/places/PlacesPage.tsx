@@ -427,7 +427,9 @@ export function PlacesPage() {
       {creatingPlace ? (
         <PlaceFormModal
           onClose={() => setCreatingPlace(false)}
-          onChanged={reload}
+          onChanged={async () => {
+            await reload()
+          }}
           onSaved={() => {
             setCreatingPlace(false)
             setPlaceQuery('')
@@ -443,7 +445,9 @@ export function PlacesPage() {
         <PlaceFormModal
           place={editingPlace}
           onClose={() => setEditingPlace(null)}
-          onChanged={reload}
+          onChanged={async () => {
+            await reload()
+          }}
           onSaved={() => {
             setEditingPlace(null)
             void reload()
