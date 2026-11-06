@@ -167,6 +167,8 @@ SELECT_INTERVAL_BROADCAST_EXISTS = (
     "SELECT 1 FROM interval_broadcasts WHERE id = $1"
 )
 
+DELETE_INTERVAL_BROADCAST = "DELETE FROM interval_broadcasts WHERE id = $1"
+
 LOCK_DUE_INTERVAL_BROADCASTS = """
 SELECT id, list_id, scheduled_at, interval_days, last_message_id
 FROM interval_broadcasts

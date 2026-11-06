@@ -361,6 +361,12 @@ async def update_interval_broadcast(
     return loaded[0]
 
 
+async def delete_interval_broadcast(pool: asyncpg.Pool, broadcast_id: UUID) -> bool:
+    async with pool.acquire() as conn:
+        result = await conn.execute(queries.DELETE_INTERVAL_BROADCAST, broadcast_id)
+    return result == "DELETE 1"
+
+
 async def list_interval_broadcasts(pool: asyncpg.Pool) -> list[IntervalBroadcast]:
     async with pool.acquire() as conn:
         return await _load_interval_broadcasts(conn)

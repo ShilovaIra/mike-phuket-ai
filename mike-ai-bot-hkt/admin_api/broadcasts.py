@@ -20,6 +20,7 @@ from broadcasts import (
     create_broadcast_list,
     create_interval_broadcast,
     delete_broadcast as remove_broadcast,
+    delete_interval_broadcast,
     list_broadcast_lists,
     list_interval_broadcasts,
     list_broadcasts as load_broadcasts,
@@ -336,3 +337,15 @@ async def update_interval(
     if updated is None:
         raise HTTPException(status_code=404, detail="Рассылка не найдена")
     return _interval_payload(updated)
+
+
+@router.delete("/api/interval-broadcasts/{broadcast_id}", status_code=204)
+async def delete_interval(
+    request: Request,
+    broadcast_id: UUID,
+    admin: AdminUser = Depends(require_admin),
+) -> None:
+    _ = admin
+    deleted = await delete_interval_broadcast(_store(request).pool, broadcast_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Рассылка не найдена")
