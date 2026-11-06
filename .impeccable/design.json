@@ -1,52 +1,127 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-17T06:00:00.000Z",
+  "generatedAt": "2026-11-06T05:50:00.000Z",
   "title": "Design System: Mike Phuket AI",
   "extensions": {
     "colorMeta": {
-      "harbor-navy": {
+      "guide-blue": {
         "role": "primary",
-        "displayName": "Harbor Navy",
-        "canonical": "oklch(0.308 0.096 258.3)",
+        "displayName": "Guide Blue",
+        "canonical": "oklch(0.607 0.198 259.6)",
         "tonalRamp": [
-          "#02122c",
-          "#042048",
-          "#0c2e5f",
-          "#1a457c",
-          "#3d5270",
-          "#7f93ad",
-          "#d5deea",
-          "#f4f7fb"
+          "#000740",
+          "#002476",
+          "#0042b0",
+          "#1766df",
+          "#408dff",
+          "#75b6ff",
+          "#abd9ff",
+          "#d6f4ff"
         ]
       },
-      "harbor-deep": {
+      "guide-blue-hover": {
         "role": "primary",
-        "displayName": "Harbor Deep",
-        "canonical": "oklch(0.250 0.082 257.9)",
+        "displayName": "Guide Blue Hover",
+        "canonical": "oklch(0.632 0.185 258.7)",
         "tonalRamp": [
-          "#010818",
-          "#02122c",
-          "#042048",
-          "#0a1b36",
-          "#0c2e5f",
-          "#3d5270",
-          "#d5deea",
-          "#f4f7fb"
+          "#000a3d",
+          "#002671",
+          "#0045aa",
+          "#1c69d7",
+          "#448fff",
+          "#78b8ff",
+          "#add9ff",
+          "#d7f4ff"
+        ]
+      },
+      "guide-blue-press": {
+        "role": "primary",
+        "displayName": "Guide Blue Press",
+        "canonical": "oklch(0.534 0.186 259.7)",
+        "tonalRamp": [
+          "#00093d",
+          "#002572",
+          "#0044ab",
+          "#2168d8",
+          "#478eff",
+          "#7ab7ff",
+          "#aed9ff",
+          "#d8f4ff"
+        ]
+      },
+      "lobby-violet": {
+        "role": "secondary",
+        "displayName": "Lobby Violet",
+        "canonical": "oklch(0.566 0.248 283.3)",
+        "tonalRamp": [
+          "#13004a",
+          "#2d0085",
+          "#4a13c5",
+          "#6643f6",
+          "#866eff",
+          "#a99fff",
+          "#cbcbff",
+          "#e9ebff"
+        ]
+      },
+      "lobby-violet-hot": {
+        "role": "secondary",
+        "displayName": "Lobby Violet Hot",
+        "canonical": "oklch(0.609 0.223 285.6)",
+        "tonalRamp": [
+          "#140043",
+          "#2e077b",
+          "#4c23b8",
+          "#6b4be7",
+          "#8b73ff",
+          "#afa2ff",
+          "#cfcbff",
+          "#ecebff"
         ]
       },
       "plate-yellow": {
-        "role": "secondary",
+        "role": "tertiary",
         "displayName": "Plate Yellow",
         "canonical": "oklch(0.862 0.172 90.2)",
         "tonalRamp": [
-          "#7a5c00",
-          "#b38a00",
-          "#e0b40a",
-          "#fdcb1a",
-          "#f0c010",
-          "#ffe37a",
-          "#fff1b8",
-          "#fff8dc"
+          "#210b00",
+          "#462600",
+          "#6f4300",
+          "#956600",
+          "#bb8a00",
+          "#dbb233",
+          "#f0d58b",
+          "#fff1c3"
+        ]
+      },
+      "harbor-navy": {
+        "role": "tertiary",
+        "displayName": "Harbor Navy",
+        "canonical": "oklch(0.308 0.096 258.3)",
+        "tonalRamp": [
+          "#031128",
+          "#152d51",
+          "#2c4d7e",
+          "#4b6fa6",
+          "#6d94cd",
+          "#98b9eb",
+          "#c2d9fc",
+          "#e4f3ff"
+        ]
+      },
+      "harbor-deep": {
+        "role": "tertiary",
+        "displayName": "Harbor Deep",
+        "canonical": "oklch(0.250 0.082 257.9)",
+        "tonalRamp": [
+          "#051125",
+          "#192e4c",
+          "#314e77",
+          "#50709e",
+          "#7394c5",
+          "#9cb9e4",
+          "#c5d9f7",
+          "#e6f3ff"
         ]
       },
       "canvas": {
@@ -54,44 +129,44 @@
         "displayName": "Canvas",
         "canonical": "oklch(0.975 0.006 255.5)",
         "tonalRamp": [
-          "#0a1b36",
-          "#3d5270",
-          "#7f93ad",
-          "#d5deea",
-          "#e7eef6",
-          "#f4f7fb",
-          "#f7f9fc",
-          "#ffffff"
+          "#111213",
+          "#2c2e30",
+          "#4b4d50",
+          "#6c6f72",
+          "#909296",
+          "#b5b7bb",
+          "#d6d7da",
+          "#f1f2f3"
         ]
       },
       "surface": {
         "role": "neutral",
         "displayName": "Surface",
-        "canonical": "#ffffff",
+        "canonical": "oklch(1.000 0.000 89.9)",
         "tonalRamp": [
-          "#0a1b36",
-          "#3d5270",
-          "#d5deea",
-          "#e7eef6",
-          "#f4f7fb",
-          "#f7f9fc",
-          "#fcfdff",
-          "#ffffff"
+          "#121212",
+          "#2e2e2e",
+          "#4d4d4d",
+          "#6f6f6f",
+          "#929292",
+          "#b7b7b7",
+          "#d7d7d7",
+          "#f2f2f2"
         ]
       },
       "ink": {
         "role": "neutral",
         "displayName": "Ink",
-        "canonical": "oklch(0.225 0.057 259.3)",
+        "canonical": "oklch(0.240 0.043 253.7)",
         "tonalRamp": [
-          "#0a1b36",
-          "#0c2e5f",
-          "#3d5270",
-          "#5a6e88",
-          "#7f93ad",
-          "#d5deea",
-          "#e7eef6",
-          "#f4f7fb"
+          "#0a121c",
+          "#232f3e",
+          "#3e4f63",
+          "#5e7087",
+          "#8094ac",
+          "#a8b9ce",
+          "#cdd9e8",
+          "#ebf3fc"
         ]
       },
       "ink-muted": {
@@ -99,160 +174,540 @@
         "displayName": "Ink Muted",
         "canonical": "oklch(0.434 0.056 257.3)",
         "tonalRamp": [
-          "#0a1b36",
-          "#3d5270",
-          "#5a6e88",
-          "#7f93ad",
-          "#a7b6c8",
-          "#d5deea",
-          "#e7eef6",
-          "#f4f7fb"
+          "#09121f",
+          "#202e43",
+          "#3a4e6a",
+          "#5a7090",
+          "#7d94b5",
+          "#a5b9d6",
+          "#cad9ed",
+          "#e9f3ff"
         ]
       },
       "line": {
         "role": "neutral",
         "displayName": "Line",
-        "canonical": "#d5deea",
+        "canonical": "oklch(0.897 0.019 255.5)",
         "tonalRamp": [
-          "#0c2e5f",
-          "#3d5270",
-          "#7f93ad",
-          "#b7c4d4",
-          "#d5deea",
-          "#e7eef6",
-          "#f4f7fb",
-          "#ffffff"
+          "#0f1216",
+          "#292e35",
+          "#474e57",
+          "#676f7a",
+          "#8b939e",
+          "#b1b8c2",
+          "#d3d8df",
+          "#eff2f6"
         ]
       },
-      "icon-well": {
+      "hover": {
         "role": "neutral",
-        "displayName": "Icon Well",
-        "canonical": "#e7eef6",
+        "displayName": "Hover",
+        "canonical": "oklch(0.962 0.010 252.8)",
         "tonalRamp": [
-          "#0c2e5f",
-          "#3d5270",
-          "#7f93ad",
-          "#d5deea",
-          "#e7eef6",
-          "#f4f7fb",
-          "#f7f9fc",
-          "#ffffff"
+          "#101214",
+          "#2b2e31",
+          "#4a4d52",
+          "#6b6f74",
+          "#8e9398",
+          "#b4b8bd",
+          "#d5d8db",
+          "#f0f2f4"
+        ]
+      },
+      "wash": {
+        "role": "neutral",
+        "displayName": "Wash",
+        "canonical": "oklch(0.920 0.025 251.9)",
+        "tonalRamp": [
+          "#0d1218",
+          "#272f37",
+          "#444e5a",
+          "#65707d",
+          "#8894a1",
+          "#aeb9c5",
+          "#d1d8e1",
+          "#eef2f8"
         ]
       },
       "danger": {
-        "role": "primary",
+        "role": "danger",
         "displayName": "Danger",
-        "canonical": "#b42318",
+        "canonical": "oklch(0.578 0.188 25.3)",
         "tonalRamp": [
-          "#7a160f",
-          "#b42318",
-          "#d92d20",
-          "#f04438",
-          "#fda29b",
-          "#fececa",
-          "#fee4e2",
-          "#fef3f2"
+          "#320000",
+          "#620000",
+          "#97000e",
+          "#c42c30",
+          "#ef5753",
+          "#ff8b82",
+          "#ffbcb3",
+          "#ffe1db"
+        ]
+      },
+      "open": {
+        "role": "semantic",
+        "displayName": "Open",
+        "canonical": "oklch(0.511 0.123 154.6)",
+        "tonalRamp": [
+          "#001904",
+          "#003a17",
+          "#005f2e",
+          "#1e834d",
+          "#4ba870",
+          "#80cb9a",
+          "#b4e6c3",
+          "#dcfbe5"
+        ]
+      },
+      "star": {
+        "role": "semantic",
+        "displayName": "Star",
+        "canonical": "oklch(0.668 0.143 72.6)",
+        "tonalRamp": [
+          "#250700",
+          "#4c2000",
+          "#783c00",
+          "#9f5d00",
+          "#c68200",
+          "#e6ab5b",
+          "#f9d09c",
+          "#ffedcd"
+        ]
+      },
+      "voice": {
+        "role": "neutral",
+        "displayName": "Voice",
+        "canonical": "oklch(0.176 0.033 256.4)",
+        "tonalRamp": [
+          "#0c121a",
+          "#262e3a",
+          "#424e5e",
+          "#627082",
+          "#8593a7",
+          "#acb9c9",
+          "#d0d8e4",
+          "#edf2fa"
+        ]
+      },
+      "canvas-dark": {
+        "role": "neutral",
+        "displayName": "Canvas Dark",
+        "canonical": "oklch(0.199 0.027 258.3)",
+        "tonalRamp": [
+          "#0e1218",
+          "#282e38",
+          "#454e5b",
+          "#656f7f",
+          "#8893a3",
+          "#afb8c6",
+          "#d1d8e2",
+          "#eef2f8"
+        ]
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "Surface Dark",
+        "canonical": "oklch(0.257 0.033 254.4)",
+        "tonalRamp": [
+          "#0c121a",
+          "#252f3a",
+          "#414e5e",
+          "#627082",
+          "#8594a7",
+          "#acb9c9",
+          "#cfd8e4",
+          "#edf2fa"
+        ]
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "Ink Dark",
+        "canonical": "oklch(0.946 0.014 254.6)",
+        "tonalRamp": [
+          "#0f1215",
+          "#2a2e33",
+          "#484e55",
+          "#696f77",
+          "#8c939b",
+          "#b2b8bf",
+          "#d4d8dd",
+          "#eff2f5"
+        ]
+      },
+      "ink-muted-dark": {
+        "role": "neutral",
+        "displayName": "Ink Muted Dark",
+        "canonical": "oklch(0.719 0.044 256.3)",
+        "tonalRamp": [
+          "#0b121c",
+          "#232f3e",
+          "#3e4e64",
+          "#5e7088",
+          "#8194ad",
+          "#a9b9cf",
+          "#cdd9e8",
+          "#ebf2fd"
+        ]
+      },
+      "line-dark": {
+        "role": "neutral",
+        "displayName": "Line Dark",
+        "canonical": "oklch(0.352 0.044 256.5)",
+        "tonalRamp": [
+          "#0a121c",
+          "#232f3e",
+          "#3e4e64",
+          "#5e7088",
+          "#8194ad",
+          "#a9b9cf",
+          "#cdd9e8",
+          "#ebf2fd"
+        ]
+      },
+      "lobby-ink": {
+        "role": "neutral",
+        "displayName": "Lobby Ink",
+        "canonical": "oklch(0.952 0.018 253.3)",
+        "tonalRamp": [
+          "#0f1216",
+          "#292e34",
+          "#474e56",
+          "#686f79",
+          "#8b939d",
+          "#b1b8c1",
+          "#d3d8de",
+          "#eff2f6"
+        ]
+      },
+      "lobby-muted": {
+        "role": "neutral",
+        "displayName": "Lobby Muted",
+        "canonical": "oklch(0.830 0.040 256.6)",
+        "tonalRamp": [
+          "#0b121b",
+          "#242e3d",
+          "#404e62",
+          "#607086",
+          "#8394ab",
+          "#aab9cd",
+          "#ced8e7",
+          "#ecf2fc"
+        ]
+      },
+      "lobby-faint": {
+        "role": "neutral",
+        "displayName": "Lobby Faint",
+        "canonical": "oklch(0.731 0.057 251.1)",
+        "tonalRamp": [
+          "#07121f",
+          "#1d2f43",
+          "#374f6a",
+          "#56718f",
+          "#7995b4",
+          "#a2bad5",
+          "#c8daed",
+          "#e8f3ff"
+        ]
+      },
+      "lobby-ground": {
+        "role": "neutral",
+        "displayName": "Lobby Ground",
+        "canonical": "oklch(0.167 0.026 272.6)",
+        "tonalRamp": [
+          "#0f1118",
+          "#2a2d38",
+          "#484c5b",
+          "#696e7e",
+          "#8d92a2",
+          "#b2b7c6",
+          "#d4d7e1",
+          "#eff1f8"
+        ]
+      },
+      "lobby-void": {
+        "role": "neutral",
+        "displayName": "Lobby Void",
+        "canonical": "oklch(0.150 0.021 264.3)",
+        "tonalRamp": [
+          "#0f1217",
+          "#2a2e36",
+          "#484d58",
+          "#696f7b",
+          "#8c929f",
+          "#b2b8c3",
+          "#d3d8e0",
+          "#eff2f7"
+        ]
+      },
+      "lobby-rail": {
+        "role": "neutral",
+        "displayName": "Lobby Rail",
+        "canonical": "oklch(0.197 0.037 273.1)",
+        "tonalRamp": [
+          "#0f111b",
+          "#292d3c",
+          "#474c61",
+          "#676e85",
+          "#8a91a9",
+          "#b1b7cc",
+          "#d3d7e6",
+          "#eff1fb"
+        ]
+      },
+      "lobby-danger": {
+        "role": "danger",
+        "displayName": "Lobby Danger",
+        "canonical": "oklch(0.839 0.088 24.2)",
+        "tonalRamp": [
+          "#230707",
+          "#4a1f1d",
+          "#743936",
+          "#9c5955",
+          "#c37c77",
+          "#e3a5a0",
+          "#f7cbc7",
+          "#ffeae7"
+        ]
+      },
+      "lobby-line": {
+        "role": "neutral",
+        "displayName": "Lobby Line",
+        "canonical": "rgba(198, 220, 255, 0.16)",
+        "tonalRamp": [
+          "#0a121f",
+          "#222e42",
+          "#3c4e69",
+          "#5c708e",
+          "#7f93b4",
+          "#a7b9d5",
+          "#ccd8ec",
+          "#eaf2ff"
         ]
       }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Mike's name under the portrait. Once per home screen." },
-      "headline": { "displayName": "Headline", "purpose": "Admin screen titles." },
-      "title": { "displayName": "Title", "purpose": "Topic row labels and the Ask-Mike plate." },
-      "body": { "displayName": "Body", "purpose": "Greeting and supporting sentences, 16px." },
-      "label": { "displayName": "Label", "purpose": "Field labels and admin table headers. Sentence case." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "Mike's name on the hero. Admin screen titles share the size, weight, and tracking at line-height 1.15."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "The voice-screen status line. Not a section kicker."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Mini App section headings. Admin pane titles are 1.05rem / 600."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Page text at 16px. Place prose is 0.9375rem, about 42ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form labels, meta, and text links. Sentence case."
+      }
     },
     "shadows": [
-      { "name": "rest", "value": "none", "purpose": "Default. Rows, fields, and tables stay flat." },
-      { "name": "press", "value": "inset 0 1px 0 rgba(4, 32, 72, 0.12)", "purpose": "Plate button :active only." },
-      { "name": "focus", "value": "0 0 0 2px #F4F7FB, 0 0 0 4px #0C2E5F", "purpose": "Keyboard focus ring on interactive controls." }
+      {
+        "name": "rest",
+        "value": "none",
+        "purpose": "Mini App rows, search, place sheet, and dock stay flat."
+      },
+      {
+        "name": "focus-mini",
+        "value": "0 0 0 2px #F4F7FB, 0 0 0 4px #2F7CF6",
+        "purpose": "Keyboard focus on the Mini App. The inner ring matches the theme ground."
+      },
+      {
+        "name": "sticker",
+        "value": "0 1px 0 rgba(4, 32, 72, 0.16)",
+        "purpose": "The «скоро» ticket only."
+      },
+      {
+        "name": "pane",
+        "value": "0 18px 40px rgba(2, 6, 16, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.16)",
+        "purpose": "Admin glass pane."
+      },
+      {
+        "name": "ice",
+        "value": "0 10px 24px rgba(18, 48, 120, 0.35)",
+        "purpose": "Admin primary buttons."
+      },
+      {
+        "name": "focus-admin",
+        "value": "0 0 0 2px #9EC0FF",
+        "purpose": "Glass field focus, drawn as a 2px outline."
+      }
     ],
     "motion": [
-      { "name": "ease-standard", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Ease-out-expo for color and press feedback." },
-      { "name": "duration-standard", "value": "180ms", "purpose": "State changes on buttons and topic rows." }
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Color, border, and shadow on both desks."
+      },
+      {
+        "name": "duration-standard",
+        "value": "180ms",
+        "purpose": "State changes. Reduced motion removes admin transitions and the chat typing dots."
+      }
     ],
     "breakpoints": [
-      { "name": "short", "value": "720px", "purpose": "Shrink portrait on short Mini App viewports." },
-      { "name": "studio", "value": "960px", "purpose": "Design-review device frame beside the spec." }
+      {
+        "name": "admin-stats",
+        "value": "1100px"
+      },
+      {
+        "name": "admin-stack",
+        "value": "980px"
+      },
+      {
+        "name": "admin-drawer",
+        "value": "900px"
+      },
+      {
+        "name": "admin-phone",
+        "value": "640px"
+      }
     ]
   },
   "components": [
     {
-      "name": "Ask-Mike plate",
+      "name": "Ask pill",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The PHUKET bar as a full-width tourist CTA.",
-      "html": "<button class=\"ds-plate\" type=\"button\">Спросить Майка</button>",
-      "css": ".ds-plate { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 56px; padding: 16px 24px; border: 0; border-radius: 999px; background: #fdcb1a; color: #042048; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; font-size: 1.125rem; font-weight: 700; letter-spacing: -0.01em; cursor: pointer; transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-plate:hover { background: #f0c010; } .ds-plate:active { background: #e0b40a; box-shadow: inset 0 1px 0 rgba(4, 32, 72, 0.12); transform: translateY(1px); } .ds-plate:focus-visible { outline: none; box-shadow: 0 0 0 2px #f4f7fb, 0 0 0 4px #0c2e5f; }"
+      "description": "The dock CTA. Guide Blue, one per screen.",
+      "html": "<button class=\"ds-ask\" type=\"button\">Спросите Майка о Пхукете</button>",
+      "css": ".ds-ask { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; padding: 0 16px; border: 0; border-radius: 999px; background: #2f7cf6; color: #fff; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 700; cursor: pointer; transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-ask:hover { background: #3b86f7; } .ds-ask:active { background: #1f66d6; } .ds-ask:focus-visible { outline: none; box-shadow: 0 0 0 2px #f4f7fb, 0 0 0 4px #2f7cf6; } .ds-ask:disabled { opacity: 0.45; cursor: default; }"
     },
     {
-      "name": "Topic tile",
+      "name": "Place CTA",
       "kind": "button",
-      "refersTo": "button-topic",
-      "description": "Two-up Mini App topic, same emoji and order as the bot keyboard.",
-      "html": "<button class=\"ds-topic\" type=\"button\"><span class=\"ds-topic-icon\" aria-hidden=\"true\">📍</span><span class=\"ds-topic-label\">Что рядом</span></button>",
-      "css": ".ds-topic { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 96px; padding: 12px 10px 14px; background: #fff; border: 1px solid #d5deea; border-radius: 16px; color: #0a1b36; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; cursor: pointer; text-align: center; } .ds-topic:hover { background: #e7eef6; } .ds-topic:focus-visible { outline: none; box-shadow: 0 0 0 2px #f4f7fb, 0 0 0 4px #0c2e5f; } .ds-topic-icon { flex: 0 0 40px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #e7eef6; font-size: 1.25rem; line-height: 1; } .ds-topic-label { font-size: 0.9375rem; font-weight: 600; line-height: 1.25; }"
+      "refersTo": "button-cta",
+      "description": "Full-width Guide Blue action on a place sheet. 14px corners, not a pill.",
+      "html": "<a class=\"ds-cta\" href=\"#\">Открыть в картах</a>",
+      "css": ".ds-cta { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; border-radius: 14px; background: #2f7cf6; color: #fff; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; font-size: 1rem; font-weight: 700; text-decoration: none; transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-cta:hover { background: #3b86f7; } .ds-cta:active { background: #1f66d6; } .ds-cta:focus-visible { outline: none; box-shadow: 0 0 0 2px #f4f7fb, 0 0 0 4px #2f7cf6; }"
     },
     {
-      "name": "Ops button",
+      "name": "Soon sticker",
+      "kind": "chip",
+      "refersTo": "chip-soon",
+      "description": "Plate Yellow status for a control that is not live yet.",
+      "html": "<span class=\"ds-soon\">скоро</span>",
+      "css": ".ds-soon { display: inline-block; padding: 2px 5px 3px; border-radius: 4px; background: #fdcb1a; color: #042048; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; font-size: 0.625rem; font-weight: 700; line-height: 1; letter-spacing: 0; transform: rotate(8deg); box-shadow: 0 1px 0 rgba(4, 32, 72, 0.16); }"
+    },
+    {
+      "name": "Chat chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "A suggested reply under a Mike message.",
+      "html": "<button class=\"ds-chip\" type=\"button\">Где поесть</button>",
+      "css": ".ds-chip { min-height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: #2f7cf6; color: #fff; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-chip:hover { background: #3b86f7; } .ds-chip:focus-visible { outline: none; box-shadow: 0 0 0 2px #f4f7fb, 0 0 0 4px #2f7cf6; }"
+    },
+    {
+      "name": "Ice button",
       "kind": "button",
       "refersTo": "button-ops",
-      "description": "Quiet admin/partner primary. Navy, not yellow.",
-      "html": "<button class=\"ds-ops\" type=\"button\">Войти</button>",
-      "css": ".ds-ops { min-height: 40px; padding: 10px 16px; border: 0; border-radius: 8px; background: #0c2e5f; color: #fff; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; } .ds-ops:hover { background: #042048; } .ds-ops:focus-visible { outline: none; box-shadow: 0 0 0 2px #f4f7fb, 0 0 0 4px #0c2e5f; }"
+      "description": "Admin primary. Lobby Violet on the night desk.",
+      "html": "<button class=\"ds-ice\" type=\"button\">Сохранить</button>",
+      "css": ".ds-ice { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 16px; border: 0; border-radius: 14px; background: #6d4dff; color: #f7faff; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 600; cursor: pointer; box-shadow: 0 10px 24px rgba(18, 48, 120, 0.35); transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-ice:hover { background: #7d62ff; } .ds-ice:focus-visible { outline: 2px solid #9ec0ff; outline-offset: 2px; } .ds-ice:disabled { opacity: 0.45; cursor: not-allowed; }"
     },
     {
-      "name": "Text field",
+      "name": "Ghost button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Admin secondary. Ice edge, no fill.",
+      "html": "<button class=\"ds-ghost\" type=\"button\">Отменить</button>",
+      "css": ".ds-ghost { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 16px; border-radius: 14px; border: 1px solid rgba(190, 214, 255, 0.28); background: rgba(255, 255, 255, 0.04); color: #e7f0fb; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; font-size: 0.9375rem; font-weight: 500; cursor: pointer; transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-ghost:hover { background: rgba(255, 255, 255, 0.09); } .ds-ghost:focus-visible { outline: 2px solid #9ec0ff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Glass pane",
+      "kind": "card",
+      "refersTo": "card-pane",
+      "description": "Admin container. Frosted navy, ice edge, one shadow.",
+      "html": "<div class=\"ds-stage\"><section class=\"ds-pane\"><h2>Цепочка сообщений</h2><p>Несколько сообщений уходят по очереди с одним интервалом.</p></section></div>",
+      "css": ".ds-stage { padding: 24px; background: radial-gradient(420px 240px at 0% 100%, rgba(109, 77, 255, 0.28), transparent 58%), #0b0e1a; } .ds-pane { border: 1px solid rgba(198, 220, 255, 0.16); border-radius: 22px; background: linear-gradient(180deg, rgba(176, 206, 255, 0.18), rgba(14, 26, 48, 0.46)); box-shadow: 0 18px 40px rgba(2, 6, 16, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.16); backdrop-filter: blur(18px) saturate(1.3); padding: 18px 20px 20px; color: #e7f0fb; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; } .ds-pane h2 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; } .ds-pane p { margin: 6px 0 0; color: #b7c9e2; font-size: 0.875rem; }"
+    },
+    {
+      "name": "Glass field",
+      "kind": "input",
+      "refersTo": "input-ops",
+      "description": "Admin text field on a dark pane.",
+      "html": "<label class=\"ds-field\">Текст<textarea class=\"ds-input\" rows=\"3\" placeholder=\"Сообщение для бота\"></textarea></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; padding: 16px; background: #0b0e1a; color: #e7f0fb; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; } .ds-input { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 12px; border: 1px solid rgba(190, 214, 255, 0.2); border-radius: 12px; background: rgba(5, 10, 22, 0.45); color: #e7f0fb; font-family: inherit; font-size: 1rem; font-weight: 400; } .ds-input::placeholder { color: #a9bdd6; } .ds-input:focus { outline: 2px solid #9ec0ff; outline-offset: 1px; border-color: transparent; }"
+    },
+    {
+      "name": "Composer",
       "kind": "input",
       "refersTo": "input-field",
-      "description": "48px field on surface with navy focus.",
-      "html": "<label class=\"ds-field\">Email<input class=\"ds-input\" type=\"email\" placeholder=\"you@example.com\"></label>",
-      "css": ".ds-field { display: flex; flex-direction: column; gap: 4px; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; color: #0a1b36; } .ds-input { height: 48px; padding: 12px 14px; border: 1px solid #d5deea; border-radius: 8px; background: #fff; color: #0a1b36; font-family: inherit; font-size: 1rem; } .ds-input::placeholder { color: #3d5270; } .ds-input:focus { outline: none; border-color: #0c2e5f; box-shadow: 0 0 0 2px #f4f7fb, 0 0 0 4px #0c2e5f; }"
+      "description": "Mini App chat field. Pill on Surface, Guide Blue send.",
+      "html": "<form class=\"ds-composer\"><input class=\"ds-compose\" type=\"text\" placeholder=\"Спросите о Пхукете\"><button class=\"ds-send\" type=\"button\" aria-label=\"Отправить\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 12h12M13 6l6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button></form>",
+      "css": ".ds-composer { display: flex; gap: 8px; padding: 12px; background: #f4f7fb; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; } .ds-compose { flex: 1; height: 44px; padding: 0 14px; border: 1px solid #d5deea; border-radius: 999px; background: #fff; color: #102033; font-family: inherit; font-size: 1rem; } .ds-compose::placeholder { color: #3d5270; } .ds-compose:focus { outline: none; box-shadow: 0 0 0 2px #f4f7fb, 0 0 0 4px #2f7cf6; } .ds-send { width: 44px; height: 44px; border: 0; border-radius: 50%; background: #2f7cf6; color: #fff; display: grid; place-items: center; cursor: pointer; } .ds-send:hover { background: #3b86f7; } .ds-send:focus-visible { outline: none; box-shadow: 0 0 0 2px #f4f7fb, 0 0 0 4px #2f7cf6; }"
     },
     {
-      "name": "Mini App header",
+      "name": "Rail item",
       "kind": "nav",
-      "refersTo": "nav",
-      "description": "Compact wordmark on canvas. Telegram owns OS chrome.",
-      "html": "<header class=\"ds-nav\"><img src=\"\" alt=\"Mike Phuket AI\" width=\"180\" height=\"28\"></header>",
-      "css": ".ds-nav { display: flex; align-items: center; justify-content: center; min-height: 76px; padding: 12px 24px; background: #f4f7fb; border-bottom: 1px solid #d5deea; } .ds-nav img { height: 52px; width: auto; }"
+      "refersTo": "nav-rail",
+      "description": "Current admin section. Violet gradient pill on the night rail.",
+      "html": "<div class=\"ds-rail\"><a class=\"ds-link\" href=\"#\">Статистика</a><a class=\"ds-link is-active\" href=\"#\">Рассылка</a></div>",
+      "css": ".ds-rail { display: flex; flex-direction: column; gap: 4px; width: 220px; padding: 16px 12px; background: #101426; font-family: 'Golos Text', 'Segoe UI', system-ui, sans-serif; } .ds-link { display: flex; align-items: center; min-height: 40px; padding: 8px 12px; border-radius: 12px; color: #d5e2f4; text-decoration: none; font-size: 0.875rem; font-weight: 500; } .ds-link:hover { background: rgba(255, 255, 255, 0.06); } .ds-link.is-active { background: linear-gradient(180deg, #7c5cff, #6846f0); color: #fff; box-shadow: 0 8px 18px rgba(88, 56, 210, 0.35); } .ds-link:focus-visible { outline: 2px solid #9ec0ff; outline-offset: 2px; }"
     }
   ],
   "narrative": {
     "northStar": "The Island Concierge",
-    "overview": "A tourist on a bright Phuket street, Telegram in one hand, sun on the glass. The Mini App is a white desk: readable in daylight, fast to tap, one person on the other side. Mike's face and short Russian copy carry the warmth. Navy type and a single yellow plate do the wayfinding. Tropical photography stays inside that circle, and in marketing. It never becomes wallpaper.\n\nThis is one product with two voices. Tourists get Mike: friendly, clear, local. Operators get a quiet desk in the same palette: navy actions, almost no yellow, no character cosplay. The Mini App home maps 1:1 to the bot keyboard (where to eat, beaches, nearby, property, ask Mike). Labels name the action. Personality lives in the portrait and the greeting, not in decoration.\n\nThe system rejects cringy consumer apps (over-cute copy, mascot spam, emoji walls, gamified fluff), loud travel-agency Telegram spam and hard-sell real-estate brochure tone, and generic flashy SaaS dashboards that prioritize chrome over task completion. It also rejects the customer's dark \"night map\" phone mock as the tourist default: we locked light concierge instead.",
+    "overview": "A tourist on a phone in daylight, Mike's photograph filling the top of the screen, a short Russian greeting in a white bubble. The Mini App is a cool canvas under that frame: Guide Blue for the ask pill, the links, and the tab that is on. Plate Yellow survives only as the small «скоро» sticker. Place photos sit in cards. They do not become the page.\n\nOne product, two desks. Tourists get the daylight Mini App, and a dark theme that keeps the same blue when the phone is dark. Operators get the night lobby: blue-black ground, violet blooms, frosted panes, Lobby Violet on the action and on the nav item that is current. The admin does not wear Mike's face or the yellow sticker. The bot keyboard stays Telegram's, packed two-up, and the Mini App does not copy that grid.\n\nThe system rejects cringy consumer apps (over-cute copy, mascot spam, emoji walls, gamified fluff), loud travel-agency Telegram spam and hard-sell real-estate brochure tone, and generic flashy SaaS dashboards that prioritize chrome over the task. It also rejects the old white-desk home (yellow plate button, no photograph, two-up topic tiles) and the cyan «Спроси Майка!» night-map phone. Light is the tourist default. Violet glass is the operator desk.",
     "keyCharacteristics": [
-      "White working surface, harbor-navy ink, yellow used as a plate, not a wash",
-      "Mike's circular portrait is the only photoreal image in the Mini App",
-      "Topic tiles packed 2-up like the bot keyboard; one primary plate button",
-      "Golos Text in a tight rem scale; the wordmark file is display, not a second UI font",
-      "Flat surfaces at rest; motion is press, focus, and state, 150–250ms"
+      "Canvas ground, Guide Blue actions, Plate Yellow only on «скоро»",
+      "Mike's photograph is the home hero; the name is set in Golos Text on the photo",
+      "Ask pill plus a five-tab dock; place cards and chat carry the rest",
+      "Golos Text for every live string; Harbor Navy stays the wordmark ink, not a UI fill",
+      "Mini App flat at rest; admin depth is frosted glass"
     ],
     "rules": [
-      { "name": "The Desk Rule", "body": "The Mini App body is canvas or surface. Tropical photos, sunsets, and palm illustrations do not appear as backgrounds, section fills, or hero wallpaper.", "section": "colors" },
-      { "name": "The Plate Rule", "body": "Plate yellow occupies ≤10% of any tourist screen, and almost 0% of ops screens. If yellow is filling a card, a chart, or a header bar, it is wrong. Put it back on the plate-shaped CTA.", "section": "colors" },
-      { "name": "The Quiet Tools Rule", "body": "Admin and partner dashboards use Harbor Navy for primary actions (replacing the older #053e7a approximation). Plate yellow does not appear on ops chrome. Do not ship the dark-navy SaaS sidebar from the sales PDF.", "section": "colors" },
-      { "name": "The One Voice Type Rule", "body": "Golos Text carries every live string. Do not pair a tropical display serif or a second geometric sans. Do not set UI in Inter, DM Sans, Plus Jakarta, or system-only once Golos is loaded.", "section": "typography" },
-      { "name": "The Flat-By-Default Rule", "body": "If a topic row has a shadow, remove it. If an admin card is stacked on a card, flatten it to a table or a single surface.", "section": "elevation" }
+      {
+        "name": "The Frame Rule",
+        "body": "Mike's photograph is the home hero. Place photographs live in cards and covers. Tropical stock, sunsets, and palms do not become the page ground.",
+        "section": "colors"
+      },
+      {
+        "name": "The Plate Rule",
+        "body": "Plate Yellow is the «скоро» sticker and the wordmark bar. If it is filling a button, a card, or a header, it is wrong. It does not appear on the admin.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Desks Rule",
+        "body": "Tourists get Canvas and Guide Blue. Operators get the night lobby and Lobby Violet. Do not put the glass desk on the Mini App, and do not put Mike's portrait on the admin.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Voice Type Rule",
+        "body": "Golos Text carries every live string. Do not pair a tropical display serif or a second geometric sans. Do not set UI in Inter, DM Sans, Plus Jakarta, or system-only once Golos is loaded.",
+        "section": "typography"
+      },
+      {
+        "name": "The Split Depth Rule",
+        "body": "If a Mini App card has a drop shadow, remove it. If an admin pane is a solid opaque card with no blur, it has left the night lobby.",
+        "section": "elevation"
+      }
     ],
     "dos": [
-      "Do keep the Mini App on Canvas (#F4F7FB) with Surface rows, Harbor Navy ink, and one Plate Yellow CTA.",
-      "Do put Mike's circular portrait on the home hero and the wordmark PNG in the header.",
-      "Do use 2-up topic tiles that match the bot keyboard, 96px min height, 44px+ hit targets, one emoji per circle.",
-      "Do set live type in Golos Text; 16px body; sentence case; text-wrap: pretty on the greeting.",
-      "Do keep ops UI task-dense: Harbor Navy buttons, 8px radius, no portrait, no plate yellow chrome.",
-      "Do honor prefers-reduced-motion: instant color shifts, no transform."
+      "Do keep the Mini App on Canvas with Surface sheets, Guide Blue actions, and Plate Yellow only on «скоро».",
+      "Do lead home with Mike's photograph, the name in Golos Text, and the white greeting bubble.",
+      "Do pin one ask pill and the five-tab dock. Hit targets stay at least 44px.",
+      "Do set live type in Golos Text, 16px body, sentence case, `text-wrap: pretty` on greeting and chat.",
+      "Do keep the admin on the night lobby: violet actions, 22px glass panes, no portrait, no Plate Yellow.",
+      "Do honor `prefers-reduced-motion` on the admin desk and the chat typing indicator."
     ],
     "donts": [
-      "Don't build cringy consumer apps: over-cute copy, mascot spam, emoji walls, gamified fluff that undercuts trust.",
-      "Don't use loud travel-agency Telegram spam or hard-sell real-estate brochure tone.",
-      "Don't ship generic flashy SaaS dashboards that prioritize chrome over task completion (including the dark-navy advertiser mock from the sales PDF).",
-      "Don't put beach photography, palms, or sunsets behind the UI. The Desk Rule.",
-      "Don't use cream, sand, beige, or warm-paper body backgrounds.",
-      "Don't use gradient text, glassmorphism, thick side-stripe borders, or identical icon+heading+text card grids.",
+      "Don't build cringy consumer apps: over-cute copy, mascot spam, emoji walls, gamified fluff.",
+      "Don't use loud travel-agency spam or a hard-sell real-estate brochure tone.",
+      "Don't put the admin night lobby on the Mini App, or Mike's portrait on the admin.",
+      "Don't put beach photography, palms, or sunsets behind the UI. The Frame Rule. Place photos stay inside cards and covers.",
+      "Don't use cream, sand, beige, or warm-paper page grounds.",
+      "Don't use gradient text, glass on the Mini App, thick side-stripe borders, or identical icon-heading-text card grids.",
       "Don't use a tiny uppercase tracked eyebrow above every section.",
-      "Don't treat the dark night harbor phone (navy screen, cyan «Спроси Майка!») as canonical. Light concierge won.",
-      "Don't stack the full lockup (face + MIKE + PHUKET bar) inside the Mini App header. Face is the hero; wordmark is the header."
+      "Don't treat the cyan «Спроси Майка!» night-map phone as the tourist UI. Light is the default. The dark theme keeps Guide Blue on `#0E1622`.",
+      "Don't bring back the yellow ask plate or the two-up topic tiles. That home was replaced.",
+      "Don't restyle the partner dashboard with this desk. It stays its own surface until it is redesigned."
     ]
   }
 }

@@ -1,45 +1,67 @@
 # Product
 
-## Register
+<!-- impeccable:product-schema 1 -->
 
-product
+## Platform
+
+web
 
 ## Users
 
-**Tourists (primary, Telegram + Mini App):** Russian-speaking visitors and newcomers on Phuket who need quick, local answers: where to eat, beaches, what's nearby, currency exchange, and optional help with property. Context is mobile, often on the go, in Telegram chat or in the upcoming Mini App.
+**Tourists (primary):** Russian-speaking visitors and newcomers on Phuket. They are on a phone, in Telegram chat or in the Mini App, often between places. They need a local answer quickly: where to eat, what to see, what's nearby, and optional help with property and partner services.
 
-**Operators (secondary, upcoming admin):** Phuket ProMax staff and partners who review leads, manage partner replies, and operate the bot. Context is desk or laptop; they want speed and clarity, not personality theater.
+**Operators (secondary):** Phuket ProMax staff at a laptop. They run the bot from the admin: stats, broadcasts, places, the knowledge base, partners, and partner users. They want speed and clarity, not personality theater.
 
-Job to be done for tourists: get a useful local answer fast, and when interested in real estate, leave a clean lead without a hard sell. Job for operators: triage and act on leads and bot configuration with minimal friction.
+Job to be done for tourists: get a useful local answer fast, and when interested in real estate, leave a clean lead without a hard sell. Job for operators: schedule messages, keep places and partners current, and read what the bot is doing, with minimal friction.
 
 ## Product Purpose
 
-Mike Phuket AI is a Telegram guide for Phuket and a soft assistant for Phuket ProMax. It answers practical travel questions, surfaces partner offers (e.g. money exchange), and qualifies real-estate interest through short, sequential questions. Tourists meet Mike in chat and, next, in a Telegram Mini App that reuses the same topics as the bot keyboard. Success is helpful chats that convert genuine interest into actionable leads, plus an admin surface that lets operators run that pipeline efficiently.
+Mike Phuket AI is a Telegram guide for Phuket and a soft assistant for Phuket ProMax. It answers practical travel questions, surfaces partner offers, and qualifies real-estate interest through short, sequential questions. Tourists meet Mike in chat and in the Telegram Mini App. Operators run that pipeline from the admin.
 
-Near-term focus: lock the tourist visual system (Mini App home + bot keyboard). Operators keep a quiet admin; it does not wear Mike's character.
+Success is a helpful chat that turns genuine interest into an actionable lead, and an admin that lets operators run the pipeline without ceremony.
 
-## Brand Personality
+## Positioning
 
-**Tourist-facing (Mike):** friendly, short, lively. Speaks Russian clearly; one or two questions at a time; never interrogates.
+A local guide inside Telegram that answers first and only then asks one or two questions. The Mini App carries the same guide: home, places, chat, saved, and profile. The bot keyboard stays the chat entry. The map tab is present and still marked soon.
 
-**Operator-facing:** neutral, efficient, calm. Same product, different register: ops UI serves the work, not the character.
+## Operating Context
+
+Tourists use a phone inside Telegram. The Mini App follows the phone's light or dark scheme unless the person has saved a choice (`mike-theme`).
+
+Operators use a laptop. Broadcast times and partner-user timestamps are shown in Asia/Bangkok. The partner dashboard is a separate surface and is not this admin desk.
+
+## Capabilities and Constraints
+
+- Telegram bot: short Russian replies, a reply keyboard packed two-up with Ask Mike alone on the last row, partner offers, and sequential real-estate questions. Contact is shared when the person offers it.
+- Mini App: home with Mike's photograph and an ask button, recommendations, places, chat, saved, and profile. The map tab is labeled soon. Home search and filters are in the markup and not live.
+- Admin, signed in: stats, one-time and interval broadcasts, places and categories, knowledge base, partners, and partner users. Rail labels are Russian. The rail title reads "Admin Panel".
+- Tourist copy is Russian.
+
+## Brand Commitments
+
+The name is Mike (Майк). Tourist voice: friendly, short, lively, clear Russian, one or two questions at a time. Operator voice: neutral, efficient, calm. The admin does not wear Mike's character.
 
 Three words for Mike: friendly · clear · local. Three words for ops: neutral · efficient · calm.
 
-## Anti-references
+Identity assets on hand: `mike-phuket-ai-tma/assets/hero-mike.jpg`, `mike-phuket-ai-tma/assets/mike-recommends.png`. Harbor Navy is the wordmark ink. There is no wordmark file in the repo.
 
-- Cringy consumer apps: over-cute copy, mascot spam, emoji walls, gamified fluff that undercuts trust
-- Loud travel-agency Telegram spam and hard-sell real-estate brochure tone
-- Generic flashy SaaS dashboards that prioritize chrome over task completion
+Anti-references: cringy consumer apps (over-cute copy, mascot spam, emoji walls, gamified fluff), loud travel-agency Telegram spam and hard-sell real-estate brochure tone, and generic flashy SaaS dashboards that prioritize chrome over the task.
 
-## Design Principles
+## Evidence on Hand
 
-1. **Channel-fit first** — Telegram keyboards and messages stay scannable on a phone; admin UI stays task-dense and quiet.
-2. **Help before harvest** — Guide and answer first; lead questions only when real-estate intent appears, and never all at once.
-3. **Two voices, one product** — Mike stays warm for tourists; operators get neutral, efficient UI with no character cosplay.
-4. **Specific over clever** — Labels and copy name the action (beaches, exchange, property); no playful ambiguity.
-5. **Trust by restraint** — No cringe, no hard sell, no decorative urgency; confidence comes from useful answers and clean lead handoff.
+- Home photograph: `mike-phuket-ai-tma/assets/hero-mike.jpg`
+- Recommendation mark: `mike-phuket-ai-tma/assets/mike-recommends.png`
+- Empty place image: `mike-phuket-ai-tma/assets/empty_picture_placeholder.jpg`
+- No testimonials, press quotes, pricing, or case studies are in the repo. Do not invent them.
+
+## Product Principles
+
+1. **Channel-fit first** — Telegram keyboards and messages stay scannable on a phone. The admin stays task-dense and quiet.
+2. **Help before harvest** — Guide and answer first. Lead questions only when real-estate intent appears, and never all at once.
+3. **Two voices, one product** — Mike stays warm for tourists. Operators get a neutral desk with no character cosplay.
+4. **Specific over clever** — Labels name the action. No playful ambiguity.
+5. **Trust by restraint** — No cringe, no hard sell, no decorative urgency. Confidence comes from a useful answer and a clean lead handoff.
 
 ## Accessibility & Inclusion
 
-Sensible default: aim for WCAG AA on web surfaces when the admin panel ships; respect `prefers-reduced-motion`; keep contrast readable; don't rely on color alone for status. Telegram button labels stay short and unambiguous for mobile readers.
+Aim for WCAG AA on the Mini App and the admin. Respect `prefers-reduced-motion`. Keep contrast readable. Don't rely on color alone for status. Telegram button labels stay short and unambiguous. The Mini App ships a light theme and a dark theme.
