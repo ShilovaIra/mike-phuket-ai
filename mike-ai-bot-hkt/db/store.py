@@ -582,7 +582,7 @@ class SessionStore:
         claim_at = now or datetime.now(timezone.utc)
         async with self._pool.acquire() as conn:
             async with conn.transaction():
-                from broadcasts import claim_due_broadcasts
+                from broadcasts import claim_due_broadcasts, claim_due_interval_broadcasts
 
                 rows = await conn.fetch(
                     """
@@ -649,6 +649,7 @@ class SessionStore:
                         )
                     )
                 jobs.extend(await claim_due_broadcasts(conn, claim_at))
+                jobs.extend(await claim_due_interval_broadcasts(conn, claim_at))
                 return jobs
 
     async def mark_job_sent(

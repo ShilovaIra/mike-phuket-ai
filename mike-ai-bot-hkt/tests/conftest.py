@@ -30,6 +30,9 @@ requires_db = pytest.mark.skipif(
 
 TRUNCATE_SQL = """
 TRUNCATE TABLE
+    interval_broadcasts,
+    broadcast_list_messages,
+    broadcast_lists,
     broadcasts,
     follow_up_jobs,
     webhook_events,

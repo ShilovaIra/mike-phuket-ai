@@ -517,3 +517,31 @@ CREATE TABLE IF NOT EXISTS broadcasts (
     button_label TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS broadcast_lists (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS broadcast_list_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    list_id UUID NOT NULL REFERENCES broadcast_lists (id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    button_url TEXT,
+    button_label TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS interval_broadcasts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    list_id UUID NOT NULL REFERENCES broadcast_lists (id),
+    scheduled_at TIMESTAMPTZ NOT NULL,
+    interval_days INTEGER NOT NULL,
+    last_message_id UUID,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE interval_broadcasts
+    ADD COLUMN IF NOT EXISTS last_message_id UUID;
