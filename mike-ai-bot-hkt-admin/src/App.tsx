@@ -7,6 +7,7 @@ import { PlaceCategoriesPage } from './place-categories/PlaceCategoriesPage'
 import { KnowledgeBasePage } from './knowledge-base/KnowledgeBasePage'
 import { PlacesPage } from './places/PlacesPage'
 import { PartnersPage } from './partners/PartnersPage'
+import { BroadcastsPage } from './broadcasts/BroadcastsPage'
 import { StatsPage } from './stats/StatsPage'
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/broadcasts" element={<BroadcastsPage />} />
         <Route path="/partners" element={<PartnersPage />} />
         <Route path="/partner-types" element={<PartnerTypesPage />} />
         <Route path="/place-categories" element={<PlaceCategoriesPage />} />

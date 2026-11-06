@@ -82,6 +82,8 @@ class DueFollowUpJob:
     message_text: str
     channel: str
     external_id: str
+    button_url: str | None = None
+    button_label: str | None = None
 
 
 def _partner_type_from_row(row: asyncpg.Record) -> PartnerType:
@@ -580,6 +582,8 @@ class SessionStore:
         claim_at = now or datetime.now(timezone.utc)
         async with self._pool.acquire() as conn:
             async with conn.transaction():
+                from broadcasts import claim_due_broadcasts, claim_due_interval_broadcasts
+
                 rows = await conn.fetch(
                     """
                     WITH due AS (
@@ -644,6 +648,8 @@ class SessionStore:
                             external_id=identity["external_id"],
                         )
                     )
+                jobs.extend(await claim_due_broadcasts(conn, claim_at))
+                jobs.extend(await claim_due_interval_broadcasts(conn, claim_at))
                 return jobs
 
     async def mark_job_sent(

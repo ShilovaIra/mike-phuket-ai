@@ -106,6 +106,12 @@ export function StatsPage() {
       ) : (
         <div className="flex flex-col gap-8 md:flex-row md:items-center">
           <div className="min-w-0 flex-1 space-y-5">
+            <section aria-label="В избранном" className="grid gap-5 sm:grid-cols-2">
+              <article className="rounded-lg border border-slate-200 bg-white p-6">
+                <p className="text-sm text-slate-600">В избранном</p>
+                <p className="mt-3 text-4xl font-semibold tracking-tight">{stats.favourite_users}</p>
+              </article>
+            </section>
             <section aria-label="Пользователи категории" className="grid gap-5 sm:grid-cols-2">
               <article className="rounded-lg border border-slate-200 bg-white p-6">
                 <p className="text-sm text-slate-600">

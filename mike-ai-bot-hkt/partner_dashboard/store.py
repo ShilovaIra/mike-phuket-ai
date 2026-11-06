@@ -156,6 +156,14 @@ async def get_partner_stats(pool: asyncpg.Pool, partner_id: UUID) -> dict:
             """,
             partner_id,
         )
+        favourite_users = await conn.fetchval(
+            """
+            SELECT COUNT(*)::int
+            FROM partner_favourites
+            WHERE partner_id = $1
+            """,
+            partner_id,
+        )
     return {
         "partner_id": str(partner_id),
         "all_time": _counts(all_time["views"], all_time["clicks"], all_time["opened"]),
@@ -165,6 +173,7 @@ async def get_partner_stats(pool: asyncpg.Pool, partner_id: UUID) -> dict:
             "all_time": category["all_time"],
             "last_30_days": category["last_30_days"],
         },
+        "favourite_users": favourite_users,
     }
 
 

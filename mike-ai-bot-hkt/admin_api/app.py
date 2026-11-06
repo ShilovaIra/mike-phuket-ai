@@ -11,6 +11,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
 
+from admin_api.broadcasts import router as broadcasts_router
 from admin_api.deps import require_admin
 from admin_api.partner_logos import router as partner_logos_router
 from admin_api.place_photos import (
@@ -804,6 +805,7 @@ def create_app(
             raise HTTPException(status_code=401, detail="unauthorized") from None
         return {"saved": saved}
 
+    app.include_router(broadcasts_router)
     app.include_router(partner_logos_router)
     app.include_router(place_photos_router)
     app.include_router(partner_dashboard_router)

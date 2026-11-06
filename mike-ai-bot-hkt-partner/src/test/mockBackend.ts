@@ -47,6 +47,7 @@ export function installFetchMock(): void {
         all_time: { views: 10, referral_clicks: 4, opened_views: 3 } satisfies PeriodStats,
         last_30_days: { views: 5, referral_clicks: 2, opened_views: 1 },
         category_users: { phrase: 'обмен рублей', all_time: 42, last_30_days: 7 },
+        favourite_users: 9,
       })
     }
 

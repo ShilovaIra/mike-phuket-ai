@@ -254,6 +254,37 @@ function seedKnowledgeBase(): KnowledgeBaseRow[] {
 }
 
 let knowledgeBase: KnowledgeBaseRow[] = seedKnowledgeBase()
+let broadcasts: {
+  id: string
+  text: string
+  scheduled_at: string
+  status: 'scheduled' | 'sent'
+  button_url: string | null
+  button_label: string | null
+}[] = []
+let broadcastLists: {
+  id: string
+  name: string
+  messages: {
+    id: string
+    text: string
+    button_url: string | null
+    button_label: string | null
+  }[]
+}[] = []
+let intervalBroadcasts: {
+  id: string
+  list_id: string
+  list_name: string
+  interval_days: number
+  scheduled_at: string
+  next_message: {
+    id: string
+    text: string
+    button_url: string | null
+    button_label: string | null
+  } | null
+}[] = []
 let partnerUsers: { id: string; email: string; partners: { id: string; name: string }[] }[] = []
 let partnerTypesListFailure: { status: number; detail: string } | null = null
 let logoUploads = new Map<string, string>()
@@ -279,6 +310,9 @@ export function resetMockBackend(): void {
   places = seedPlaces()
   partners = structuredClone(seedPartners)
   knowledgeBase = seedKnowledgeBase()
+  broadcasts = []
+  broadcastLists = []
+  intervalBroadcasts = []
   partnerUsers = []
   partnerTypesListFailure = null
   logoUploads = new Map()
@@ -306,6 +340,52 @@ export function failPlacePhotoSave(): void {
 
 export function restorePlacePhotoSave(): void {
   placePhotoSaveDown = false
+}
+
+export function seedBroadcastLists(
+  items: {
+    id: string
+    name: string
+    messages: {
+      id: string
+      text: string
+      button_url: string | null
+      button_label: string | null
+    }[]
+  }[],
+): void {
+  broadcastLists = items
+}
+
+export function seedIntervalBroadcasts(
+  items: {
+    id: string
+    list_id: string
+    list_name: string
+    interval_days: number
+    scheduled_at: string
+    next_message: {
+      id: string
+      text: string
+      button_url: string | null
+      button_label: string | null
+    } | null
+  }[],
+): void {
+  intervalBroadcasts = items
+}
+
+export function seedBroadcasts(
+  items: {
+    id: string
+    text: string
+    scheduled_at: string
+    status: 'scheduled' | 'sent'
+    button_url: string | null
+    button_label: string | null
+  }[],
+): void {
+  broadcasts = items
 }
 
 export function mockPartnerByName(name: string): Partner | undefined {
@@ -419,6 +499,144 @@ export function installFetchMock(): void {
       const used = places.some((place) => place.category === slug)
       if (used) return json({ detail: 'Категорию используют места' }, 409)
       placeCategories = placeCategories.filter((category) => category.slug !== slug)
+      return new Response(null, { status: 204 })
+    }
+
+    if (path === '/api/broadcasts' && method === 'GET') {
+      return json(broadcasts)
+    }
+
+    if (path === '/api/broadcasts' && method === 'POST') {
+      const created = {
+        id: crypto.randomUUID(),
+        text: String(body.text).trim(),
+        scheduled_at: body.scheduled_at as string,
+        status: 'scheduled' as const,
+        button_url: (body.button_url as string | null) || null,
+        button_label: (body.button_label as string | null) || null,
+      }
+      broadcasts.push(created)
+      return json(created, 201)
+    }
+
+    const broadcastMatch = path.match(/^\/api\/broadcasts\/([^/]+)$/)
+    if (broadcastMatch && method === 'PATCH') {
+      const id = decodeURIComponent(broadcastMatch[1])
+      const index = broadcasts.findIndex((item) => item.id === id)
+      if (index < 0) return json({ detail: 'not found' }, 404)
+      broadcasts[index] = {
+        ...broadcasts[index],
+        text: String(body.text).trim(),
+        scheduled_at: body.scheduled_at as string,
+        button_url: (body.button_url as string | null) || null,
+        button_label: (body.button_label as string | null) || null,
+      }
+      return json(broadcasts[index])
+    }
+
+    if (broadcastMatch && method === 'DELETE') {
+      const id = decodeURIComponent(broadcastMatch[1])
+      broadcasts = broadcasts.filter((item) => item.id !== id)
+      return new Response(null, { status: 204 })
+    }
+
+    if (path === '/api/broadcast-lists' && method === 'GET') {
+      return json(broadcastLists)
+    }
+
+    if (path === '/api/broadcast-lists' && method === 'POST') {
+      const created = {
+        id: crypto.randomUUID(),
+        name: String(body.name).trim(),
+        messages: [] as (typeof broadcastLists)[number]['messages'],
+      }
+      broadcastLists.push(created)
+      return json(created, 201)
+    }
+
+    const listMatch = path.match(/^\/api\/broadcast-lists\/([^/]+)$/)
+    if (listMatch && method === 'DELETE') {
+      const id = decodeURIComponent(listMatch[1])
+      if (intervalBroadcasts.some((item) => item.list_id === id)) {
+        return json({ detail: 'Список используют рассылки' }, 409)
+      }
+      const exists = broadcastLists.some((item) => item.id === id)
+      if (!exists) return json({ detail: 'not found' }, 404)
+      broadcastLists = broadcastLists.filter((item) => item.id !== id)
+      return new Response(null, { status: 204 })
+    }
+
+    const listMessageMatch = path.match(/^\/api\/broadcast-lists\/([^/]+)\/messages$/)
+    if (listMessageMatch && method === 'POST') {
+      const listId = decodeURIComponent(listMessageMatch[1])
+      const list = broadcastLists.find((item) => item.id === listId)
+      if (!list) return json({ detail: 'not found' }, 404)
+      const created = {
+        id: crypto.randomUUID(),
+        text: String(body.text).trim(),
+        button_url: (body.button_url as string | null) || null,
+        button_label: (body.button_label as string | null) || null,
+      }
+      list.messages.push(created)
+      return json(created, 201)
+    }
+
+    const moveMatch = path.match(/^\/api\/broadcast-lists\/([^/]+)\/messages\/([^/]+)\/move$/)
+    if (moveMatch && method === 'POST') {
+      const listId = decodeURIComponent(moveMatch[1])
+      const messageId = decodeURIComponent(moveMatch[2])
+      const list = broadcastLists.find((item) => item.id === listId)
+      if (!list) return json({ detail: 'not found' }, 404)
+      const index = list.messages.findIndex((item) => item.id === messageId)
+      if (index < 0) return json({ detail: 'not found' }, 404)
+      const swapWith = body.direction === 'up' ? index - 1 : index + 1
+      if (swapWith >= 0 && swapWith < list.messages.length) {
+        const current = list.messages[index]
+        list.messages[index] = list.messages[swapWith]
+        list.messages[swapWith] = current
+      }
+      return json({ ok: true })
+    }
+
+    if (path === '/api/interval-broadcasts' && method === 'GET') {
+      return json(intervalBroadcasts)
+    }
+
+    if (path === '/api/interval-broadcasts' && method === 'POST') {
+      const list = broadcastLists.find((item) => item.id === body.list_id)
+      if (!list) return json({ detail: 'not found' }, 404)
+      const created = {
+        id: crypto.randomUUID(),
+        list_id: list.id,
+        list_name: list.name,
+        interval_days: Number(body.interval_days),
+        scheduled_at: body.scheduled_at as string,
+        next_message: list.messages[0] ?? null,
+      }
+      intervalBroadcasts.push(created)
+      return json(created, 201)
+    }
+
+    const intervalMatch = path.match(/^\/api\/interval-broadcasts\/([^/]+)$/)
+    if (intervalMatch && method === 'PATCH') {
+      const id = decodeURIComponent(intervalMatch[1])
+      const index = intervalBroadcasts.findIndex((item) => item.id === id)
+      if (index < 0) return json({ detail: 'not found' }, 404)
+      intervalBroadcasts[index] = {
+        ...intervalBroadcasts[index],
+        interval_days:
+          body.interval_days == null
+            ? intervalBroadcasts[index].interval_days
+            : Number(body.interval_days),
+        scheduled_at:
+          (body.scheduled_at as string | undefined) ?? intervalBroadcasts[index].scheduled_at,
+      }
+      return json(intervalBroadcasts[index])
+    }
+
+    if (intervalMatch && method === 'DELETE') {
+      const id = decodeURIComponent(intervalMatch[1])
+      intervalBroadcasts = intervalBroadcasts.filter((item) => item.id !== id)
       return new Response(null, { status: 204 })
     }
 

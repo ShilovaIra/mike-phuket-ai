@@ -6,6 +6,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from tests.conftest import requires_db
+from tests.test_tma_chat import BOT_TOKEN, signed_init_data, tma_headers
 
 
 @pytest.fixture(autouse=True)
@@ -598,3 +599,70 @@ async def test_updated_choice_phrase_shows_on_partner_stats(store):
 
     assert stats.status_code == 200
     assert stats.json()["category_users"]["phrase"] == "обмен валюты"
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_partner_stats_count_tourists_who_saved_the_current_partner(store, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", BOT_TOKEN)
+    async with operator_client(store) as (client, partner):
+        other = await store.create_partner(
+            name="Ex24",
+            type="money_exchange",
+            referral_url="https://example.com/ex24",
+        )
+        for user_id in (101, 102):
+            saved = await client.put(
+                f"/api/tma/favourites/partners/{partner.id}",
+                headers=tma_headers(signed_init_data(user_id=user_id)),
+                json={"saved": True},
+            )
+            assert saved.status_code == 200
+        other_saved = await client.put(
+            f"/api/tma/favourites/partners/{other.id}",
+            headers=tma_headers(signed_init_data(user_id=103)),
+            json={"saved": True},
+        )
+        assert other_saved.status_code == 200
+        token = await create_shop_user(client, partner.id)
+        stats = await client.get(
+            f"/api/partner/stats?partner_id={partner.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert stats.status_code == 200
+    assert stats.json()["favourite_users"] == 2
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_partner_stats_drop_a_tourist_who_removes_the_current_partner(store, monkeypatch):
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", BOT_TOKEN)
+    async with operator_client(store) as (client, partner):
+        headers = tma_headers(signed_init_data(user_id=201))
+        saved = await client.put(
+            f"/api/tma/favourites/partners/{partner.id}",
+            headers=headers,
+            json={"saved": True},
+        )
+        assert saved.status_code == 200
+        token = await create_shop_user(client, partner.id)
+        before = await client.get(
+            f"/api/partner/stats?partner_id={partner.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        removed = await client.put(
+            f"/api/tma/favourites/partners/{partner.id}",
+            headers=headers,
+            json={"saved": False},
+        )
+        assert removed.status_code == 200
+        after = await client.get(
+            f"/api/partner/stats?partner_id={partner.id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert before.status_code == 200
+    assert before.json()["favourite_users"] == 1
+    assert after.status_code == 200
+    assert after.json()["favourite_users"] == 0
