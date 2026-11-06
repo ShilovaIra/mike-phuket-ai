@@ -1,6 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { IntervalBroadcastsPanel } from './IntervalBroadcastsPanel'
 import { broadcastsApi, type Broadcast } from './broadcastsApi'
+import { formatBangkok } from './formatBangkok'
+import { Icon } from '../shell/icons'
 
 function bangkokTimestamp(localValue: string): string {
   return `${localValue}:00+07:00`
@@ -8,9 +10,13 @@ function bangkokTimestamp(localValue: string): string {
 
 type Tab = 'one-time' | 'interval'
 
+const TELEGRAM_LIMIT = 4096
+
 export function BroadcastsPage() {
   const [tab, setTab] = useState<Tab>('one-time')
   const [items, setItems] = useState<Broadcast[]>([])
+  const [loading, setLoading] = useState(true)
+  const [showAll, setShowAll] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [text, setText] = useState('')
   const [scheduledAt, setScheduledAt] = useState('')
@@ -24,9 +30,13 @@ export function BroadcastsPage() {
 
   useEffect(() => {
     let cancelled = false
-    reload().catch((err: Error) => {
-      if (!cancelled) setError(err.message)
-    })
+    reload()
+      .catch((err: Error) => {
+        if (!cancelled) setError(err.message)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
     return () => {
       cancelled = true
     }
@@ -58,125 +68,224 @@ export function BroadcastsPage() {
     }
   }
 
+  function cancelEdit() {
+    setEditingId(null)
+    setText('')
+    setScheduledAt('')
+    setButtonUrl('')
+    setButtonLabel('')
+  }
+
+  const ordered = useMemo(
+    () => [...items].sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at)),
+    [items],
+  )
+  const sentCount = items.filter((item) => item.status === 'sent').length
+  const queuedCount = items.filter((item) => item.status === 'scheduled').length
+  const nextId =
+    ordered.find((item) => item.status === 'scheduled')?.id ?? null
+  const visible = showAll ? ordered : ordered.slice(0, 6)
+
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-semibold tracking-tight">Рассылка</h1>
-      <div role="tablist" className="mb-6 flex gap-1 border-b border-slate-300">
+    <main className={tab === 'one-time' ? 'cast cast--once' : 'cast'}>
+      <header className="cast-head">
+        <h1>Рассылка</h1>
+        <p>Отправляйте разовые сообщения или настраивайте цепочки с интервалом</p>
+      </header>
+      <div role="tablist" aria-label="Тип рассылки" className="cast-tabs">
         <button
           type="button"
           role="tab"
           aria-selected={tab === 'one-time'}
-          className={`-mb-px border-b-2 px-4 py-2 text-sm ${
-            tab === 'one-time'
-              ? 'border-slate-900 font-medium text-slate-900'
-              : 'border-transparent text-slate-500'
-          }`}
+          className={`cast-tab${tab === 'one-time' ? ' is-active' : ''}`}
           onClick={() => setTab('one-time')}
         >
-          Разовые
+          <Icon name="send" size={16} />
+          Разовая
         </button>
         <button
           type="button"
           role="tab"
           aria-selected={tab === 'interval'}
-          className={`-mb-px border-b-2 px-4 py-2 text-sm ${
-            tab === 'interval'
-              ? 'border-slate-900 font-medium text-slate-900'
-              : 'border-transparent text-slate-500'
-          }`}
+          className={`cast-tab${tab === 'interval' ? ' is-active' : ''}`}
           onClick={() => setTab('interval')}
         >
+          <Icon name="calendar" size={16} />
           Интервал
         </button>
       </div>
+
       {tab === 'interval' ? (
         <IntervalBroadcastsPanel />
       ) : (
         <>
-          <form onSubmit={onSubmit} className="mb-8 flex max-w-xl flex-col gap-3">
-            <label className="flex flex-col gap-1 text-sm">
-              Текст сообщения
-              <textarea
-                className="rounded border border-slate-300 px-3 py-2"
-                value={text}
-                onChange={(event) => setText(event.target.value)}
-                required
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              Дата и время (Бангкок)
-              <input
-                type="datetime-local"
-                className="rounded border border-slate-300 px-3 py-2"
-                value={scheduledAt}
-                onChange={(event) => setScheduledAt(event.target.value)}
-                required
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              Ссылка на карты
-              <input
-                className="rounded border border-slate-300 px-3 py-2"
-                value={buttonUrl}
-                onChange={(event) => setButtonUrl(event.target.value)}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
-              Текст кнопки
-              <input
-                className="rounded border border-slate-300 px-3 py-2"
-                value={buttonLabel}
-                onChange={(event) => setButtonLabel(event.target.value)}
-              />
-            </label>
-            {error ? <p className="text-sm text-red-700">{error}</p> : null}
-            <button
-              type="submit"
-              className="w-fit rounded bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800"
-            >
-              Сохранить
-            </button>
-          </form>
-          <ul className="flex flex-col gap-2">
-            {items.map((item) => (
-              <li
-                key={item.id}
-                className={item.status === 'sent' ? 'text-slate-400' : undefined}
-              >
-                <span>{item.scheduled_at}</span>
-                <span className="ml-3">{item.text}</span>
-                {item.button_label ? <span className="ml-2">{item.button_label}</span> : null}
-                <span className="ml-3">
-                  {item.status === 'scheduled' ? (
-                    <button
-                      type="button"
-                      className="text-sm underline"
-                      onClick={() => {
-                        setEditingId(item.id)
-                        setText(item.text)
-                        setScheduledAt(item.scheduled_at.slice(0, 16))
-                        setButtonUrl(item.button_url ?? '')
-                        setButtonLabel(item.button_label ?? '')
-                      }}
-                    >
-                      Изменить
-                    </button>
-                  ) : null}
-                  <button
-                    type="button"
-                    className={`text-sm underline ${item.status === 'scheduled' ? 'ml-2' : ''}`}
-                    onClick={() => {
-                      void broadcastsApi.remove(item.id).then(reload).catch((err: Error) => {
-                        setError(err.message)
-                      })
-                    }}
-                  >
-                    Удалить
-                  </button>
+          <section className="cast-stats" aria-label="Сводка разовых">
+            <article className="glass-pane cast-stat">
+              <span className="cast-stat__icon">
+                <Icon name="send" />
+              </span>
+              <div>
+                <strong>{loading ? '—' : sentCount}</strong>
+                <span>Отправлено</span>
+              </div>
+            </article>
+            <article className="glass-pane cast-stat">
+              <span className="cast-stat__icon">
+                <Icon name="clock" />
+              </span>
+              <div>
+                <strong>{loading ? '—' : queuedCount}</strong>
+                <span>В очереди</span>
+              </div>
+            </article>
+          </section>
+
+          <section className="glass-pane cast-card">
+            <form onSubmit={onSubmit} className="cast-form">
+              <label className="cast-label">
+                <span>
+                  Текст сообщения <span className="req">*</span>
                 </span>
-              </li>
-            ))}
-          </ul>
+                <span className="ta-wrap">
+                  <textarea
+                    className="glass-field"
+                    value={text}
+                    onChange={(event) => setText(event.target.value)}
+                    placeholder="Введите текст рассылки…"
+                    maxLength={TELEGRAM_LIMIT}
+                    required
+                  />
+                  <span className="ta-count">
+                    {text.length} / {TELEGRAM_LIMIT}
+                  </span>
+                </span>
+              </label>
+              <label className="cast-row">
+                <span>
+                  Дата и время (Бангкок) <span className="req">*</span>
+                </span>
+                <input
+                  type="datetime-local"
+                  className="glass-field"
+                  value={scheduledAt}
+                  onChange={(event) => setScheduledAt(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="cast-row">
+                <span>Ссылка на карты</span>
+                <span className="cast-input-wrap">
+                  <span className="cast-input-icon">
+                    <Icon name="link" size={16} />
+                  </span>
+                  <input
+                    className="glass-field"
+                    value={buttonUrl}
+                    onChange={(event) => setButtonUrl(event.target.value)}
+                    placeholder="https://… (опционально)"
+                    inputMode="url"
+                  />
+                </span>
+              </label>
+              <label className="cast-row">
+                <span>Текст кнопки</span>
+                <input
+                  className="glass-field"
+                  value={buttonLabel}
+                  onChange={(event) => setButtonLabel(event.target.value)}
+                  placeholder="Например: Открыть"
+                />
+              </label>
+              {error ? (
+                <p className="form-error" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              <div className="cast-actions">
+                <button type="submit" className="ice-button">
+                  <Icon name="send" size={16} />
+                  Сохранить
+                </button>
+                {editingId ? (
+                  <button type="button" className="ghost-button" onClick={cancelEdit}>
+                    Отменить
+                  </button>
+                ) : null}
+              </div>
+            </form>
+          </section>
+
+          <section className="glass-pane cast-card">
+            <div className="card-head">
+              <h2>Последние рассылки</h2>
+              {ordered.length > 6 ? (
+                <button type="button" className="linkish" onClick={() => setShowAll((value) => !value)}>
+                  {showAll ? 'Свернуть' : 'Смотреть все'}
+                </button>
+              ) : null}
+            </div>
+            {loading ? <p className="empty-copy">Загрузка…</p> : null}
+            {!loading && ordered.length === 0 ? (
+              <p className="empty-copy">
+                Пока пусто. Напишите текст и время — сообщение появится в очереди.
+              </p>
+            ) : null}
+            <ul className="queue">
+              {visible.map((item) => {
+                const sent = item.status === 'sent'
+                return (
+                  <li
+                    key={item.id}
+                    className={`queue-row${item.id === nextId ? ' is-next' : ''}${sent ? ' text-slate-400' : ''}`}
+                  >
+                    <span
+                      className="queue-mark"
+                      role="img"
+                      aria-label={sent ? 'Отправлено' : 'Запланировано'}
+                    >
+                      <Icon name={sent ? 'check' : 'clock'} size={16} />
+                    </span>
+                    <div>
+                      <p className="queue-text">{item.text}</p>
+                      {item.button_label ? <p className="queue-meta">{item.button_label}</p> : null}
+                      <div className="queue-actions">
+                        {sent ? null : (
+                          <button
+                            type="button"
+                            className="linkish"
+                            onClick={() => {
+                              setEditingId(item.id)
+                              setText(item.text)
+                              setScheduledAt(item.scheduled_at.slice(0, 16))
+                              setButtonUrl(item.button_url ?? '')
+                              setButtonLabel(item.button_label ?? '')
+                            }}
+                          >
+                            Изменить
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="linkish"
+                          onClick={() => {
+                            void broadcastsApi
+                              .remove(item.id)
+                              .then(reload)
+                              .catch((err: Error) => setError(err.message))
+                          }}
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    </div>
+                    <time className="queue-time" dateTime={item.scheduled_at}>
+                      {formatBangkok(item.scheduled_at)}
+                    </time>
+                  </li>
+                )
+              })}
+            </ul>
+          </section>
         </>
       )}
     </main>
