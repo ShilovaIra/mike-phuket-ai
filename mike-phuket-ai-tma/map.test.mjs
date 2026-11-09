@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cameraFor, markerOptions, PHUKET, usablePins } from "./map.mjs";
+import { cameraFor, markerOptions, PHUKET, PIN_RED, usablePins } from "./map.mjs";
 
 const recommended = {
   name: "Якорная",
   latitude: 7.7622,
   longitude: 98.3055,
   mike_recommends: true,
+  photo_url: "https://cdn.example/promthep.jpg",
 };
 
 const plain = {
@@ -14,6 +15,7 @@ const plain = {
   latitude: 7.8201,
   longitude: 98.298,
   mike_recommends: false,
+  photo_url: "https://cdn.example/kata.jpg",
 };
 
 test("a pin without coordinates is left off the map", () => {
@@ -21,10 +23,14 @@ test("a pin without coordinates is left off the map", () => {
   assert.deepEqual(pins, [recommended]);
 });
 
-test("a recommended pin is larger and named as Mike's pick", () => {
+test("every pin is red, with a round photo, and a recommendation stays larger", () => {
   const strong = markerOptions(recommended);
   const quiet = markerOptions(plain);
-  assert.ok(strong.icon.scale > quiet.icon.scale);
+  assert.equal(strong.color, PIN_RED);
+  assert.equal(quiet.color, PIN_RED);
+  assert.equal(strong.photoUrl, "https://cdn.example/promthep.jpg");
+  assert.equal(quiet.photoUrl, "https://cdn.example/kata.jpg");
+  assert.ok(strong.size > quiet.size);
   assert.equal(strong.zIndex > quiet.zIndex, true);
   assert.match(strong.title, /Майк рекомендует/);
   assert.equal(quiet.title, "Анапа");

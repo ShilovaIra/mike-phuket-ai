@@ -1531,6 +1531,44 @@ button {
   height: 100%;
 }
 
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.map-pin img,
+.map-pin.is-empty::before {
+  content: "";
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #d23b3b;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px #d23b3b;
+}
+
+.map-pin img {
+  height: auto;
+  object-fit: cover;
+}
+
+.map-pin::after {
+  content: "";
+  display: block;
+  width: 0;
+  height: 0;
+  margin: 2px auto 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #d23b3b;
+}
+
 .map-note {
   position: absolute;
   inset: 0;

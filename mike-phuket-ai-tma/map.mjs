@@ -1,8 +1,6 @@
 export const PHUKET = { lat: 7.9519, lng: 98.3381 };
 
-const PIN_PATH = "M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z";
-const RECOMMENDED_FILL = "#c98400";
-const PLACE_FILL = "#2f7cf6";
+export const PIN_RED = "#d23b3b";
 
 export function usablePins(pins) {
   return (pins || []).filter(
@@ -15,15 +13,9 @@ export function markerOptions(pin) {
   return {
     title: recommended ? `${pin.name}. Майк рекомендует` : pin.name,
     zIndex: recommended ? 2 : 1,
-    icon: {
-      path: PIN_PATH,
-      fillColor: recommended ? RECOMMENDED_FILL : PLACE_FILL,
-      fillOpacity: 1,
-      strokeColor: "#ffffff",
-      strokeWeight: recommended ? 2 : 1.5,
-      scale: recommended ? 1.45 : 1,
-      anchor: { x: 12, y: 21 },
-    },
+    photoUrl: pin.photo_url || "",
+    color: PIN_RED,
+    size: recommended ? 34 : 28,
   };
 }
 
@@ -77,14 +69,56 @@ export function loadMaps(key, documentRef = document) {
   return loader;
 }
 
+function placePin(api, map, pin, onPin) {
+  const style = markerOptions(pin);
+  const overlay = new api.OverlayView();
+  overlay.onAdd = function () {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "map-pin";
+    button.style.zIndex = String(style.zIndex);
+    button.style.width = `${style.size}px`;
+    button.setAttribute("aria-label", style.title);
+    if (style.photoUrl) {
+      const photo = document.createElement("img");
+      photo.alt = "";
+      photo.src = style.photoUrl;
+      photo.addEventListener("error", function () {
+        button.classList.add("is-empty");
+        photo.remove();
+      });
+      button.appendChild(photo);
+    } else {
+      button.classList.add("is-empty");
+    }
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      onPin(pin);
+    });
+    this.button = button;
+    this.getPanes().overlayMouseTarget.appendChild(button);
+  };
+  overlay.draw = function () {
+    if (!this.button) return;
+    const projection = this.getProjection();
+    if (!projection) return;
+    const point = projection.fromLatLngToDivPixel(new api.LatLng(pin.latitude, pin.longitude));
+    if (!point) return;
+    this.button.style.left = `${point.x}px`;
+    this.button.style.top = `${point.y}px`;
+  };
+  overlay.onRemove = function () {
+    if (this.button) this.button.remove();
+    this.button = null;
+  };
+  overlay.setMap(map);
+  return overlay;
+}
+
 export async function mountMap({ element, key, pins, onPin, maps }) {
   const api = maps || (await loadMaps(key));
-  const libraries = await Promise.all([
-    api.importLibrary("maps"),
-    api.importLibrary("marker"),
-  ]);
-  const Map = libraries[0].Map;
-  const Marker = libraries[1].Marker || api.Marker;
+  const { Map } = await api.importLibrary("maps");
   const camera = cameraFor(pins);
   const map = new Map(element, {
     center: camera.center || PHUKET,
@@ -95,24 +129,6 @@ export async function mountMap({ element, key, pins, onPin, maps }) {
     clickableIcons: false,
   });
   if (camera.bounds) map.fitBounds(camera.bounds, 48);
-  for (const pin of usablePins(pins)) {
-    const style = markerOptions(pin);
-    const marker = new Marker({
-      map,
-      position: { lat: pin.latitude, lng: pin.longitude },
-      title: style.title,
-      zIndex: style.zIndex,
-      icon: {
-        path: style.icon.path,
-        fillColor: style.icon.fillColor,
-        fillOpacity: style.icon.fillOpacity,
-        strokeColor: style.icon.strokeColor,
-        strokeWeight: style.icon.strokeWeight,
-        scale: style.icon.scale,
-        anchor: new api.Point(style.icon.anchor.x, style.icon.anchor.y),
-      },
-    });
-    marker.addListener("click", () => onPin(pin));
-  }
+  for (const pin of usablePins(pins)) placePin(api, map, pin, onPin);
   return map;
 }
