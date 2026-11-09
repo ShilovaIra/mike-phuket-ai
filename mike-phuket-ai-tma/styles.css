@@ -1622,6 +1622,10 @@ button {
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px #d23b3b;
 }
 
+.map-pin.is-on .map-pin-photo {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--blue);
+}
+
 .map-pin::after {
   content: "";
   display: block;
@@ -1631,6 +1635,103 @@ button {
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
   border-top: 8px solid #d23b3b;
+}
+
+#map {
+  position: relative;
+}
+
+.map-card {
+  position: absolute;
+  z-index: 3;
+  left: 12px;
+  right: 12px;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 10px 28px rgba(16, 32, 51, 0.16);
+}
+
+.map-card[hidden] {
+  display: none;
+}
+
+.map-card.is-in {
+  animation: map-card-in 0.28s var(--ease);
+}
+
+@keyframes map-card-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.map-card-photo {
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+  background: var(--wash);
+}
+
+.map-card-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 12px 14px;
+}
+
+.map-card-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.map-card-main h2 {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.map-card-category {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.map-card-description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.map-card-description[hidden] {
+  display: none;
+}
+
+.map-card-open {
+  flex: none;
+  align-self: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 12px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 700;
+}
+
+.map-card-open:active {
+  background: var(--blue-press);
 }
 
 .map-note {

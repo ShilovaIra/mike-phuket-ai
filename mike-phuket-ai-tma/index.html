@@ -305,6 +305,17 @@
             <div class="map-canvas" data-map></div>
             <p class="map-note" data-map-note hidden></p>
           </div>
+          <article class="map-card" data-map-card hidden>
+            <img class="map-card-photo" data-map-card-photo alt="" />
+            <div class="map-card-copy">
+              <div class="map-card-main">
+                <h2 data-map-card-name></h2>
+                <p class="map-card-category" data-map-card-category></p>
+                <p class="map-card-description" data-map-card-description hidden></p>
+              </div>
+              <button class="map-card-open" type="button" data-map-card-open>Открыть</button>
+            </div>
+          </article>
           <nav class="tabs tabs-bar" aria-label="Разделы">
             <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
             <a class="tab is-on" href="#map" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="currentColor" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>Карта</a>
@@ -503,7 +514,7 @@
     </script>
     <script type="module">
       import { directoryView, homeView, partnerPage, placeView } from "./catalog.mjs";
-      import { mountMap } from "./map.mjs";
+      import { mountMap, pinCard, selectionAfter } from "./map.mjs";
       import { canSend, failureView, homeAsk, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
       import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
       import { descriptionParts } from "./description.mjs";
@@ -1022,19 +1033,76 @@
 
       var mapCanvas = document.querySelector("[data-map]");
       var mapNote = document.querySelector("[data-map-note]");
+      var mapCard = document.querySelector("[data-map-card]");
+      var mapCardPhoto = document.querySelector("[data-map-card-photo]");
+      var mapCardName = document.querySelector("[data-map-card-name]");
+      var mapCardCategory = document.querySelector("[data-map-card-category]");
+      var mapCardDescription = document.querySelector("[data-map-card-description]");
+      var mapCardOpen = document.querySelector("[data-map-card-open]");
       var mapStarted = false;
       var mapInstance = null;
+      var mapPins = [];
+      var selectedPinId = null;
+
+      mapCardPhoto.addEventListener("error", function () {
+        if (!mapCardPhoto.src.endsWith("empty_picture_placeholder.jpg")) {
+          mapCardPhoto.src = "./assets/empty_picture_placeholder.jpg";
+        }
+      });
 
       function showMapNote(text) {
         mapNote.hidden = false;
         mapNote.textContent = text;
       }
 
+      function cardPhoto(url) {
+        if (!url || url.endsWith("media/places/placeholder.jpg")) {
+          return "./assets/empty_picture_placeholder.jpg";
+        }
+        return url;
+      }
+
+      function paintMapCard(pin) {
+        var card = pinCard(pin);
+        var wasHidden = mapCard.hidden;
+        mapCardPhoto.src = cardPhoto(card.photoUrl);
+        mapCardName.textContent = card.name;
+        mapCardCategory.textContent = card.category;
+        mapCardDescription.hidden = !card.description;
+        mapCardDescription.textContent = card.description || "";
+        mapCardOpen.textContent = card.actionLabel;
+        mapCard.hidden = false;
+        if (wasHidden) {
+          mapCard.classList.remove("is-in");
+          void mapCard.offsetWidth;
+          mapCard.classList.add("is-in");
+        }
+        if (mapInstance && mapInstance.markPin) mapInstance.markPin(selectedPinId);
+      }
+
+      function hideMapCard() {
+        mapCard.hidden = true;
+        mapCard.classList.remove("is-in");
+        if (mapInstance && mapInstance.markPin) mapInstance.markPin(null);
+      }
+
       function openPin(pin) {
+        selectedPinId = selectionAfter(selectedPinId, { type: "pin", id: pin.id });
+        paintMapCard(pin);
+      }
+
+      function clearMapCard() {
+        selectedPinId = selectionAfter(selectedPinId, { type: "map" });
+        hideMapCard();
+      }
+
+      mapCardOpen.addEventListener("click", function () {
+        var pin = mapPins.find(function (item) { return item.id === selectedPinId; });
+        if (!pin) return;
         var place = catalogPlaces.find(function (item) { return item.id === pin.id; }) || pin;
         showPlace(place, "#map");
         location.hash = "#place";
-      }
+      });
 
       function openMap() {
         if (location.hash !== "#map") return;
@@ -1057,13 +1125,15 @@
               return;
             }
             mapNote.hidden = true;
+            mapPins = body.pins || [];
             return new Promise(function (resolve, reject) {
               requestAnimationFrame(function () {
                 mountMap({
                   element: mapCanvas,
                   key: body.key,
-                  pins: body.pins,
+                  pins: mapPins,
                   onPin: openPin,
+                  onMap: clearMapCard,
                 }).then(function (map) {
                   mapInstance = map;
                   resolve(map);

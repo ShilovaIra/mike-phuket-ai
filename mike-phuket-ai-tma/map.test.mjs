@@ -1,6 +1,15 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cameraFor, createPinButton, markerOptions, PHUKET, PIN_RED, usablePins } from "./map.mjs";
+import {
+  cameraFor,
+  createPinButton,
+  markerOptions,
+  PHUKET,
+  pinCard,
+  PIN_RED,
+  selectionAfter,
+  usablePins,
+} from "./map.mjs";
 
 const recommended = {
   name: "Якорная",
@@ -17,6 +26,45 @@ const plain = {
   mike_recommends: false,
   photo_url: "https://cdn.example/kata.jpg",
 };
+
+test("a pin card shows the photo, name, category, plain blurb, and Открыть", () => {
+  const card = pinCard({
+    id: "yakornaya",
+    name: "Якорная",
+    category: "Пляж",
+    photo_url: "https://cdn.example/promthep.jpg",
+    blurb: "Закат",
+  });
+  assert.equal(card.photoUrl, "https://cdn.example/promthep.jpg");
+  assert.equal(card.name, "Якорная");
+  assert.equal(card.category, "Пляж");
+  assert.equal(card.description, "Закат");
+  assert.equal(card.actionLabel, "Открыть");
+});
+
+test("a blank blurb is left off the card and a url stays plain text", () => {
+  const blank = pinCard({
+    name: "Анапа",
+    category: "Магазин",
+    photo_url: "https://cdn.example/kata.jpg",
+    blurb: "  ",
+  });
+  assert.equal(blank.description, null);
+
+  const linked = pinCard({
+    name: "Анапа",
+    category: "Магазин",
+    photo_url: "https://cdn.example/kata.jpg",
+    blurb: "Сайт https://example.com/a",
+  });
+  assert.equal(linked.description, "Сайт https://example.com/a");
+});
+
+test("another pin replaces the card, a map tap clears it, and leaving keeps it", () => {
+  assert.equal(selectionAfter("yakornaya", { type: "pin", id: "anapa" }), "anapa");
+  assert.equal(selectionAfter("yakornaya", { type: "map" }), null);
+  assert.equal(selectionAfter("yakornaya", { type: "keep" }), "yakornaya");
+});
 
 test("a pin without coordinates is left off the map", () => {
   const pins = usablePins([recommended, { name: "Пусто", latitude: null, longitude: 98 }]);

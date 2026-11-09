@@ -2,6 +2,23 @@ export const PHUKET = { lat: 7.9519, lng: 98.3381 };
 
 export const PIN_RED = "#d23b3b";
 
+export function pinCard(pin) {
+  const description = (pin.blurb || "").trim();
+  return {
+    photoUrl: pin.photo_url,
+    name: pin.name,
+    category: pin.category,
+    description: description || null,
+    actionLabel: "Открыть",
+  };
+}
+
+export function selectionAfter(current, action) {
+  if (action.type === "pin") return action.id;
+  if (action.type === "map") return null;
+  return current;
+}
+
 export function usablePins(pins) {
   return (pins || []).filter(
     (pin) => Number.isFinite(pin.latitude) && Number.isFinite(pin.longitude),
@@ -91,11 +108,13 @@ export function createPinButton(documentRef, style, onPin) {
   return button;
 }
 
-function placePin(api, map, pin, onPin) {
+function placePin(api, map, pin, onPin, selection) {
   const style = markerOptions(pin);
   const overlay = new api.OverlayView();
+  overlay.pinId = pin.id;
   overlay.onAdd = function () {
     this.button = createPinButton(document, style, () => onPin(pin));
+    this.button.classList.toggle("is-on", this.pinId === selection.id);
     this.getPanes().overlayMouseTarget.appendChild(this.button);
   };
   overlay.draw = function () {
@@ -115,7 +134,7 @@ function placePin(api, map, pin, onPin) {
   return overlay;
 }
 
-export async function mountMap({ element, key, pins, onPin, maps }) {
+export async function mountMap({ element, key, pins, onPin, onMap, maps }) {
   const api = maps || (await loadMaps(key));
   const { Map } = await api.importLibrary("maps");
   const camera = cameraFor(pins);
@@ -128,6 +147,16 @@ export async function mountMap({ element, key, pins, onPin, maps }) {
     clickableIcons: false,
   });
   if (camera.bounds) map.fitBounds(camera.bounds, 48);
-  for (const pin of usablePins(pins)) placePin(api, map, pin, onPin);
+  const selection = { id: null };
+  const placed = [];
+  for (const pin of usablePins(pins)) placed.push(placePin(api, map, pin, onPin, selection));
+  map.markPin = (id) => {
+    selection.id = id;
+    for (const overlay of placed) {
+      if (!overlay.button) continue;
+      overlay.button.classList.toggle("is-on", overlay.pinId === id);
+    }
+  };
+  if (onMap) map.addListener("click", () => onMap());
   return map;
 }
