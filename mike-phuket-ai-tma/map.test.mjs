@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { cameraFor, markerOptions, PHUKET, PIN_RED, usablePins } from "./map.mjs";
+import { cameraFor, createPinButton, markerOptions, PHUKET, PIN_RED, usablePins } from "./map.mjs";
 
 const recommended = {
   name: "Якорная",
@@ -34,6 +34,38 @@ test("every pin is red, with a round photo, and a recommendation stays larger", 
   assert.equal(strong.zIndex > quiet.zIndex, true);
   assert.match(strong.title, /Майк рекомендует/);
   assert.equal(quiet.title, "Анапа");
+});
+
+function fakeDocument() {
+  const make = (tag) => ({
+    tag,
+    type: "",
+    className: "",
+    style: {},
+    children: [],
+    attrs: {},
+    appendChild(child) {
+      this.children.push(child);
+    },
+    setAttribute(name, value) {
+      this.attrs[name] = value;
+    },
+    addEventListener() {},
+  });
+  return { createElement: make };
+}
+
+test("a pin photo is a background, so the map's image rules cannot hide it", () => {
+  const button = createPinButton(fakeDocument(), markerOptions(recommended), () => {});
+  const photo = button.children[0];
+  assert.equal(photo.tag, "span");
+  assert.equal(photo.className, "map-pin-photo");
+  assert.equal(photo.style.height, "34px");
+  assert.equal(photo.style.backgroundImage, 'url("https://cdn.example/promthep.jpg")');
+  assert.equal(
+    button.children.some((child) => child.tag === "img"),
+    false,
+  );
 });
 
 test("one pin centers on that place", () => {

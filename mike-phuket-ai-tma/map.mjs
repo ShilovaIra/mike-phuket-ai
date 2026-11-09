@@ -69,35 +69,34 @@ export function loadMaps(key, documentRef = document) {
   return loader;
 }
 
+export function createPinButton(documentRef, style, onPin) {
+  const button = documentRef.createElement("button");
+  button.type = "button";
+  button.className = "map-pin";
+  button.style.zIndex = String(style.zIndex);
+  button.style.width = `${style.size}px`;
+  button.setAttribute("aria-label", style.title);
+  // Google's map stylesheet targets img, and Telegram then paints only the
+  // red background. The photo has to be a background on a plain element.
+  const photo = documentRef.createElement("span");
+  photo.className = "map-pin-photo";
+  photo.style.height = `${style.size}px`;
+  if (style.photoUrl) photo.style.backgroundImage = `url("${style.photoUrl}")`;
+  button.appendChild(photo);
+  button.addEventListener("click", function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    onPin();
+  });
+  return button;
+}
+
 function placePin(api, map, pin, onPin) {
   const style = markerOptions(pin);
   const overlay = new api.OverlayView();
   overlay.onAdd = function () {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "map-pin";
-    button.style.zIndex = String(style.zIndex);
-    button.style.width = `${style.size}px`;
-    button.setAttribute("aria-label", style.title);
-    if (style.photoUrl) {
-      const photo = document.createElement("img");
-      photo.alt = "";
-      photo.src = style.photoUrl;
-      photo.addEventListener("error", function () {
-        button.classList.add("is-empty");
-        photo.remove();
-      });
-      button.appendChild(photo);
-    } else {
-      button.classList.add("is-empty");
-    }
-    button.addEventListener("click", function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-      onPin(pin);
-    });
-    this.button = button;
-    this.getPanes().overlayMouseTarget.appendChild(button);
+    this.button = createPinButton(document, style, () => onPin(pin));
+    this.getPanes().overlayMouseTarget.appendChild(this.button);
   };
   overlay.draw = function () {
     if (!this.button) return;

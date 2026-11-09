@@ -1542,20 +1542,15 @@ button {
   line-height: 0;
 }
 
-.map-pin img,
-.map-pin.is-empty::before {
-  content: "";
+.map-pin-photo {
   display: block;
   width: 100%;
-  aspect-ratio: 1;
+  overflow: hidden;
   border-radius: 50%;
-  background: #d23b3b;
+  background-color: #d23b3b;
+  background-position: center;
+  background-size: cover;
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px #d23b3b;
-}
-
-.map-pin img {
-  height: auto;
-  object-fit: cover;
 }
 
 .map-pin::after {
