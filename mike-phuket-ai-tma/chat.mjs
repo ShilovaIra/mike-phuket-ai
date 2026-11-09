@@ -36,6 +36,12 @@ export function canSend({ signedIn, busy, text }) {
   return Boolean(signedIn) && !busy && text.trim().length > 0;
 }
 
+export function homeAsk({ signedIn, busy, text }) {
+  const draft = text.trim();
+  const send = canSend({ signedIn, busy, text: draft });
+  return { openChat: true, send, draft: send ? "" : draft };
+}
+
 function tmaHeaders(initData) {
   return { Authorization: `tma ${initData}` };
 }

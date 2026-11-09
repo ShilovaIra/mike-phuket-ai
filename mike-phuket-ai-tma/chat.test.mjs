@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { canSend, failureView, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
+import { canSend, failureView, homeAsk, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
 
 test("an empty thread shows only the greeting", () => {
   const view = threadView([]);
@@ -48,6 +48,28 @@ test("a failed turn shows the retry line", () => {
     role: "mike",
     parts: [{ type: "text", value: "Не получилось ответить. Напиши ещё раз." }],
   });
+});
+
+test("sendable text from home opens chat, sends, and clears the draft", () => {
+  assert.deepEqual(homeAsk({ signedIn: true, busy: false, text: " Где пляж? " }), {
+    openChat: true,
+    send: true,
+    draft: "",
+  });
+});
+
+test("a blank home field opens chat and does not send", () => {
+  assert.deepEqual(homeAsk({ signedIn: true, busy: false, text: "   " }), {
+    openChat: true,
+    send: false,
+    draft: "",
+  });
+});
+
+test("home text that cannot be sent opens chat and keeps the draft", () => {
+  const kept = { openChat: true, send: false, draft: "Где пляж?" };
+  assert.deepEqual(homeAsk({ signedIn: false, busy: false, text: " Где пляж? " }), kept);
+  assert.deepEqual(homeAsk({ signedIn: true, busy: true, text: " Где пляж? " }), kept);
 });
 
 test("sending needs a signed session, a free composer, and some text", () => {
