@@ -312,10 +312,10 @@ button {
 
 .topic-grid {
   display: grid;
-  grid-template-columns: repeat(4, 68px);
+  grid-template-columns: repeat(4, 60px);
   justify-content: center;
-  column-gap: 4px;
-  row-gap: 6px;
+  column-gap: 6px;
+  row-gap: 8px;
   margin: 8px 16px 4px;
 }
 
@@ -323,21 +323,16 @@ button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px;
-  min-height: 88px;
-  padding: 10px 4px 8px;
-  border: 1px solid var(--line);
+  min-height: 0;
+  padding: 0;
+  border: 0;
   border-radius: 16px;
-  background: var(--surface);
+  background: transparent;
   color: var(--ink);
   text-align: center;
   text-decoration: none;
-}
-
-.topic-tile:hover,
-.topic-tile:active {
-  background: var(--hover);
 }
 
 .topic-tile:focus-visible {
@@ -345,30 +340,34 @@ button {
   box-shadow: 0 0 0 2px var(--canvas), 0 0 0 4px var(--blue);
 }
 
-.topic-icon {
-  display: block;
-  flex: none;
+.topic-art {
+  position: relative;
+  width: 56px;
+  height: 56px;
 }
 
-.topic-icon[data-tone="beach"] { color: #0c6e7c; }
-.topic-icon[data-tone="food"] { color: #0c6b3c; }
-.topic-icon[data-tone="trip"] { color: #1a5f9a; }
-.topic-icon[data-tone="exchange"] { color: #7a4e00; }
-.topic-icon[data-tone="transport"] { color: #4e3eae; }
-.topic-icon[data-tone="property"] { color: #1a56b8; }
-.topic-icon[data-tone="esim"] { color: #8e315c; }
-.topic-icon[data-tone="other"] { color: var(--muted); }
+.topic-art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
 
-[data-theme="dark"] .topic-icon[data-tone="beach"] { color: #8ee4ef; }
-[data-theme="dark"] .topic-icon[data-tone="food"] { color: #7ee0a8; }
-[data-theme="dark"] .topic-icon[data-tone="trip"] { color: #9ecfff; }
-[data-theme="dark"] .topic-icon[data-tone="exchange"] { color: #f2c76a; }
-[data-theme="dark"] .topic-icon[data-tone="transport"] { color: #cec2ff; }
-[data-theme="dark"] .topic-icon[data-tone="property"] { color: #b7d4ff; }
-[data-theme="dark"] .topic-icon[data-tone="esim"] { color: #f5b3cf; }
-[data-theme="dark"] .topic-icon[data-tone="other"] { color: var(--muted); }
+.topic-art .topic-art-dark {
+  display: none;
+}
 
-.topic-tile span {
+[data-theme="dark"] .topic-art .topic-art-light {
+  display: none;
+}
+
+[data-theme="dark"] .topic-art .topic-art-dark {
+  display: block;
+}
+
+.topic-tile > span:not(.topic-art) {
   display: flex;
   align-items: center;
   justify-content: center;
