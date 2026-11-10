@@ -18,6 +18,10 @@ async def test_list_place_categories_returns_seeded_kinds(store):
         ("bar", "Бар"),
         ("beach", "Пляж"),
         ("shop", "Магазин"),
+        ("excursion", "Экскурсии"),
+        ("sight", "Достопримечательности"),
+        ("exchange", "Обмен"),
+        ("vehicle", "Транспорт"),
     ]
     assert all(isinstance(category.id, UUID) for category in categories)
 

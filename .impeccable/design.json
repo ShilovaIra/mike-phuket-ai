@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-06T05:50:00.000Z",
+  "generatedAt": "2026-11-10T06:50:00.000Z",
   "title": "Design System: Mike Phuket AI",
   "extensions": {
     "colorMeta": {
@@ -289,6 +289,90 @@
           "#edf2fa"
         ]
       },
+      "topic-beach": {
+        "role": "topic",
+        "displayName": "Beach",
+        "canonical": "#0C6E7C",
+        "tonalRamp": ["#11292c", "#15525b", "#168797", "#20bed5", "#56d4e6", "#8ce2ee", "#c5ecf1", "#ecf7f8"]
+      },
+      "topic-food": {
+        "role": "topic",
+        "displayName": "Food",
+        "canonical": "#0C6B3C",
+        "tonalRamp": ["#112c1f", "#175a38", "#189557", "#22d27b", "#58e49f", "#8decbd", "#c6f1dc", "#edf8f2"]
+      },
+      "topic-trip": {
+        "role": "topic",
+        "displayName": "Trip",
+        "canonical": "#1A5F9A",
+        "tonalRamp": ["#13202b", "#1a3a56", "#1f5b8e", "#2c81c9", "#60a3dc", "#92c0e7", "#c8ddee", "#edf3f7"]
+      },
+      "topic-exchange": {
+        "role": "topic",
+        "displayName": "Exchange",
+        "canonical": "#7A4E00",
+        "tonalRamp": ["#2f230e", "#62440e", "#a56c09", "#e9990c", "#f5b647", "#f8cd81", "#f6e3c1", "#f9f4eb"]
+      },
+      "topic-transport": {
+        "role": "topic",
+        "displayName": "Transport",
+        "canonical": "#4E3EAE",
+        "tonalRamp": ["#191727", "#2a244c", "#3c327c", "#5546af", "#8175c7", "#a8a0d9", "#d2cfe8", "#f0eff6"]
+      },
+      "topic-property": {
+        "role": "topic",
+        "displayName": "Property",
+        "canonical": "#1A56B8",
+        "tonalRamp": ["#121c2b", "#183058", "#1c4991", "#2866cd", "#5c8ee0", "#90b2ea", "#c7d6ef", "#edf1f8"]
+      },
+      "topic-esim": {
+        "role": "topic",
+        "displayName": "eSIM",
+        "canonical": "#8E315C",
+        "tonalRamp": ["#27161e", "#4d2437", "#7d3154", "#b04576", "#c9749b", "#daa0bb", "#e8ceda", "#f6eff2"]
+      },
+      "topic-beach-dark": {
+        "role": "topic",
+        "displayName": "Beach Dark",
+        "canonical": "#8EE4EF",
+        "tonalRamp": ["#12282b", "#185158", "#1c8491", "#28bacd", "#5dd1e0", "#90dfea", "#c7ebef", "#edf6f8"]
+      },
+      "topic-food-dark": {
+        "role": "topic",
+        "displayName": "Food Dark",
+        "canonical": "#7EE0A8",
+        "tonalRamp": ["#14291d", "#1e5234", "#278650", "#37be71", "#69d496", "#98e1b7", "#cbecd9", "#eef7f2"]
+      },
+      "topic-trip-dark": {
+        "role": "topic",
+        "displayName": "Trip Dark",
+        "canonical": "#9ECFFF",
+        "tonalRamp": ["#0e1f2f", "#0e3962", "#0958a5", "#0c7ce9", "#479ff5", "#81bdf8", "#c1dcf6", "#ebf2f9"]
+      },
+      "topic-exchange-dark": {
+        "role": "topic",
+        "displayName": "Exchange Dark",
+        "canonical": "#F2C76A",
+        "tonalRamp": ["#2d2410", "#5b4515", "#986f15", "#d79c1e", "#e7b955", "#efcf8b", "#f2e4c5", "#f8f4ec"]
+      },
+      "topic-transport-dark": {
+        "role": "topic",
+        "displayName": "Transport Dark",
+        "canonical": "#CEC2FF",
+        "tonalRamp": ["#140e2f", "#1f0e62", "#2709a5", "#380ce9", "#6947f5", "#9981f8", "#cbc1f6", "#eeebf9"]
+      },
+      "topic-property-dark": {
+        "role": "topic",
+        "displayName": "Property Dark",
+        "canonical": "#B7D4FF",
+        "tonalRamp": ["#0e1b2f", "#0e3062", "#0948a5", "#0c65e9", "#478df5", "#81b1f8", "#c1d6f6", "#ebf1f9"]
+      },
+      "topic-esim-dark": {
+        "role": "topic",
+        "displayName": "eSIM Dark",
+        "canonical": "#F5B3CF",
+        "tonalRamp": ["#2c121d", "#581833", "#931b4e", "#cf266e", "#e15b94", "#ea8fb6", "#f0c7d8", "#f8edf1"]
+      },
       "canvas-dark": {
         "role": "neutral",
         "displayName": "Canvas Dark",
@@ -488,7 +572,7 @@
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "Mike's name on the hero. Admin screen titles share the size, weight, and tracking at line-height 1.15."
+        "purpose": "Mike's name on the hero. Admin screen titles use the same size, weight, and tracking at line-height 1.15."
       },
       "headline": {
         "displayName": "Headline",
@@ -496,15 +580,19 @@
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Mini App section headings. Admin pane titles are 1.05rem / 600."
+        "purpose": "Mini App section headings (Рекомендации, Места, directory titles). Admin pane titles are 1.05rem / 600."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Page text at 16px. Place prose is 0.9375rem, about 42ch."
+        "purpose": "Page text. Place prose is 0.9375rem and wraps at about 42ch. Admin subtitles sit on Lobby muted, max about 62ch."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Form labels, meta, and text links. Sentence case."
+        "purpose": "Form labels, meta, text links. Tabs are 0.75rem / 600. The ask pill is 0.9375rem / 700. Sentence case. No tracked all-caps eyebrows."
+      },
+      "tile": {
+        "displayName": "Tile",
+        "purpose": "Category tile labels on the home. Ink, 0.75rem, weight 600."
       }
     },
     "shadows": [
@@ -654,7 +742,7 @@
   ],
   "narrative": {
     "northStar": "The Island Concierge",
-    "overview": "A tourist on a phone in daylight, Mike's photograph filling the top of the screen, a short Russian greeting in a white bubble. The Mini App is a cool canvas under that frame: Guide Blue for the ask pill, the links, and the tab that is on. Plate Yellow survives only as the small «скоро» sticker. Place photos sit in cards. They do not become the page.\n\nOne product, two desks. Tourists get the daylight Mini App, and a dark theme that keeps the same blue when the phone is dark. Operators get the night lobby: blue-black ground, violet blooms, frosted panes, Lobby Violet on the action and on the nav item that is current. The admin does not wear Mike's face or the yellow sticker. The bot keyboard stays Telegram's, packed two-up, and the Mini App does not copy that grid.\n\nThe system rejects cringy consumer apps (over-cute copy, mascot spam, emoji walls, gamified fluff), loud travel-agency Telegram spam and hard-sell real-estate brochure tone, and generic flashy SaaS dashboards that prioritize chrome over the task. It also rejects the old white-desk home (yellow plate button, no photograph, two-up topic tiles) and the cyan «Спроси Майка!» night-map phone. Light is the tourist default. Violet glass is the operator desk.",
+    "overview": "A tourist on a phone in daylight, Mike's photograph filling the top of the screen, a short Russian greeting in a white bubble. The Mini App is a cool canvas under that frame: Guide Blue for the ask pill, the links, and the tab that is on. Plate Yellow survives only as the small «скоро» sticker. Place photos sit in cards. They do not become the page.\n\nOne product, two desks. Tourists get the daylight Mini App, and a dark theme that keeps the same blue when the phone is dark. Operators get the night lobby: blue-black ground, violet blooms, frosted panes, Lobby Violet on the action and on the nav item that is current. The admin does not wear Mike's face or the yellow sticker. The bot keyboard stays Telegram's, packed two-up. The Mini App home has its own eight category tiles and does not copy that emoji keyboard.\n\nThe system rejects cringy consumer apps (over-cute copy, mascot spam, emoji walls, gamified fluff), loud travel-agency Telegram spam and hard-sell real-estate brochure tone, and generic flashy SaaS dashboards that prioritize chrome over the task. It also rejects the old white-desk home (yellow plate button, no photograph, two-up topic tiles) and the cyan «Спроси Майка!» night-map phone. Light is the tourist default. Violet glass is the operator desk.",
     "keyCharacteristics": [
       "Canvas ground, Guide Blue actions, Plate Yellow only on «скоро»",
       "Mike's photograph is the home hero; the name is set in Golos Text on the photo",
@@ -706,7 +794,7 @@
       "Don't use gradient text, glass on the Mini App, thick side-stripe borders, or identical icon-heading-text card grids.",
       "Don't use a tiny uppercase tracked eyebrow above every section.",
       "Don't treat the cyan «Спроси Майка!» night-map phone as the tourist UI. Light is the default. The dark theme keeps Guide Blue on `#0E1622`.",
-      "Don't bring back the yellow ask plate or the two-up topic tiles. That home was replaced.",
+      "Don't bring back the yellow ask plate or the old two-up text tiles. The home categories are the eight icon tiles.",
       "Don't restyle the partner dashboard with this desk. It stays its own surface until it is redesigned."
     ]
   }

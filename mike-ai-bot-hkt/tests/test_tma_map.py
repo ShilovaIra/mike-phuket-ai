@@ -63,6 +63,7 @@ def test_pin_carries_the_place_card_and_its_point():
         "id": str(place.id),
         "name": "Якорная",
         "category": "Пляж",
+        "category_slug": "",
         "blurb": "Закат",
         "maps_url": "https://maps.example/promthep",
         "photo_url": "https://cdn.example/promthep.jpg",
@@ -114,6 +115,22 @@ async def test_listed_pins_skip_a_place_with_no_point_and_use_its_cover():
     assert [pin["name"] for pin in pins] == ["Якорная"]
     assert pins[0]["category"] == "Пляж"
     assert pins[0]["photo_url"] == "https://cdn.example/places/yakornaya.jpg"
+
+
+@pytest.mark.asyncio
+async def test_a_listed_pin_carries_its_category_slug():
+    beach = uuid4()
+    place = _place(category_id=beach)
+    store = _Store(
+        [place],
+        [PlaceCategory(id=beach, slug="beach", label="Пляж", sort_order=1)],
+        {},
+    )
+
+    pins = await list_map_pins(store, _Storage())
+
+    assert pins[0]["category"] == "Пляж"
+    assert pins[0]["category_slug"] == "beach"
 
 
 @requires_db
@@ -184,6 +201,8 @@ async def test_public_map_lists_visible_places_and_the_browser_key(store, asset_
     assert set(pins) == {"Якорная", "Анапа"}
     assert pins["Якорная"]["mike_recommends"] is True
     assert pins["Якорная"]["category"] == "Пляж"
+    assert pins["Якорная"]["category_slug"] == "beach"
+    assert pins["Анапа"]["category_slug"] == "shop"
     assert pins["Якорная"]["latitude"] == pytest.approx(7.7622)
     assert pins["Якорная"]["longitude"] == pytest.approx(98.3055)
     assert pins["Анапа"]["mike_recommends"] is False

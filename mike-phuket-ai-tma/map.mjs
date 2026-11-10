@@ -91,6 +91,47 @@ export function usablePins(pins) {
   );
 }
 
+export const MAP_FILTERS = [
+  { id: "all", label: "Все" },
+  { id: "beaches", label: "Пляжи", slugs: ["beach"], empty: "Пока нет пляжей" },
+  {
+    id: "food",
+    label: "Еда",
+    slugs: ["cafe", "restaurant", "bar"],
+    empty: "Пока нет мест, где поесть",
+  },
+  { id: "excursions", label: "Экскурсии", slugs: ["excursion"], empty: "Пока нет мест" },
+  { id: "sights", label: "Достопримечательности", slugs: ["sight"], empty: "Пока нет мест" },
+  { id: "exchange", label: "Обмен", slugs: ["exchange"], empty: "Пока нет мест" },
+  { id: "vehicle", label: "Транспорт", slugs: ["vehicle"], empty: "Пока нет мест" },
+];
+
+function filterById(filterId) {
+  return MAP_FILTERS.find((filter) => filter.id === filterId) || null;
+}
+
+export function pinsFor(pins, filterId) {
+  const usable = usablePins(pins);
+  const slugs = filterById(filterId)?.slugs;
+  if (!slugs) return usable;
+  return usable.filter((pin) => slugs.includes(pin.category_slug));
+}
+
+export function filterAfter(current, tapped) {
+  if (!tapped || tapped === "all" || tapped === current) return "all";
+  return tapped;
+}
+
+export function keptSelection(selectedId, pins) {
+  if ((pins || []).some((pin) => pin.id === selectedId)) return selectedId;
+  return null;
+}
+
+export function emptyLine(filterId, pins) {
+  if (pinsFor(pins, filterId).length > 0) return null;
+  return filterById(filterId)?.empty || null;
+}
+
 export function markerOptions(pin) {
   const recommended = Boolean(pin.mike_recommends);
   return {
@@ -251,7 +292,21 @@ export async function mountMap({ element, key, pins, onPin, onMap, maps }) {
   if (camera.bounds) map.fitBounds(camera.bounds, 48);
   const selection = { id: null };
   const placed = [];
+  const frame = (next) => {
+    const cameraNext = cameraFor(next);
+    if (cameraNext.bounds) map.fitBounds(cameraNext.bounds, 48);
+    else {
+      map.setCenter(cameraNext.center || PHUKET);
+      map.setZoom(cameraNext.zoom || 11);
+    }
+  };
   for (const pin of usablePins(pins)) placed.push(placePin(api, map, pin, onPin, selection));
+  map.showPins = (next) => {
+    for (const overlay of placed) overlay.setMap(null);
+    placed.length = 0;
+    for (const pin of usablePins(next)) placed.push(placePin(api, map, pin, onPin, selection));
+    frame(next);
+  };
   map.markPin = (id) => {
     selection.id = id;
     for (const overlay of placed) {

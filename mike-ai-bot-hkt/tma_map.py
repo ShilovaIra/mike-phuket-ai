@@ -31,11 +31,12 @@ def has_coordinates(latitude: Any, longitude: Any) -> bool:
     return math.isfinite(lat) and math.isfinite(lng)
 
 
-def map_pin(place: Place, category: str, photo_url: str) -> dict:
+def map_pin(place: Place, category: str, photo_url: str, category_slug: str = "") -> dict:
     return {
         "id": str(place.id),
         "name": place.name,
         "category": category,
+        "category_slug": category_slug,
         "blurb": place.blurb or "",
         "maps_url": tracked_maps_url(
             place_id=place.id, partner_id=place.partner_id, maps_url=place.maps_url
@@ -48,7 +49,7 @@ def map_pin(place: Place, category: str, photo_url: str) -> dict:
 
 
 async def list_map_pins(store: Any, storage: Any | None) -> list[dict]:
-    categories = {item.id: item.label for item in await store.list_place_categories()}
+    categories = {item.id: item for item in await store.list_place_categories()}
     pins = []
     for place in await store.list_visible_places():
         if not has_coordinates(place.latitude, place.longitude):
@@ -56,5 +57,13 @@ async def list_map_pins(store: Any, storage: Any | None) -> list[dict]:
         assets = await store.list_place_assets(place.id)
         cover = assets[0].path if assets else PLACEHOLDER_COVER
         photo_url = storage.public_url(cover) if storage is not None else cover
-        pins.append(map_pin(place, categories.get(place.category_id, ""), photo_url))
+        category = categories.get(place.category_id)
+        pins.append(
+            map_pin(
+                place,
+                category.label if category else "",
+                photo_url,
+                category.slug if category else "",
+            )
+        )
     return pins

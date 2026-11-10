@@ -60,7 +60,10 @@ WHERE slug NOT IN ('money_exchange', 'vehicle_rental', 'excursions', 'esim')
 
 RESET_PLACE_CATEGORIES_SQL = """
 DELETE FROM place_categories
-WHERE slug NOT IN ('cafe', 'restaurant', 'bar', 'beach', 'shop')
+WHERE slug NOT IN (
+    'cafe', 'restaurant', 'bar', 'beach', 'shop',
+    'excursion', 'sight', 'exchange', 'vehicle'
+)
 """
 
 RESEED_CHOICE_PHRASES_SQL = """
@@ -82,7 +85,11 @@ VALUES
     ('restaurant', 'Ресторан', 20),
     ('bar', 'Бар', 30),
     ('beach', 'Пляж', 40),
-    ('shop', 'Магазин', 50)
+    ('shop', 'Магазин', 50),
+    ('excursion', 'Экскурсии', 60),
+    ('sight', 'Достопримечательности', 70),
+    ('exchange', 'Обмен', 80),
+    ('vehicle', 'Транспорт', 90)
 ON CONFLICT (slug) DO UPDATE SET
     label = EXCLUDED.label,
     sort_order = EXCLUDED.sort_order

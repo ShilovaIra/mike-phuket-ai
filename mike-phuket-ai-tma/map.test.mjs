@@ -3,13 +3,18 @@ import { test } from "node:test";
 import {
   cameraFor,
   createPinButton,
+  emptyLine,
   externalUrl,
+  MAP_FILTERS,
+  filterAfter,
+  keptSelection,
   locateAfter,
   readFix,
   markerOptions,
   PHUKET,
   pinCard,
   PIN_RED,
+  pinsFor,
   selectionAfter,
   usablePins,
 } from "./map.mjs";
@@ -110,6 +115,79 @@ test("another pin replaces the card, a map tap clears it, and leaving keeps it",
 test("a pin without coordinates is left off the map", () => {
   const pins = usablePins([recommended, { name: "Пусто", latitude: null, longitude: 98 }]);
   assert.deepEqual(pins, [recommended]);
+});
+
+test("the map chips run from Все to Транспорт", () => {
+  assert.deepEqual(
+    MAP_FILTERS.map((filter) => filter.label),
+    ["Все", "Пляжи", "Еда", "Экскурсии", "Достопримечательности", "Обмен", "Транспорт"],
+  );
+});
+
+test("Все keeps every pin that has a point", () => {
+  const pins = pinsFor(
+    [recommended, plain, { name: "Пусто", latitude: null, longitude: 98.3 }],
+    "all",
+  );
+  assert.deepEqual(
+    pins.map((pin) => pin.name),
+    ["Якорная", "Анапа"],
+  );
+});
+
+test("Пляжи keeps beaches and Еда keeps cafes, restaurants, and bars", () => {
+  const pins = [
+    { name: "Якорная", latitude: 7.76, longitude: 98.3, category_slug: "beach" },
+    { name: "Кафе", latitude: 7.77, longitude: 98.31, category_slug: "cafe" },
+    { name: "Ресторан", latitude: 7.78, longitude: 98.32, category_slug: "restaurant" },
+    { name: "Бар", latitude: 7.79, longitude: 98.33, category_slug: "bar" },
+    { name: "Лавка", latitude: 7.8, longitude: 98.34, category_slug: "shop" },
+  ];
+  assert.deepEqual(
+    pinsFor(pins, "beaches").map((pin) => pin.name),
+    ["Якорная"],
+  );
+  assert.deepEqual(
+    pinsFor(pins, "food").map((pin) => pin.name),
+    ["Кафе", "Ресторан", "Бар"],
+  );
+});
+
+test("each new category keeps only its own places", () => {
+  const pins = [
+    { name: "Тур", latitude: 7.76, longitude: 98.3, category_slug: "excursion" },
+    { name: "Мыс", latitude: 7.77, longitude: 98.31, category_slug: "sight" },
+    { name: "Обменник", latitude: 7.78, longitude: 98.32, category_slug: "exchange" },
+    { name: "Байк", latitude: 7.79, longitude: 98.33, category_slug: "vehicle" },
+    { name: "Лавка", latitude: 7.8, longitude: 98.34, category_slug: "shop" },
+  ];
+  assert.deepEqual(pinsFor(pins, "excursions").map((pin) => pin.name), ["Тур"]);
+  assert.deepEqual(pinsFor(pins, "sights").map((pin) => pin.name), ["Мыс"]);
+  assert.deepEqual(pinsFor(pins, "exchange").map((pin) => pin.name), ["Обменник"]);
+  assert.deepEqual(pinsFor(pins, "vehicle").map((pin) => pin.name), ["Байк"]);
+});
+
+test("tapping the active chip returns to Все, and a hidden place card closes", () => {
+  assert.equal(filterAfter("all", "beaches"), "beaches");
+  assert.equal(filterAfter("beaches", "beaches"), "all");
+  assert.equal(filterAfter("beaches", "all"), "all");
+  assert.equal(filterAfter("beaches", "food"), "food");
+
+  const visible = [{ id: "beach-1" }, { id: "cafe-1" }];
+  assert.equal(keptSelection("beach-1", visible), "beach-1");
+  assert.equal(keptSelection("shop-1", visible), null);
+});
+
+test("an empty category returns its line, and a category with pins returns none", () => {
+  const beach = [{ name: "Якорная", latitude: 7.76, longitude: 98.3, category_slug: "beach" }];
+  assert.equal(emptyLine("beaches", []), "Пока нет пляжей");
+  assert.equal(emptyLine("food", []), "Пока нет мест, где поесть");
+  assert.equal(emptyLine("excursions", []), "Пока нет мест");
+  assert.equal(emptyLine("sights", []), "Пока нет мест");
+  assert.equal(emptyLine("exchange", []), "Пока нет мест");
+  assert.equal(emptyLine("vehicle", []), "Пока нет мест");
+  assert.equal(emptyLine("beaches", beach), null);
+  assert.equal(emptyLine("all", []), null);
 });
 
 test("every pin is red, with a round photo, and a recommendation stays larger", () => {

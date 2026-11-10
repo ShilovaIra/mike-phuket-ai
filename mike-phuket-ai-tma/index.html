@@ -30,7 +30,7 @@
       href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=56" />
+    <link rel="stylesheet" href="./styles.css?v=57" />
   </head>
   <body>
     <a class="skip" href="#home">К экранам</a>
@@ -372,6 +372,8 @@
         <section class="screen screen-tab" id="map" aria-label="Карта">
           <header class="tab-head">
             <h1>Карта</h1>
+            <p class="map-intro">Здесь места острова. Выберите категорию или нажмите на метку.</p>
+            <div class="map-filters" role="toolbar" aria-label="Категории" data-map-filters></div>
           </header>
           <div class="map-fill">
             <div class="map-canvas" data-map></div>
@@ -382,10 +384,10 @@
                 <path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
               </svg>
             </button>
+            <p class="map-empty" data-map-empty hidden></p>
             <p class="map-locate-banner" data-map-locate-banner hidden></p>
             <p class="map-note" data-map-note hidden></p>
-          </div>
-          <article class="map-card" data-map-card hidden>
+            <article class="map-card" data-map-card hidden>
             <img class="map-card-photo" data-map-card-photo alt="" />
             <div class="map-card-copy">
               <div class="map-card-main">
@@ -396,6 +398,7 @@
               <button class="map-card-open" type="button" data-map-card-open>Открыть</button>
             </div>
           </article>
+          </div>
           <nav class="tabs tabs-bar" aria-label="Разделы">
             <a class="tab" href="#home"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5Z" fill="currentColor" /></svg>Главная</a>
             <a class="tab is-on" href="#map" aria-current="page"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z" fill="currentColor" /><circle cx="12" cy="10" r="2.2" fill="currentColor" /></svg>Карта</a>
@@ -601,7 +604,7 @@
     <script type="module">
       import { directoryView, homeView, partnerPage, placeView } from "./catalog.mjs";
       import { OPENER_TEXT, topicByHash, topicView } from "./categories.mjs";
-      import { externalUrl, locateAfter, mountMap, pinCard, readFix, selectionAfter } from "./map.mjs";
+      import { emptyLine, externalUrl, filterAfter, keptSelection, locateAfter, MAP_FILTERS, mountMap, pinCard, pinsFor, readFix, selectionAfter } from "./map.mjs";
       import { canSend, failureView, homeAsk, loadThread, postMessage, postOpener, threadView, waitingView } from "./chat.mjs";
       import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
       import { descriptionParts } from "./description.mjs";

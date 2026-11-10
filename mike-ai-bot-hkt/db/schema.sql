@@ -429,6 +429,14 @@ FROM (
 ) AS seed(slug, label, sort_order)
 WHERE NOT EXISTS (SELECT 1 FROM place_categories);
 
+INSERT INTO place_categories (slug, label, sort_order)
+VALUES
+    ('excursion', 'Экскурсии', 60),
+    ('sight', 'Достопримечательности', 70),
+    ('exchange', 'Обмен', 80),
+    ('vehicle', 'Транспорт', 90)
+ON CONFLICT (slug) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS places (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
