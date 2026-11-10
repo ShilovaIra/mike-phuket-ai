@@ -1151,6 +1151,8 @@
 
       var mapCanvas = document.querySelector("[data-map]");
       var mapNote = document.querySelector("[data-map-note]");
+      var mapFilters = document.querySelector("[data-map-filters]");
+      var mapEmpty = document.querySelector("[data-map-empty]");
       var mapLocate = document.querySelector("[data-map-locate]");
       var mapLocateBanner = document.querySelector("[data-map-locate-banner]");
       var mapCard = document.querySelector("[data-map-card]");
@@ -1162,8 +1164,47 @@
       var mapStarted = false;
       var mapInstance = null;
       var mapPins = [];
+      var mapFilter = "all";
       var selectedPinId = null;
       var locate = { dot: null, banner: null, button: "ready" };
+
+      function paintFilters() {
+        mapFilters.querySelectorAll(".map-filter").forEach(function (button) {
+          var on = button.dataset.filter === mapFilter;
+          button.classList.toggle("is-on", on);
+          button.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        var line = mapNote.hidden ? emptyLine(mapFilter, mapPins) : null;
+        mapEmpty.hidden = !line;
+        mapEmpty.textContent = line || "";
+      }
+
+      function applyMapFilter() {
+        var visible = pinsFor(mapPins, mapFilter);
+        selectedPinId = keptSelection(selectedPinId, visible);
+        if (selectedPinId) {
+          var pin = visible.find(function (item) { return item.id === selectedPinId; });
+          if (pin) paintMapCard(pin);
+        } else {
+          hideMapCard();
+        }
+        if (mapInstance && mapInstance.showPins) mapInstance.showPins(visible);
+        paintFilters();
+      }
+
+      MAP_FILTERS.forEach(function (filter) {
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "map-filter";
+        button.dataset.filter = filter.id;
+        button.textContent = filter.label;
+        button.addEventListener("click", function () {
+          mapFilter = filterAfter(mapFilter, filter.id);
+          applyMapFilter();
+        });
+        mapFilters.appendChild(button);
+      });
+      paintFilters();
 
       mapCardPhoto.addEventListener("error", function () {
         if (!mapCardPhoto.src.endsWith("empty_picture_placeholder.jpg")) {
@@ -1174,6 +1215,7 @@
       function showMapNote(text) {
         mapNote.hidden = false;
         mapNote.textContent = text;
+        mapEmpty.hidden = true;
       }
 
       function cardPhoto(url) {
@@ -1304,11 +1346,13 @@
                 mountMap({
                   element: mapCanvas,
                   key: body.key,
-                  pins: mapPins,
+                  pins: pinsFor(mapPins, mapFilter),
                   onPin: openPin,
                   onMap: clearMapCard,
                 }).then(function (map) {
                   mapInstance = map;
+                  map.showPins(pinsFor(mapPins, mapFilter));
+                  paintFilters();
                   map.addListener("idle", function () {
                     if (!locate.dot || !map.seesUser(locate.dot)) return;
                     var next = locateAfter(locate, { type: "visible" });
