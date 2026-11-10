@@ -1099,9 +1099,13 @@
       mapCardOpen.addEventListener("click", function () {
         var pin = mapPins.find(function (item) { return item.id === selectedPinId; });
         if (!pin) return;
-        var place = catalogPlaces.find(function (item) { return item.id === pin.id; }) || pin;
-        showPlace(place, "#map");
-        location.hash = "#place";
+        var url = pinCard(pin).mapsUrl;
+        var tg = window.Telegram && window.Telegram.WebApp;
+        if (tg && typeof tg.openLink === "function") {
+          tg.openLink(url);
+          return;
+        }
+        window.open(url, "_blank", "noopener");
       });
 
       function openMap() {

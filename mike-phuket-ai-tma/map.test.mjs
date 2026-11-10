@@ -42,6 +42,33 @@ test("a pin card shows the photo, name, category, plain blurb, and Открыт�
   assert.equal(card.actionLabel, "Открыть");
 });
 
+test("Открыть uses the saved maps link, or the pin point when that link is missing", () => {
+  const saved = pinCard({
+    name: "Якорная",
+    category: "Пляж",
+    photo_url: "https://cdn.example/promthep.jpg",
+    blurb: "Закат",
+    maps_url: "https://maps.example/promthep",
+    latitude: 7.7622,
+    longitude: 98.3055,
+  });
+  assert.equal(saved.mapsUrl, "https://maps.example/promthep");
+  assert.equal(saved.actionLabel, "Открыть");
+
+  const point = pinCard({
+    name: "Анапа",
+    category: "Магазин",
+    photo_url: "https://cdn.example/kata.jpg",
+    maps_url: "  ",
+    latitude: 7.8201,
+    longitude: 98.298,
+  });
+  assert.equal(
+    point.mapsUrl,
+    "https://www.google.com/maps/search/?api=1&query=7.8201,98.298",
+  );
+});
+
 test("a blank blurb is left off the card and a url stays plain text", () => {
   const blank = pinCard({
     name: "Анапа",

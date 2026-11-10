@@ -2,14 +2,18 @@ export const PHUKET = { lat: 7.9519, lng: 98.3381 };
 
 export const PIN_RED = "#d23b3b";
 
+const MAPS_SEARCH = "https://www.google.com/maps/search/?api=1&query=";
+
 export function pinCard(pin) {
   const description = (pin.blurb || "").trim();
+  const saved = (pin.maps_url || "").trim();
   return {
     photoUrl: pin.photo_url,
     name: pin.name,
     category: pin.category,
     description: description || null,
     actionLabel: "Открыть",
+    mapsUrl: saved || `${MAPS_SEARCH}${pin.latitude},${pin.longitude}`,
   };
 }
 
