@@ -4,6 +4,10 @@ export const PIN_RED = "#d23b3b";
 
 const MAPS_SEARCH = "https://www.google.com/maps/search/?api=1&query=";
 
+export function externalUrl(url, origin) {
+  return new URL(url, origin).href;
+}
+
 export function pinCard(pin) {
   const description = (pin.blurb || "").trim();
   const saved = (pin.maps_url || "").trim();

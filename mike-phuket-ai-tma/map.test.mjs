@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   cameraFor,
   createPinButton,
+  externalUrl,
   markerOptions,
   PHUKET,
   pinCard,
@@ -26,6 +27,17 @@ const plain = {
   mike_recommends: false,
   photo_url: "https://cdn.example/kata.jpg",
 };
+
+test("a maps link opens on the mini app origin when it is ours", () => {
+  assert.equal(
+    externalUrl("/api/places/place-1/maps", "https://tma.example"),
+    "https://tma.example/api/places/place-1/maps",
+  );
+  assert.equal(
+    externalUrl("https://maps.example/promthep", "https://tma.example"),
+    "https://maps.example/promthep",
+  );
+});
 
 test("a pin card shows the photo, name, category, plain blurb, and Открыть", () => {
   const card = pinCard({

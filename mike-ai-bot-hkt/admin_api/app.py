@@ -30,6 +30,7 @@ from db.url import resolve_database_url
 from partner_dashboard.router import router as partner_dashboard_router
 from maps_pin import follow_maps_redirect, resolve_maps_link
 from partners import PartnerType
+from place_maps import tracked_maps_url
 from tma_chat import (
     InvalidInitData,
     MikeUnavailable,
@@ -82,7 +83,9 @@ def _catalog_card(
         "name": place.name,
         "category": category,
         "blurb": place.blurb or "",
-        "maps_url": place.maps_url or "",
+        "maps_url": tracked_maps_url(
+            place_id=place.id, partner_id=place.partner_id, maps_url=place.maps_url
+        ),
         "photo_url": photo_url,
         "mike_recommends": place.mike_recommends,
         "partner": partner,

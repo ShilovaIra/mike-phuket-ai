@@ -44,6 +44,7 @@ TRUNCATE TABLE
     users,
     partner_referral_clicks,
     partner_views,
+    place_map_opens,
     partner_access,
     partner_users,
     knowledge_base,

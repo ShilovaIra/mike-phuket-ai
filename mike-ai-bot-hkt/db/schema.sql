@@ -545,3 +545,13 @@ CREATE TABLE IF NOT EXISTS interval_broadcasts (
 
 ALTER TABLE interval_broadcasts
     ADD COLUMN IF NOT EXISTS last_message_id UUID;
+
+CREATE TABLE IF NOT EXISTS place_map_opens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    partner_id UUID NOT NULL REFERENCES partners (id) ON DELETE CASCADE,
+    place_id UUID REFERENCES places (id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS place_map_opens_partner
+    ON place_map_opens (partner_id);

@@ -514,7 +514,7 @@
     </script>
     <script type="module">
       import { directoryView, homeView, partnerPage, placeView } from "./catalog.mjs";
-      import { mountMap, pinCard, selectionAfter } from "./map.mjs";
+      import { externalUrl, mountMap, pinCard, selectionAfter } from "./map.mjs";
       import { canSend, failureView, homeAsk, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
       import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
       import { descriptionParts } from "./description.mjs";
@@ -642,7 +642,7 @@
         document.querySelector("[data-place-category]").textContent = view.category;
         fillDescription(document.querySelector("[data-place-blurb]"), view.blurb);
         var maps = document.querySelector("[data-place-maps]");
-        maps.href = view.mapsUrl;
+        maps.href = view.mapsUrl ? externalUrl(view.mapsUrl, window.location.origin) : "";
         maps.lastChild.textContent = view.mapsLabel;
         var badge = document.querySelector("[data-place-badge]");
         badge.hidden = !view.badge;
@@ -715,7 +715,7 @@
         if (card.mapsUrl) {
           var maps = document.createElement("a");
           maps.className = "office-maps";
-          maps.href = card.mapsUrl;
+          maps.href = externalUrl(card.mapsUrl, window.location.origin);
           maps.target = "_blank";
           maps.rel = "noopener";
           maps.textContent = card.mapsLabel;
@@ -1099,7 +1099,7 @@
       mapCardOpen.addEventListener("click", function () {
         var pin = mapPins.find(function (item) { return item.id === selectedPinId; });
         if (!pin) return;
-        var url = pinCard(pin).mapsUrl;
+        var url = externalUrl(pinCard(pin).mapsUrl, window.location.origin);
         var tg = window.Telegram && window.Telegram.WebApp;
         if (tg && typeof tg.openLink === "function") {
           tg.openLink(url);

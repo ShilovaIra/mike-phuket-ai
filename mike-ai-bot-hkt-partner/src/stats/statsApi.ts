@@ -28,6 +28,7 @@ export type PartnerStats = {
   last_30_days: PeriodStats
   category_users: CategoryUsers
   favourite_users: number
+  map_opens: number
 }
 
 export const partnerApi = {

@@ -6,6 +6,7 @@ from uuid import UUID
 import asyncpg
 
 from admin_api.passwords import hash_password, verify_password
+from place_maps import SELECT_PLACE_MAP_OPEN_COUNT
 
 
 def _counts(views: int, clicks: int, opened: int) -> dict:
@@ -164,6 +165,7 @@ async def get_partner_stats(pool: asyncpg.Pool, partner_id: UUID) -> dict:
             """,
             partner_id,
         )
+        map_opens = await conn.fetchval(SELECT_PLACE_MAP_OPEN_COUNT, partner_id)
     return {
         "partner_id": str(partner_id),
         "all_time": _counts(all_time["views"], all_time["clicks"], all_time["opened"]),
@@ -174,6 +176,7 @@ async def get_partner_stats(pool: asyncpg.Pool, partner_id: UUID) -> dict:
             "last_30_days": category["last_30_days"],
         },
         "favourite_users": favourite_users,
+        "map_opens": map_opens,
     }
 
 

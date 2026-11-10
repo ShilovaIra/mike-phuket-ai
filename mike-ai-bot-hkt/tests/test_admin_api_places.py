@@ -620,6 +620,8 @@ async def test_public_catalog_names_the_partner_on_a_bound_place(store, asset_st
     assert "referral_url" not in places["Касса Ката"]
     assert "referral_url" not in places["Касса Ката"]["partner"]
     assert places["Якорная"]["partner"] is None
+    assert places["Якорная"]["maps_url"] == PROMTEP_MAPS
+    assert places["Касса Ката"]["maps_url"] == f"/api/places/{places['Касса Ката']['id']}/maps"
     assert "partner_id" not in places["Якорная"]
 
 

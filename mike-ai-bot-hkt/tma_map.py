@@ -11,6 +11,7 @@ import os
 from typing import Any
 
 from place_catalog import Place
+from place_maps import tracked_maps_url
 
 PLACEHOLDER_COVER = "media/places/placeholder.jpg"
 MAPS_JS_KEY = "GOOGLE_MAPS_JS_API_KEY"
@@ -36,7 +37,9 @@ def map_pin(place: Place, category: str, photo_url: str) -> dict:
         "name": place.name,
         "category": category,
         "blurb": place.blurb or "",
-        "maps_url": place.maps_url or "",
+        "maps_url": tracked_maps_url(
+            place_id=place.id, partner_id=place.partner_id, maps_url=place.maps_url
+        ),
         "photo_url": photo_url,
         "mike_recommends": place.mike_recommends,
         "latitude": float(place.latitude),

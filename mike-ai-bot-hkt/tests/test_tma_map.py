@@ -33,7 +33,9 @@ def test_map_route_is_mounted():
     from admin_api.app import create_app
 
     app = create_app(store=object(), storage=None)
-    assert "/api/map" in {route.path for route in app.routes}
+    paths = {route.path for route in app.routes}
+    assert "/api/map" in paths
+    assert "/api/places/{place_id}/maps" in paths
 
 
 def test_browser_key_is_the_maps_js_key_only(monkeypatch):
@@ -46,6 +48,12 @@ def test_a_place_without_coordinates_is_not_a_pin():
     assert has_coordinates(7.76, 98.30)
     assert not has_coordinates(None, 98.30)
     assert not has_coordinates(float("nan"), 98.30)
+
+
+def test_a_linked_place_pin_counts_through_our_redirect():
+    place = _place(partner_id=uuid4())
+    pin = map_pin(place, "Магазин", "https://cdn.example/office.jpg")
+    assert pin["maps_url"] == f"/api/places/{place.id}/maps"
 
 
 def test_pin_carries_the_place_card_and_its_point():

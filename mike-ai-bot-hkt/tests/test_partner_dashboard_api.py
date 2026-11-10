@@ -85,6 +85,7 @@ async def test_operator_creates_partner_user_who_sees_zero_stats_for_that_partne
     zeros = {"views": 0, "referral_clicks": 0, "opened_views": 0}
     assert body["all_time"] == zeros
     assert body["last_30_days"] == zeros
+    assert body["map_opens"] == 0
 
 
 @requires_db
@@ -668,3 +669,100 @@ async def test_partner_stats_drop_a_tourist_who_removes_the_current_partner(stor
     assert before.json()["favourite_users"] == 1
     assert after.status_code == 200
     assert after.json()["favourite_users"] == 0
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_map_open_counts_for_the_partner_who_owns_the_place_at_the_tap(store):
+    from tests.test_admin_api_places import KATA_MAPS
+
+    async with operator_client(store) as (client, partner):
+        other = await store.create_partner(
+            name="Ex24",
+            type="money_exchange",
+            referral_url="https://example.com/ex24",
+        )
+        created = await client.post(
+            "/api/places",
+            json={
+                "name": "Касса",
+                "category": "shop",
+                "maps_url": KATA_MAPS,
+                "partner_id": str(partner.id),
+            },
+        )
+        assert created.status_code == 201
+        assert created.json()["maps_url"] == KATA_MAPS
+        place_id = created.json()["id"]
+        path = f"/api/places/{place_id}/maps"
+
+        first = await client.get(path, follow_redirects=False)
+        second = await client.get(path, follow_redirects=False)
+        assert first.status_code == 302
+        assert first.headers["location"] == KATA_MAPS
+        assert second.status_code == 302
+
+        created_user = await client.post(
+            "/api/partner-users",
+            json={
+                "email": "shop@example.com",
+                "password": "shop-secret",
+                "partner_ids": [str(partner.id), str(other.id)],
+            },
+        )
+        assert created_user.status_code == 201
+        login = await client.post(
+            "/api/partner/auth/login",
+            json={"email": "shop@example.com", "password": "shop-secret"},
+        )
+        token = login.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        async def opens(partner_id) -> dict:
+            stats = await client.get(
+                f"/api/partner/stats?partner_id={partner_id}",
+                headers=headers,
+            )
+            assert stats.status_code == 200
+            body = stats.json()
+            assert body["all_time"]["referral_clicks"] == 0
+            return body
+
+        assert (await opens(partner.id))["map_opens"] == 2
+        assert (await opens(other.id))["map_opens"] == 0
+
+        moved = await client.patch(
+            f"/api/places/{place_id}",
+            json={
+                "name": "Касса",
+                "category": "shop",
+                "maps_url": KATA_MAPS,
+                "partner_id": str(other.id),
+            },
+        )
+        assert moved.status_code == 200
+        third = await client.get(path, follow_redirects=False)
+        assert third.status_code == 302
+        assert (await opens(partner.id))["map_opens"] == 2
+        assert (await opens(other.id))["map_opens"] == 1
+
+        async with store.pool.acquire() as conn:
+            await conn.execute("DELETE FROM places WHERE id = $1", place_id)
+        missing = await client.get(path, follow_redirects=False)
+        assert missing.status_code == 404
+        assert (await opens(partner.id))["map_opens"] == 2
+        assert (await opens(other.id))["map_opens"] == 1
+
+        plain = await client.post(
+            "/api/places",
+            json={"name": "Якорная", "category": "beach", "maps_url": KATA_MAPS.replace("Kata", "Shore")},
+        )
+        assert plain.status_code == 201
+        plain_open = await client.get(
+            f"/api/places/{plain.json()['id']}/maps",
+            follow_redirects=False,
+        )
+        assert plain_open.status_code == 302
+        assert plain_open.headers["location"] == plain.json()["maps_url"]
+        assert (await opens(partner.id))["map_opens"] == 2
+        assert (await opens(other.id))["map_opens"] == 1
