@@ -27,6 +27,64 @@ export function selectionAfter(current, action) {
   return current;
 }
 
+export function readFix({ locationManager, geolocation }) {
+  if (!locationManager) {
+    if (!geolocation) return Promise.resolve({ type: "miss" });
+    return new Promise((resolve) => {
+      geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            type: "fix",
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          resolve(error.code === 1 ? { type: "refuse" } : { type: "miss" });
+        },
+      );
+    });
+  }
+  return new Promise((resolve) => {
+    const ask = () => locationManager.getLocation((point) => {
+      if (point && Number.isFinite(point.latitude) && Number.isFinite(point.longitude)) {
+        resolve({ type: "fix", latitude: point.latitude, longitude: point.longitude });
+        return;
+      }
+      const refused = locationManager.isAccessRequested && !locationManager.isAccessGranted;
+      resolve(refused ? { type: "refuse" } : { type: "miss" });
+    });
+    if (typeof locationManager.init === "function" && !locationManager.isInited) {
+      locationManager.init(ask);
+      return;
+    }
+    ask();
+  });
+}
+
+export function locateAfter(state, action) {
+  if (action.type === "tap" && state.button === "ready") {
+    return { dot: state.dot, banner: state.banner, button: "busy" };
+  }
+  if (action.type === "fix") {
+    return {
+      dot: { latitude: action.latitude, longitude: action.longitude },
+      banner: action.inside ? null : "Вы за пределами карты",
+      button: "ready",
+    };
+  }
+  if (action.type === "refuse") {
+    return { dot: null, banner: null, button: "hidden" };
+  }
+  if (action.type === "miss") {
+    return { dot: state.dot, banner: "Не удалось определить место", button: "ready" };
+  }
+  if (action.type === "visible" && state.banner === "Вы за пределами карты") {
+    return { dot: state.dot, banner: null, button: state.button };
+  }
+  return state;
+}
+
 export function usablePins(pins) {
   return (pins || []).filter(
     (pin) => Number.isFinite(pin.latitude) && Number.isFinite(pin.longitude),
@@ -116,6 +174,42 @@ export function createPinButton(documentRef, style, onPin) {
   return button;
 }
 
+function placeUserDot(api, map) {
+  const overlay = new api.OverlayView();
+  overlay.dot = null;
+  overlay.onAdd = function () {
+    this.mark = document.createElement("span");
+    this.mark.className = "map-user-dot";
+    this.mark.setAttribute("aria-hidden", "true");
+    this.getPanes().overlayMouseTarget.appendChild(this.mark);
+  };
+  overlay.draw = function () {
+    if (!this.mark || !this.dot) return;
+    const projection = this.getProjection();
+    if (!projection) return;
+    const point = projection.fromLatLngToDivPixel(
+      new api.LatLng(this.dot.latitude, this.dot.longitude),
+    );
+    if (!point) return;
+    this.mark.style.left = `${point.x}px`;
+    this.mark.style.top = `${point.y}px`;
+  };
+  overlay.onRemove = function () {
+    if (this.mark) this.mark.remove();
+    this.mark = null;
+  };
+  map.showUser = (dot) => {
+    overlay.dot = dot;
+    overlay.setMap(dot ? map : null);
+    if (dot) overlay.draw();
+  };
+  map.seesUser = (dot) => {
+    const bounds = map.getBounds();
+    if (!dot || !bounds) return false;
+    return bounds.contains(new api.LatLng(dot.latitude, dot.longitude));
+  };
+}
+
 function placePin(api, map, pin, onPin, selection) {
   const style = markerOptions(pin);
   const overlay = new api.OverlayView();
@@ -166,5 +260,6 @@ export async function mountMap({ element, key, pins, onPin, onMap, maps }) {
     }
   };
   if (onMap) map.addListener("click", () => onMap());
+  placeUserDot(api, map);
   return map;
 }

@@ -375,6 +375,14 @@
           </header>
           <div class="map-fill">
             <div class="map-canvas" data-map></div>
+            <button class="map-locate" type="button" data-map-locate hidden aria-label="Где я">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" fill="currentColor" />
+                <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.7" />
+                <path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              </svg>
+            </button>
+            <p class="map-locate-banner" data-map-locate-banner hidden></p>
             <p class="map-note" data-map-note hidden></p>
           </div>
           <article class="map-card" data-map-card hidden>
@@ -593,7 +601,7 @@
     <script type="module">
       import { directoryView, homeView, partnerPage, placeView } from "./catalog.mjs";
       import { OPENER_TEXT, topicByHash, topicView } from "./categories.mjs";
-      import { externalUrl, mountMap, pinCard, selectionAfter } from "./map.mjs";
+      import { externalUrl, locateAfter, mountMap, pinCard, readFix, selectionAfter } from "./map.mjs";
       import { canSend, failureView, homeAsk, loadThread, postMessage, postOpener, threadView, waitingView } from "./chat.mjs";
       import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
       import { descriptionParts } from "./description.mjs";
@@ -1140,6 +1148,8 @@
 
       var mapCanvas = document.querySelector("[data-map]");
       var mapNote = document.querySelector("[data-map-note]");
+      var mapLocate = document.querySelector("[data-map-locate]");
+      var mapLocateBanner = document.querySelector("[data-map-locate-banner]");
       var mapCard = document.querySelector("[data-map-card]");
       var mapCardPhoto = document.querySelector("[data-map-card-photo]");
       var mapCardName = document.querySelector("[data-map-card-name]");
@@ -1150,6 +1160,7 @@
       var mapInstance = null;
       var mapPins = [];
       var selectedPinId = null;
+      var locate = { dot: null, banner: null, button: "ready" };
 
       mapCardPhoto.addEventListener("error", function () {
         if (!mapCardPhoto.src.endsWith("empty_picture_placeholder.jpg")) {
@@ -1185,13 +1196,61 @@
           mapCard.classList.add("is-in");
         }
         if (mapInstance && mapInstance.markPin) mapInstance.markPin(selectedPinId);
+        placeLocateBanner();
       }
 
       function hideMapCard() {
         mapCard.hidden = true;
         mapCard.classList.remove("is-in");
         if (mapInstance && mapInstance.markPin) mapInstance.markPin(null);
+        placeLocateBanner();
       }
+
+      function placeLocateBanner() {
+        if (mapCard.hidden) {
+          mapLocateBanner.style.bottom = "";
+          return;
+        }
+        mapLocateBanner.style.bottom = (mapCard.offsetHeight + 12) + "px";
+      }
+
+      function paintLocate() {
+        mapLocate.hidden = !mapInstance || locate.button === "hidden";
+        mapLocate.disabled = locate.button === "busy";
+        mapLocate.setAttribute("aria-busy", locate.button === "busy" ? "true" : "false");
+        mapLocateBanner.hidden = !locate.banner;
+        mapLocateBanner.textContent = locate.banner || "";
+        placeLocateBanner();
+        if (mapInstance && mapInstance.showUser) mapInstance.showUser(locate.dot);
+      }
+
+      function applyReading(reading) {
+        if (reading.type === "fix") {
+          locate = locateAfter(locate, {
+            type: "fix",
+            latitude: reading.latitude,
+            longitude: reading.longitude,
+            inside: mapInstance.seesUser(reading),
+          });
+        } else {
+          locate = locateAfter(locate, { type: reading.type });
+        }
+        paintLocate();
+      }
+
+      mapLocate.addEventListener("click", function () {
+        var next = locateAfter(locate, { type: "tap" });
+        if (next === locate) return;
+        locate = next;
+        paintLocate();
+        var telegram = window.Telegram && window.Telegram.WebApp;
+        readFix({
+          locationManager: telegram && telegram.LocationManager,
+          geolocation: window.navigator.geolocation,
+        }).then(applyReading, function () {
+          applyReading({ type: "miss" });
+        });
+      });
 
       function openPin(pin) {
         selectedPinId = selectionAfter(selectedPinId, { type: "pin", id: pin.id });
@@ -1247,6 +1306,14 @@
                   onMap: clearMapCard,
                 }).then(function (map) {
                   mapInstance = map;
+                  map.addListener("idle", function () {
+                    if (!locate.dot || !map.seesUser(locate.dot)) return;
+                    var next = locateAfter(locate, { type: "visible" });
+                    if (next === locate) return;
+                    locate = next;
+                    paintLocate();
+                  });
+                  paintLocate();
                   resolve(map);
                 }, reject);
               });
