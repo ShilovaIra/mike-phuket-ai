@@ -72,7 +72,13 @@ export async function postMessage({ text, initData, fetch }) {
   });
   if (!response.ok) throw new Error("send");
   const body = await response.json();
-  return body.reply;
+  return body.replies;
+}
+
+export function replyBubbles(replies) {
+  return threadView(
+    replies.map((content) => ({ role: "assistant", content })),
+  ).bubbles;
 }
 
 export function threadView(messages) {

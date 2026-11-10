@@ -67,7 +67,9 @@ async def test_signed_user_reads_back_mikes_reply_without_the_lead_marker(store)
         )
 
         assert sent.status_code == 200
-        reply = sent.json()["reply"]
+        replies = sent.json()["replies"]
+        assert len(replies) == 1
+        reply = replies[0]
         assert MAPS_URL in reply
         assert "ЗАЯВКА_ГОТОВА" not in reply
 
@@ -77,6 +79,38 @@ async def test_signed_user_reads_back_mikes_reply_without_the_lead_marker(store)
     assert history.json()["messages"] == [
         {"role": "user", "content": "Где пляж в Кате?"},
         {"role": "assistant", "content": reply},
+    ]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_two_places_are_stored_and_returned_as_separate_replies(store):
+    smile = "https://www.google.com/maps/search/?api=1&query=Smile+Bar+Phuket"
+
+    async def model(_messages):
+        return (
+            "Вот ссылки:\n\n"
+            f"Kata Beach:\n{MAPS_URL}\n\n"
+            f"Smile Bar:\n{smile}"
+        )
+
+    async with tma_client(store, model) as client:
+        sent = await client.post(
+            "/api/tma/messages",
+            headers=tma_headers(),
+            json={"text": "Где поесть и пляж?"},
+        )
+        history = await client.get("/api/tma/messages", headers=tma_headers())
+
+    assert sent.status_code == 200
+    assert sent.json()["replies"] == [
+        f"Kata Beach:\n{MAPS_URL}",
+        f"Smile Bar:\n{smile}",
+    ]
+    assert history.json()["messages"] == [
+        {"role": "user", "content": "Где поесть и пляж?"},
+        {"role": "assistant", "content": f"Kata Beach:\n{MAPS_URL}"},
+        {"role": "assistant", "content": f"Smile Bar:\n{smile}"},
     ]
 
 
@@ -173,7 +207,9 @@ async def test_ready_lead_notifies_admins_and_hides_the_marker(store):
             headers={"Authorization": f"Bearer {login.json()['access_token']}"},
         )
 
-    reply = sent.json()["reply"]
+    replies = sent.json()["replies"]
+    assert len(replies) == 1
+    reply = replies[0]
     assert "ЗАЯВКА_ГОТОВА" not in reply
     assert MAPS_URL in reply
     assert stats.json()["leads_all_time"] == 1

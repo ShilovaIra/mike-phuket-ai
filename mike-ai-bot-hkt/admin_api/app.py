@@ -684,7 +684,7 @@ def create_app(
     ) -> dict:
         model = request.app.state.mike_model or default_mike_model
         try:
-            reply = await tma_send(
+            replies = await tma_send(
                 _store(request),
                 model,
                 init_data=_tma_init_data(authorization),
@@ -698,7 +698,7 @@ def create_app(
             raise HTTPException(status_code=502, detail="mike unavailable") from None
         except ReplyInFlight:
             raise HTTPException(status_code=409, detail="reply in flight") from None
-        return {"reply": reply}
+        return {"replies": replies}
 
     @app.post("/api/tma/openers")
     async def create_tma_opener(

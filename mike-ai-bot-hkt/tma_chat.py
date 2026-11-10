@@ -14,6 +14,7 @@ import httpx
 
 from lead_contact import OPERATOR_REPLY_HINT
 from maps_links import sanitize_map_links
+from place_messages import place_messages
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +131,7 @@ async def send(
     bot_token: str,
     text: str,
     notify: LeadNotice | None = None,
-) -> str:
+) -> list[str]:
     user = telegram_user(init_data, bot_token)
     external_id = user["id"]
     if external_id in _inflight:
@@ -153,8 +154,12 @@ async def send(
             raise MikeUnavailable from exc
         lead_ready = "ЗАЯВКА_ГОТОВА" in answer
         reply = sanitize_map_links(answer.replace("ЗАЯВКА_ГОТОВА", "").strip())
+        outgoing = place_messages(reply)
         await store.append_message(TMA_CHANNEL, external_id, role="user", content=text)
-        await store.append_message(TMA_CHANNEL, external_id, role="assistant", content=reply)
+        for message in outgoing:
+            await store.append_message(
+                TMA_CHANNEL, external_id, role="assistant", content=message.text
+            )
         if lead_ready:
             dialogue = await store.get_ai_context(TMA_CHANNEL, external_id)
             lead = await store.create_lead(
@@ -172,7 +177,7 @@ async def send(
                     await notify(lead_notice(user, dialogue))
                 except Exception:
                     logger.exception("lead notice failed")
-        return reply
+        return [message.text for message in outgoing]
     finally:
         _inflight.discard(external_id)
 

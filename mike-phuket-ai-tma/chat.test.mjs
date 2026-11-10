@@ -1,6 +1,20 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { canSend, failureView, homeAsk, loadThread, postMessage, postOpener, threadView, waitingView } from "./chat.mjs";
+import { canSend, failureView, homeAsk, loadThread, postMessage, postOpener, replyBubbles, threadView, waitingView } from "./chat.mjs";
+
+test("each reply is its own mike bubble", () => {
+  const tom = "https://www.google.com/maps/search/?api=1&query=Tom+Yum+Phuket";
+  const smile = "https://www.google.com/maps/search/?api=1&query=Smile+Bar+Phuket";
+  const bubbles = replyBubbles([`Tom Yum:\n${tom}`, `Smile Bar:\n${smile}`]);
+
+  assert.equal(bubbles.length, 2);
+  assert.deepEqual(
+    bubbles.map((bubble) => bubble.role),
+    ["mike", "mike"],
+  );
+  assert.equal(bubbles[0].parts.at(-1).href, tom);
+  assert.equal(bubbles[1].parts.at(-1).href, smile);
+});
 
 test("an empty thread shows only the greeting", () => {
   const view = threadView([]);
@@ -97,14 +111,14 @@ test("loading the thread sends the signed init data", async () => {
   assert.deepEqual(messages, [{ role: "user", content: "Привет" }]);
 });
 
-test("sending posts the text with the signed init data and returns the reply", async () => {
+test("sending posts the text with the signed init data and returns the replies", async () => {
   let called;
-  const reply = await postMessage({
+  const replies = await postMessage({
     text: "Привет",
     initData: "signed",
     fetch: async (url, options) => {
       called = { url, options };
-      return { ok: true, json: async () => ({ reply: "Ок" }) };
+      return { ok: true, json: async () => ({ replies: ["Ок"] }) };
     },
   });
 
@@ -112,7 +126,7 @@ test("sending posts the text with the signed init data and returns the reply", a
   assert.equal(called.options.method, "POST");
   assert.equal(called.options.headers.Authorization, "tma signed");
   assert.deepEqual(JSON.parse(called.options.body), { text: "Привет" });
-  assert.equal(reply, "Ок");
+  assert.deepEqual(replies, ["Ок"]);
 });
 
 test("opening a topic posts the kind and returns the saved thread", async () => {

@@ -629,7 +629,7 @@
       import { directoryView, homeView, partnerPage, placeView } from "./catalog.mjs";
       import { OPENER_TEXT, topicByHash, topicView } from "./categories.mjs";
       import { emptyLine, externalUrl, filterAfter, keptSelection, locateAfter, MAP_FILTERS, mountMap, pinCard, pinsFor, readFix, selectionAfter } from "./map.mjs";
-      import { canSend, failureView, homeAsk, loadThread, postMessage, postOpener, threadView, waitingView } from "./chat.mjs";
+      import { canSend, failureView, homeAsk, loadThread, postMessage, postOpener, replyBubbles, threadView, waitingView } from "./chat.mjs";
       import { favouritesView, heartView, loadFavourites, openSession, setSaved } from "./favourites.mjs";
       import { descriptionParts } from "./description.mjs";
       import { profileView } from "./profile.mjs";
@@ -1626,8 +1626,12 @@
         thread.appendChild(waiting);
         thread.scrollTop = thread.scrollHeight;
         postMessage({ text: text, initData: initData, fetch: window.fetch.bind(window) })
-          .then(function (reply) {
-            waiting.replaceWith(createBubble(threadView([{ role: "assistant", content: reply }]).bubbles[0]));
+          .then(function (replies) {
+            var bubbles = replyBubbles(replies);
+            waiting.replaceWith(createBubble(bubbles[0]));
+            bubbles.slice(1).forEach(function (bubble) {
+              thread.appendChild(createBubble(bubble));
+            });
           })
           .catch(function () {
             waiting.replaceWith(createBubble(failureView()));

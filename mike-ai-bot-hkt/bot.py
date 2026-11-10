@@ -51,6 +51,7 @@ from buttons import (
 import lead_contact
 from lead_contact import public_telegram_username
 from maps_links import sanitize_map_links
+from place_messages import OutgoingMessage, place_messages
 from places import PlacesClient
 from stats_report import format_bot_stats
 from topics import TOPIC_NEARBY
@@ -165,6 +166,12 @@ https://www.google.com/maps/search/?api=1&query=НАЗВАНИЕ+МЕСТА+Phuk
 
 Название пиши латиницей, пробелы заменяй на +.
 Пример: https://www.google.com/maps/search/?api=1&query=Kan+Eang+at+Pier+Phuket
+
+Если в ответе несколько мест, пиши каждое место отдельным блоком:
+название, короткая пометка и одна ссылка на карты. Между местами пустая строка.
+Вводную фразу без ссылки, вроде «Вот ссылки:», не пиши.
+Ссылку партнёра и ссылку на карты одного места держи в одном блоке.
+Вопрос или фразу без ссылки после мест поставь отдельным блоком в конце.
 
 Ссылки присылай обычным текстом, без markdown — квадратные скобки не работают.
 """
@@ -548,9 +555,14 @@ async def ask_openai(
         answer = await run_model(messages)
 
         lead_ready = "ЗАЯВКА_ГОТОВА" in answer
-        answer = sanitize_map_links(answer.replace("ЗАЯВКА_ГОТОВА", "").strip())
+        outgoing = place_messages(
+            sanitize_map_links(answer.replace("ЗАЯВКА_ГОТОВА", "").strip())
+        )
 
-        await store.append_message(CHANNEL, tid, role="assistant", content=answer)
+        for message in outgoing:
+            await store.append_message(
+                CHANNEL, tid, role="assistant", content=message.text
+            )
 
         if lead_ready:
             lead = await store.create_lead(
@@ -563,9 +575,16 @@ async def ask_openai(
                 await send_lead_to_admin(update, context, lead.source)
 
     except Exception as e:
-        answer = f"Ошибка OpenAI:\n{e}"
+        outgoing = [OutgoingMessage(f"Ошибка OpenAI:\n{e}", is_place=False)]
 
-    await update.message.reply_text(answer, reply_markup=await build_reply_markup())
+    markup = None
+    for message in outgoing:
+        kwargs = {}
+        if message.is_place or len(outgoing) == 1:
+            if markup is None:
+                markup = await build_reply_markup()
+            kwargs["reply_markup"] = markup
+        await update.message.reply_text(message.text, **kwargs)
     if new_lead:
         await lead_contact.ask_for_contact_if_unreachable(context.bot, update.effective_user)
 

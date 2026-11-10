@@ -79,3 +79,9 @@ def test_maps_search_url_adds_region_once():
 def test_prompt_forbids_shortened_links():
     assert "goo.gl" in MIKE_PROMPT
     assert MAPS_SEARCH_BASE.rstrip("=") in MIKE_PROMPT
+
+
+def test_prompt_asks_for_one_place_per_block():
+    assert "каждое место отдельным блоком" in MIKE_PROMPT
+    assert "Вот ссылки" in MIKE_PROMPT
+    assert "пустая строка" in MIKE_PROMPT
