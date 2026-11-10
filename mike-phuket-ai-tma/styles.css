@@ -312,10 +312,10 @@ button {
 
 .topic-grid {
   display: grid;
-  grid-template-columns: repeat(4, 60px);
+  grid-template-columns: repeat(4, 72px);
   justify-content: center;
-  column-gap: 6px;
-  row-gap: 8px;
+  column-gap: 10px;
+  row-gap: 10px;
   margin: 8px 16px 4px;
 }
 
@@ -342,8 +342,8 @@ button {
 
 .topic-art {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 72px;
+  height: 72px;
 }
 
 .topic-art img {
@@ -371,6 +371,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   min-height: 2.3em;
   font-size: 0.75rem;
   font-weight: 600;
