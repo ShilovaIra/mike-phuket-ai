@@ -49,6 +49,7 @@ async def test_signed_user_saves_a_visible_place_and_reads_it_back(store):
             "id": str(place.id),
             "name": "Якорная",
             "category": "Пляж",
+            "category_slug": "beach",
             "blurb": "Закат",
             "maps_url": "https://maps.example/promthep",
             "photo_url": "media/places/placeholder.jpg",

@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 TMA_CHANNEL = "tma"
 
+OPENER_TEXT = {
+    "property": "Напишите сюда — помогу с арендой или покупкой жилья.",
+    "other": "Напишите сюда, и я попробую помочь.",
+}
+
 MikeModel = Callable[[list[dict[str, str]]], Awaitable[str]]
 LeadNotice = Callable[[str], Awaitable[None]]
 
@@ -170,6 +175,30 @@ async def send(
         return reply
     finally:
         _inflight.discard(external_id)
+
+
+def needs_opener(messages: list[dict[str, str]], text: str) -> bool:
+    """Append only when this exact line is not already Mike's latest message."""
+    if not messages:
+        return True
+    last = messages[-1]
+    return not (last.get("role") == "assistant" and last.get("content") == text)
+
+
+async def open_topic(
+    store: Any,
+    *,
+    init_data: str,
+    bot_token: str,
+    kind: str,
+) -> list[dict[str, str]]:
+    text = OPENER_TEXT[kind]
+    external_id = telegram_user_id(init_data, bot_token)
+    messages = await store.get_ai_context(TMA_CHANNEL, external_id)
+    if needs_opener(messages, text):
+        await store.append_message(TMA_CHANNEL, external_id, role="assistant", content=text)
+        messages = await store.get_ai_context(TMA_CHANNEL, external_id)
+    return messages
 
 
 async def history(store: Any, *, init_data: str, bot_token: str) -> list[dict[str, str]]:

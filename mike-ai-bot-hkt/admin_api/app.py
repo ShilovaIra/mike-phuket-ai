@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 from dataclasses import asdict
-from typing import List, Optional
+from typing import List, Literal, Optional
 from uuid import UUID
 
 import asyncpg
@@ -38,6 +38,7 @@ from tma_chat import (
     default_mike_model,
     history as tma_history,
     notify_admins,
+    open_topic as tma_open_topic,
     send as tma_send,
 )
 from tma_favourites import list_places as tma_favourite_places
@@ -77,11 +78,14 @@ def _catalog_card(
     category: str,
     photo_url: str,
     partner: dict | None = None,
+    *,
+    category_slug: str = "",
 ) -> dict:
     return {
         "id": str(place.id),
         "name": place.name,
         "category": category,
+        "category_slug": category_slug,
         "blurb": place.blurb or "",
         "maps_url": tracked_maps_url(
             place_id=place.id, partner_id=place.partner_id, maps_url=place.maps_url
@@ -104,6 +108,10 @@ class LoginResponse(BaseModel):
 
 class TmaMessageIn(BaseModel):
     text: str
+
+
+class TmaOpenerIn(BaseModel):
+    kind: Literal["property", "other"]
 
 
 class KnowledgeBaseIn(BaseModel):
@@ -430,7 +438,7 @@ def create_app(
     @app.get("/api/catalog/places")
     async def list_catalog_places(request: Request) -> list[dict]:
         store = _store(request)
-        categories = {item.id: item.label for item in await store.list_place_categories()}
+        categories = {item.id: item for item in await store.list_place_categories()}
         partners = {item.id: item for item in await store.list_partners()}
         storage = request.app.state.storage
         payloads = []
@@ -440,8 +448,15 @@ def create_app(
             photo_url = storage.public_url(cover) if storage is not None else cover
             bound = partners.get(place.partner_id) if place.partner_id else None
             partner = _catalog_partner(bound, storage) if bound is not None else None
+            category = categories[place.category_id]
             payloads.append(
-                _catalog_card(place, categories[place.category_id], photo_url, partner)
+                _catalog_card(
+                    place,
+                    category.label,
+                    photo_url,
+                    partner,
+                    category_slug=category.slug,
+                )
             )
         return payloads
 
@@ -455,6 +470,7 @@ def create_app(
             if not partner.is_active:
                 continue
             card = _catalog_partner(partner, storage)
+            card["type"] = partner.type
             card["type_label"] = _type_label(types[partner.type].topic_label)
             payloads.append(card)
         return payloads
@@ -684,6 +700,23 @@ def create_app(
             raise HTTPException(status_code=409, detail="reply in flight") from None
         return {"reply": reply}
 
+    @app.post("/api/tma/openers")
+    async def create_tma_opener(
+        request: Request,
+        body: TmaOpenerIn,
+        authorization: Optional[str] = Header(default=None),
+    ) -> dict:
+        try:
+            messages = await tma_open_topic(
+                _store(request),
+                init_data=_tma_init_data(authorization),
+                bot_token=_bot_token(),
+                kind=body.kind,
+            )
+        except InvalidInitData:
+            raise HTTPException(status_code=401, detail="unauthorized") from None
+        return {"messages": messages}
+
     @app.post("/api/tma/session", status_code=204)
     async def open_tma_session(
         request: Request,
@@ -737,7 +770,7 @@ def create_app(
             }
         except InvalidInitData:
             raise HTTPException(status_code=401, detail="unauthorized") from None
-        categories = {item.id: item.label for item in await store.list_place_categories()}
+        categories = {item.id: item for item in await store.list_place_categories()}
         partners = {item.id: item for item in await store.list_partners()}
         types = {item.slug: item for item in await store.list_partner_types()}
         storage = request.app.state.storage
@@ -750,7 +783,13 @@ def create_app(
                 assets = await store.list_place_assets(place.id)
                 cover = assets[0].path if assets else PLACEHOLDER_COVER
                 photo_url = storage.public_url(cover) if storage is not None else cover
-                card = _catalog_card(place, categories[place.category_id], photo_url)
+                category = categories[place.category_id]
+                card = _catalog_card(
+                    place,
+                    category.label,
+                    photo_url,
+                    category_slug=category.slug,
+                )
                 card["kind"] = "place"
                 payloads.append(card)
                 continue

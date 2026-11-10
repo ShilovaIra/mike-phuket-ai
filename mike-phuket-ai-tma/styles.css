@@ -117,6 +117,14 @@ button {
   display: flex;
 }
 
+#topic.is-open {
+  display: flex;
+}
+
+.device:has(#topic.is-open) #home {
+  display: none;
+}
+
 .device:not(:has(.screen:target)) #home {
   display: flex;
 }
@@ -300,6 +308,73 @@ button {
 
 .home-ask button:active {
   background: var(--blue-press);
+}
+
+.topic-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 16px 4px;
+}
+
+.topic-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 88px;
+  padding: 10px 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: center;
+  text-decoration: none;
+}
+
+.topic-tile:hover,
+.topic-tile:active {
+  background: var(--hover);
+}
+
+.topic-tile:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--canvas), 0 0 0 4px var(--blue);
+}
+
+.topic-icon {
+  display: block;
+  flex: none;
+}
+
+.topic-icon[data-tone="beach"] { color: #0c6e7c; }
+.topic-icon[data-tone="food"] { color: #0c6b3c; }
+.topic-icon[data-tone="trip"] { color: #1a5f9a; }
+.topic-icon[data-tone="exchange"] { color: #7a4e00; }
+.topic-icon[data-tone="transport"] { color: #4e3eae; }
+.topic-icon[data-tone="property"] { color: #1a56b8; }
+.topic-icon[data-tone="esim"] { color: #8e315c; }
+.topic-icon[data-tone="other"] { color: var(--muted); }
+
+[data-theme="dark"] .topic-icon[data-tone="beach"] { color: #8ee4ef; }
+[data-theme="dark"] .topic-icon[data-tone="food"] { color: #7ee0a8; }
+[data-theme="dark"] .topic-icon[data-tone="trip"] { color: #9ecfff; }
+[data-theme="dark"] .topic-icon[data-tone="exchange"] { color: #f2c76a; }
+[data-theme="dark"] .topic-icon[data-tone="transport"] { color: #cec2ff; }
+[data-theme="dark"] .topic-icon[data-tone="property"] { color: #b7d4ff; }
+[data-theme="dark"] .topic-icon[data-tone="esim"] { color: #f5b3cf; }
+[data-theme="dark"] .topic-icon[data-tone="other"] { color: var(--muted); }
+
+.topic-tile span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.3em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
 }
 
 .sheet {
@@ -591,6 +666,11 @@ button {
 .recs-empty,
 .saved-empty {
   margin: 8px 16px 0;
+  color: var(--muted);
+}
+
+.topic-empty {
+  margin: 12px 0 0;
   color: var(--muted);
 }
 

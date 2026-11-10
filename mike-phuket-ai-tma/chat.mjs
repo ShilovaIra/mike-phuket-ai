@@ -53,6 +53,17 @@ export async function loadThread({ initData, fetch }) {
   return body.messages;
 }
 
+export async function postOpener({ kind, initData, fetch }) {
+  const response = await fetch("/api/tma/openers", {
+    method: "POST",
+    headers: { ...tmaHeaders(initData), "Content-Type": "application/json" },
+    body: JSON.stringify({ kind }),
+  });
+  if (!response.ok) throw new Error("opener");
+  const body = await response.json();
+  return body.messages;
+}
+
 export async function postMessage({ text, initData, fetch }) {
   const response = await fetch("/api/tma/messages", {
     method: "POST",

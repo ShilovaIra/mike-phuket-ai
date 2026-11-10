@@ -378,3 +378,86 @@ async def test_mike_can_search_places_when_the_key_is_set(store, monkeypatch):
         bot.places = previous
 
     assert "У тебя есть поиск реальных мест" in seen[0][0]["content"]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_topic_opener_is_saved_once_until_the_thread_moves_on(store):
+    calls = 0
+
+    async def model(_messages):
+        nonlocal calls
+        calls += 1
+        return "Смотрю варианты"
+
+    property_line = "Напишите сюда — помогу с арендой или покупкой жилья."
+    other_line = "Напишите сюда, и я попробую помочь."
+
+    async with tma_client(store, model) as client:
+        opened = await client.post(
+            "/api/tma/openers",
+            headers=tma_headers(),
+            json={"kind": "property"},
+        )
+        again = await client.post(
+            "/api/tma/openers",
+            headers=tma_headers(),
+            json={"kind": "property"},
+        )
+        other = await client.post(
+            "/api/tma/openers",
+            headers=tma_headers(),
+            json={"kind": "other"},
+        )
+        assert calls == 0
+        sent = await client.post(
+            "/api/tma/messages",
+            headers=tma_headers(),
+            json={"text": "Студия у пляжа"},
+        )
+        returned = await client.post(
+            "/api/tma/openers",
+            headers=tma_headers(),
+            json={"kind": "property"},
+        )
+
+    assert opened.status_code == 200
+    assert opened.json()["messages"] == [{"role": "assistant", "content": property_line}]
+    assert again.json()["messages"] == opened.json()["messages"]
+    assert [item["content"] for item in other.json()["messages"]] == [
+        property_line,
+        other_line,
+    ]
+    assert sent.status_code == 200
+    assert [item["content"] for item in returned.json()["messages"]] == [
+        property_line,
+        other_line,
+        "Студия у пляжа",
+        "Смотрю варианты",
+        property_line,
+    ]
+
+
+@requires_db
+@pytest.mark.asyncio
+async def test_topic_opener_rejects_a_bad_signature_and_an_unknown_kind(store):
+    async def model(_messages):
+        raise AssertionError("model should not run")
+
+    forged = signed_init_data().replace("hash=", "hash=00", 1)
+    async with tma_client(store, model) as client:
+        rejected = await client.post(
+            "/api/tma/openers",
+            headers={"Authorization": f"tma {forged}"},
+            json={"kind": "property"},
+        )
+        unknown = await client.post(
+            "/api/tma/openers",
+            headers=tma_headers(),
+            json={"kind": "beaches"},
+        )
+        history = await client.get("/api/tma/messages", headers=tma_headers())
+
+    assert rejected.status_code == 401
+    assert unknown.status_code == 422
+    assert history.json()["messages"] == []

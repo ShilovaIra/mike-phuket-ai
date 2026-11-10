@@ -21,6 +21,20 @@ colors:
   open: "#0E7A45"
   star: "#C98400"
   voice: "#07111F"
+  topic-beach: "#0C6E7C"
+  topic-food: "#0C6B3C"
+  topic-trip: "#1A5F9A"
+  topic-exchange: "#7A4E00"
+  topic-transport: "#4E3EAE"
+  topic-property: "#1A56B8"
+  topic-esim: "#8E315C"
+  topic-beach-dark: "#8EE4EF"
+  topic-food-dark: "#7EE0A8"
+  topic-trip-dark: "#9ECFFF"
+  topic-exchange-dark: "#F2C76A"
+  topic-transport-dark: "#CEC2FF"
+  topic-property-dark: "#B7D4FF"
+  topic-esim-dark: "#F5B3CF"
   canvas-dark: "#0E1622"
   surface-dark: "#182433"
   ink-dark: "#E7EEF7"
@@ -63,6 +77,12 @@ typography:
     fontWeight: 500
     lineHeight: 1.35
     letterSpacing: "0"
+  tile:
+    fontFamily: "Golos Text, Segoe UI, system-ui, sans-serif"
+    fontSize: "0.75rem"
+    fontWeight: 600
+    lineHeight: 1.15
+    letterSpacing: "-0.01em"
 rounded:
   xs: "4px"
   sm: "8px"
@@ -154,7 +174,7 @@ components:
 
 A tourist on a phone in daylight, Mike's photograph filling the top of the screen, a short Russian greeting in a white bubble. The Mini App is a cool canvas under that frame: Guide Blue for the ask pill, the links, and the tab that is on. Plate Yellow survives only as the small «скоро» sticker. Place photos sit in cards. They do not become the page.
 
-One product, two desks. Tourists get the daylight Mini App, and a dark theme that keeps the same blue when the phone is dark. Operators get the night lobby: blue-black ground, violet blooms, frosted panes, Lobby Violet on the action and on the nav item that is current. The admin does not wear Mike's face or the yellow sticker. The bot keyboard stays Telegram's, packed two-up, and the Mini App does not copy that grid.
+One product, two desks. Tourists get the daylight Mini App, and a dark theme that keeps the same blue when the phone is dark. Operators get the night lobby: blue-black ground, violet blooms, frosted panes, Lobby Violet on the action and on the nav item that is current. The admin does not wear Mike's face or the yellow sticker. The bot keyboard stays Telegram's, packed two-up. The Mini App home has its own eight category tiles and does not copy that emoji keyboard.
 
 The system rejects cringy consumer apps (over-cute copy, mascot spam, emoji walls, gamified fluff), loud travel-agency Telegram spam and hard-sell real-estate brochure tone, and generic flashy SaaS dashboards that prioritize chrome over the task. It also rejects the old white-desk home (yellow plate button, no photograph, two-up topic tiles) and the cyan «Спроси Майка!» night-map phone. Light is the tourist default. Violet glass is the operator desk.
 
@@ -260,6 +280,7 @@ Borders are a full 1px. No thick side stripe. The hero clips the photograph; the
 - **Ops primary:** Lobby Violet, `#F7FAFF` type, 0.9375rem, weight 600, padding 0 16px, ice shadow. Hover `#7D62FF`. Disabled at 45% opacity.
 - **Ghost (admin):** 1px `rgba(190, 214, 255, 0.28)`, fill `rgba(255, 255, 255, 0.04)`, Lobby ink, weight 500. Hover fill `rgba(255, 255, 255, 0.09)`.
 - **Hover / Focus:** 180ms on color. Mini App focus is the two-ring shadow. No scale bounce.
+- **Category tiles:** eight on the home, four across, under the ask field. Surface fill, 1px Line, 16px radius, at least 88px tall. The icon is a 26px stroke in one topic hue; the label is Ink, 0.75rem, weight 600. Light hues are Beach `#0C6E7C`, Food `#0C6B3C`, Trip `#1A5F9A`, Exchange `#7A4E00`, Transport `#4E3EAE`, Property `#1A56B8`, eSIM `#8E315C`. Другое uses Ink Muted. Dark theme uses the matching lighter hues. No blur, no glow, no emoji.
 
 ### Chips
 - **Ask chips in chat:** Guide Blue fill, white type, pill, 36px, padding 0 12px, 0.8125rem, weight 600.
@@ -288,7 +309,7 @@ The home hero is `assets/hero-mike.jpg`, cover, centered at 35% height, with a n
 On the voice screen only: a 168px circle, `object-position: 32% 36%`, padded by a Guide Blue ring and a soft blue glow, on the Voice ground. It is not the home hero.
 
 ### Telegram reply keyboard
-Visuals are Telegram's. Rows pack two-up. Ask Mike sits alone on the last row. The Mini App does not repeat that grid or those emoji. Tabs use SVG icons.
+Visuals are Telegram's. Rows pack two-up. Ask Mike sits alone on the last row. The Mini App category tiles use stroke icons, not those emoji. Tabs use SVG icons.
 
 ## Do's and Don'ts
 
@@ -309,5 +330,5 @@ Visuals are Telegram's. Rows pack two-up. Ask Mike sits alone on the last row. T
 - **Don't** use gradient text, glass on the Mini App, thick side-stripe borders, or identical icon-heading-text card grids.
 - **Don't** use a tiny uppercase tracked eyebrow above every section.
 - **Don't** treat the cyan «Спроси Майка!» night-map phone as the tourist UI. Light is the default. The dark theme keeps Guide Blue on `#0E1622`.
-- **Don't** bring back the yellow ask plate or the two-up topic tiles. That home was replaced.
+- **Don't** bring back the yellow ask plate or the old two-up text tiles. The home categories are the eight icon tiles.
 - **Don't** restyle the partner dashboard with this desk. It stays its own surface until it is redesigned.

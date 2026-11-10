@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { canSend, failureView, homeAsk, loadThread, postMessage, threadView, waitingView } from "./chat.mjs";
+import { canSend, failureView, homeAsk, loadThread, postMessage, postOpener, threadView, waitingView } from "./chat.mjs";
 
 test("an empty thread shows only the greeting", () => {
   const view = threadView([]);
@@ -113,6 +113,39 @@ test("sending posts the text with the signed init data and returns the reply", a
   assert.equal(called.options.headers.Authorization, "tma signed");
   assert.deepEqual(JSON.parse(called.options.body), { text: "Привет" });
   assert.equal(reply, "Ок");
+});
+
+test("opening a topic posts the kind and returns the saved thread", async () => {
+  let called;
+  const messages = await postOpener({
+    kind: "property",
+    initData: "signed",
+    fetch: async (url, options) => {
+      called = { url, options };
+      return {
+        ok: true,
+        json: async () => ({
+          messages: [{ role: "assistant", content: "Напишите сюда — помогу с арендой или покупкой жилья." }],
+        }),
+      };
+    },
+  });
+
+  assert.equal(called.url, "/api/tma/openers");
+  assert.equal(called.options.method, "POST");
+  assert.equal(called.options.headers.Authorization, "tma signed");
+  assert.deepEqual(JSON.parse(called.options.body), { kind: "property" });
+  assert.equal(messages[0].role, "assistant");
+});
+
+test("a failed opener does not return a thread", async () => {
+  await assert.rejects(() =>
+    postOpener({
+      kind: "other",
+      initData: "signed",
+      fetch: async () => ({ ok: false, status: 401 }),
+    }),
+  );
 });
 
 test("a failed send does not return a reply", async () => {

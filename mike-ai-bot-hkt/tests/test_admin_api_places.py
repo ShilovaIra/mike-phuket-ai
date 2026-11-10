@@ -541,6 +541,8 @@ async def test_public_catalog_is_open_and_lists_visible_places(store, asset_stor
     assert [place["name"] for place in places] == ["Якорная", "Анапа"]
     assert places[0]["mike_recommends"] is True
     assert places[0]["category"] == "Пляж"
+    assert places[0]["category_slug"] == "beach"
+    assert places[1]["category_slug"] == "shop"
     assert places[0]["blurb"] == "Закат"
     assert places[0]["maps_url"] == PROMTEP_MAPS
     assert places[0]["photo_url"] == (
@@ -657,6 +659,7 @@ async def test_catalog_lists_every_listed_partner_without_a_referral_url(store):
     assert "Hidden Shop" not in [item["name"] for item in body]
     shore = next(item for item in body if item["id"] == listed.json()["id"])
     assert shore["name"] == "Shore Only"
+    assert shore["type"] == "esim"
     assert shore["type_label"] == "eSIM"
     assert shore["blurb"] == ""
     assert "places" not in shore
